@@ -4,4 +4,4 @@ source "$COMMON_LIB_ROOT/functions/networking.sh"
 source "$COMMON_LIB_ROOT/functions/environments.sh"
 source "$COMMON_LIB_ROOT/functions/systemd.sh"
 source "$COMMON_LIB_ROOT/functions/install.sh"
-
+source "$COMMON_LIB_ROOT/functions/uninstall.sh"

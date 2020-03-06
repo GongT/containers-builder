@@ -73,14 +73,14 @@ function arg_finish() {
 	fi
 	# echo "${ARGS[@]} -- $@"
 
-	if [[ $# -eq 0 ]] && [[ -e "$MONO_ROOT_DIR/environment" ]]; then
+	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
 		local _PROGRAM_ARGS=()
 		eval _check_arg $(
 			cat "$MONO_ROOT_DIR/environment" | \
 			grep -E "^$PROJECT_NAME" | \
 			grep -E "$CURRENT_ACTION" | \
 			sed -E 's/^[^:]+:\s*\S+\s*//g'
-		)
+		) "$@"
 	else
 		local _PROGRAM_ARGS=("$@")
 	fi

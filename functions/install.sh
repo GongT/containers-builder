@@ -4,7 +4,7 @@ function install_script() {
 	if ! [[ -f "$F" ]]; then
 		die "Cannot found script file: $F"
 	fi
-	cp "$F" "/usr/share/scripts/$F"
+	cat "$F" | write_file "/usr/share/scripts/$F"
 	chmod a+x "/usr/share/scripts/$F"
 	echo "/usr/share/scripts/$F"
 }
@@ -13,7 +13,7 @@ function install_binary() {
 	if ! [[ -f "$F" ]]; then
 		die "Cannot found script file: $F ($(pwd))"
 	fi
-	cp "$F" "/usr/local/bin/$AS"
+	cat "$F" | write_file "/usr/local/bin/$AS"
 	chmod a+x "/usr/local/bin/$AS"
 	info "installed binary: \e[38;5;2m/usr/local/bin/$AS"
 }

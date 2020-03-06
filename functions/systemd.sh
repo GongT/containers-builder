@@ -43,19 +43,26 @@ function unit_finish() {
 	if [[ -z "$UN" ]]; then
 		die "create_unit first."
 	fi
-	_unit_assemble >"/usr/lib/systemd/system/$UN"
-	if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
-		systemctl daemon-reload
+	_unit_assemble | write_file "/usr/lib/systemd/system/$UN"
+
+	if is_installing ; then
+		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
+			systemctl daemon-reload
+		fi
+		info systemctl enable "$UN"
+		systemctl enable "$UN"
+		info "systemd unit $UN create and enabled."
+	else
+		info systemctl disable "$UN"
+		systemctl disable "$UN"
+		info "systemd unit $UN disabled."
 	fi
-	info systemctl enable "$UN"
-	systemctl enable "$UN"
-	info "systemd unit $UN create and enabled."
 }
 function _unit_assemble() {
 	local I
 	echo "[Unit]"
 
-	if [[ "${#_S_PREP_FOLDER}" -gt 0 ]] && ! [[ "$_S_REQUIRE_INFRA" == "yes" ]]; then
+	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]] && ! [[ "$_S_REQUIRE_INFRA" == "yes" ]]; then
 		unit_depend wait-mount.service
 	fi
 
@@ -78,14 +85,14 @@ PIDFile=/run/$NAME.pid"
 		echo "ExecStartPre=-/usr/bin/podman rm --ignore --force $NAME"
 	fi
 
-	if [[ "${#_S_EXEC_START_PRE}" -gt 0 ]]; then
+	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
 		for I in "${_S_EXEC_START_PRE[@]}"; do
 			echo -n "ExecStartPre=$I"
 		done
 		echo ''
 	fi
 
-	if [[ "${#_S_PREP_FOLDER}" -gt 0 ]]; then
+	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
 		echo -n "ExecStartPre=/usr/bin/mkdir -p"
 		for I in "${_S_PREP_FOLDER[@]}"; do
 			echo -n " '$I'"

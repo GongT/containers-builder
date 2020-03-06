@@ -8,5 +8,6 @@ if [[ "$CURRENT_DIR" == "." ]] ; then
 fi
 PROJECT_NAME="$(basename "${CURRENT_DIR}")"
 
+source "$COMMON_LIB_ROOT/functions/fs.sh"
 source "$COMMON_LIB_ROOT/functions/output.sh"
 source "$COMMON_LIB_ROOT/functions/arguments.sh"
