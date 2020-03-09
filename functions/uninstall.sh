@@ -1,3 +1,4 @@
+_F_UNINSTALL=""
 function is_uninstalling() {
 	[[ -n "$_F_UNINSTALL" ]]
 }
