@@ -1,3 +1,6 @@
+if [[ "${CONTAINERS_DATA_PATH+not found}" == "not found" ]]; then
+	export CONTAINERS_DATA_PATH="/data/AppData"
+fi
 COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
 CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")")"

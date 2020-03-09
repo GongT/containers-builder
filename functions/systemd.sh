@@ -167,7 +167,7 @@ function unit_fs_bind() {
 		RO=":$3"
 	fi
 	if [[ "${FROM:0:1}" != "/" ]]; then
-		FROM="/data/AppData/$FROM"
+		FROM="$CONTAINERS_DATA_PATH/$FROM"
 	fi
 
 	_S_PREP_FOLDER+=("$FROM")
