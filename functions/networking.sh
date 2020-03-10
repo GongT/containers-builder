@@ -24,7 +24,8 @@ function network_use_bridge() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'bridge' again."
 	info "Network: bridge"
 	_N_TYPE="bridge"
-	unit_depend "firewalld.service network-online.target"
+	unit_depend "network-online.target"
+	unit_unit After "firewalld.service"
 	unit_unit PartOf "firewalld.service"
 	for i ; do
 		_unit_podman_network_arg "--publish=$i:$i --publish=$i:$i/udp"
