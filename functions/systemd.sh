@@ -6,6 +6,7 @@ declare -a _S_EXEC_START_PRE
 declare -a _S_EXEC_STOP_POST
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
+declare -a _S_NETWORK_ARGS
 
 function _unit_init() {
 	_S_IMAGE=
@@ -14,7 +15,6 @@ function _unit_init() {
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
 	_S_INSTALL=machines.target
-	_S_NETWORK=
 	_S_EXEC_RELOAD=
 
 	_S_CURRENT_UNIT=
@@ -26,10 +26,14 @@ function _unit_init() {
 	_S_EXEC_STOP_POST=()
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
+	_S_NETWORK_ARGS=()
 	_S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
 	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_REQUIRE_INFRA=
+
+	## network.sh
+	_N_TYPE=
 }
 
 function create_unit() {
@@ -47,22 +51,29 @@ function unit_finish() {
 
 	if is_installing ; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
+			info systemctl daemon-reload
 			systemctl daemon-reload
 		fi
-		info systemctl enable "$UN"
-		systemctl enable "$UN"
+		if ! systemctl is-enabled "$UN" ; then
+			info systemctl enable "$UN"
+			systemctl enable "$UN"
+		fi
 		info "systemd unit $UN create and enabled."
 	else
-		info systemctl disable "$UN"
-		systemctl disable "$UN"
+		if systemctl is-enabled "$UN" ; then
+			info systemctl disable "$UN"
+			systemctl disable "$UN"
+		fi
 		info "systemd unit $UN disabled."
 	fi
 }
 function _unit_assemble() {
+	_network_use_not_define
+	
 	local I
 	echo "[Unit]"
 
-	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]] && ! [[ "$_S_REQUIRE_INFRA" == "yes" ]]; then
+	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
 		unit_depend wait-mount.service
 	fi
 
@@ -104,9 +115,9 @@ PIDFile=/run/$NAME.pid"
 	--conmon-pidfile=/run/$NAME.conmon.pid \\
 	--hostname=${_S_HOST:-$NAME} --name=$NAME \\
 	--systemd=false --log-opt=path=/dev/null \\"
-	if [[ -n "$_S_NETWORK" ]]; then
-		echo "${_S_NETWORK} \\"
-	fi
+	for I in "${_S_NETWORK_ARGS[@]}"; do
+		echo -e "\t$I \\"
+	done
 	for I in "${_S_PODMAN_ARGS[@]}"; do
 		echo -e "\t$I \\"
 	done
@@ -188,7 +199,7 @@ function unit_unit() {
 	local K=$1
 	shift
 	local V="$*"
-	if echo "$K" | grep -qE '^(Before|After|Requires|Wants)$'; then
+	if echo "$K" | grep -qE '^(Before|After|Requires|Wants|PartOf|WantedBy)$'; then
 		_S_UNIT_CONFIG[$K]+=" $V"
 	elif echo "$K" | grep -qE '^(WantedBy)$'; then
 		_S_INSTALL="$V"
@@ -209,11 +220,7 @@ function unit_body() {
 	fi
 }
 function _unit_podman_network_arg() {
-	_S_NETWORK="$*"
-}
-function unit_podman_network_publish() {
-	_S_NETWORK="$NETWORK_TYPE"
-	unit_depend $INFRA_DEP
+	_S_NETWORK_ARGS+=("$*")
 }
 function unit_podman_arguments() {
 	_S_PODMAN_ARGS=("$@")
