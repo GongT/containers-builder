@@ -54,13 +54,13 @@ function unit_finish() {
 			info systemctl daemon-reload
 			systemctl daemon-reload
 		fi
-		if ! systemctl is-enabled "$UN" ; then
+		if ! systemctl is-enabled -q "$UN" ; then
 			info systemctl enable "$UN"
 			systemctl enable "$UN"
 		fi
 		info "systemd unit $UN create and enabled."
 	else
-		if systemctl is-enabled "$UN" ; then
+		if systemctl is-enabled -q "$UN" ; then
 			info systemctl disable "$UN"
 			systemctl disable "$UN"
 		fi
