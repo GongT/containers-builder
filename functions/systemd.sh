@@ -86,7 +86,7 @@ function _unit_assemble() {
 	echo ""
 	echo "[${EXT^}]
 Type=simple
-PIDFile=/run/$NAME.pid"
+PIDFile=/run/$NAME.conmon.pid"
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $NAME"
 	else
@@ -223,7 +223,7 @@ function _unit_podman_network_arg() {
 	_S_NETWORK_ARGS+=("$*")
 }
 function unit_podman_arguments() {
-	_S_PODMAN_ARGS=("$@")
+	_S_PODMAN_ARGS+=("$@")
 }
 function unit_podman_hostname() {
 	_S_HOST=$1
