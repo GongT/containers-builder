@@ -45,12 +45,16 @@ function create_unit() {
 	echo "creating unit file $NAME.${2-service}"
 }
 
-function unit_finish() {
+function unit_write() {
 	local UN="$_S_CURRENT_UNIT"
 	if [[ -z "$UN" ]]; then
 		die "create_unit first."
 	fi
 	_unit_assemble | write_file "/usr/lib/systemd/system/$UN"
+}
+function unit_finish() {
+	unit_write
+	_unit_init
 
 	if is_installing ; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
@@ -153,8 +157,6 @@ PIDFile=/run/$NAME.conmon.pid"
 	echo ""
 	echo "[Install]"
 	echo "WantedBy=$_S_INSTALL"
-
-	_unit_init
 }
 
 declare -r BIND_RBIND="noexec,nodev,nosuid,rw,rbind"
