@@ -7,7 +7,6 @@ function __run() {
 	echo podman "${ARGS[@]}"
 	podman "${ARGS[@]}" &
 	PIDFile=/run/$CONTAINER_ID.conmon.pid
-	sleep 1
 	echo "Conmon PID: $(<$PIDFile)"
 }
 function sdnotify() {
