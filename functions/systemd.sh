@@ -106,7 +106,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo "ExecStartPre=-$_S_STOP_CMD"
 	fi
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman rm --ignore --force $SCOPE_ID"
+		echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
