@@ -6,3 +6,6 @@ function write_file() {
 	_REG_FILES+=("$F")
 	cat > "$F"
 }
+function find_command() { 
+    env sh --noprofile --norc -c "command -v \"$@\"" -- "$1"
+}

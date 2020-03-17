@@ -17,6 +17,7 @@ function _unit_init() {
 	_S_KILL_FORCE=yes
 	_S_INSTALL=multi-user.target
 	_S_EXEC_RELOAD=
+	_S_START_WAIT_SLEEP=10
 
 	_S_CURRENT_UNIT=
 	_S_PREP_FOLDER=()
@@ -31,6 +32,8 @@ function _unit_init() {
 	_S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
 	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
+	_S_BODY_CONFIG[KillSignal]="SIGINT"
+	_S_BODY_CONFIG[TimeoutStopSec]="10"
 	_S_REQUIRE_INFRA=
 
 	## network.sh
@@ -98,7 +101,7 @@ function _unit_assemble() {
 	fi
 	echo ""
 	echo "[${EXT^}]
-Type=simple
+Type=forking
 PIDFile=/run/$SCOPE_ID.conmon.pid"
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
@@ -137,11 +140,16 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	for I in "${_S_VOLUME_ARG[@]}"; do
 		echo -e "\t$I \\"
 	done
-	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm ${_S_IMAGE:-"$NAME"}"
+	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm -d ${_S_IMAGE:-"$NAME"}"
 	for I in "${_S_COMMAND_LINE[@]}"; do
 		echo -n " '$I'"
 	done
 	echo ""
+
+	if [[ "${_SERVICE_WAITER+found}" != "found" ]]; then
+		_create_service_wait
+	fi
+	echo "ExecStartPost=$_SERVICE_WAITER $SCOPE_ID $_S_START_WAIT_SLEEP"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStop=/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
@@ -256,4 +264,13 @@ function unit_hook_stop() {
 }
 function unit_reload_command() {
 	_S_EXEC_RELOAD="$*"
+}
+function unit_start_delay() {
+	_S_START_WAIT_SLEEP="$1"
+}
+function _create_service_wait(){
+	mkdir -p /usr/share/scripts/
+	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" > /usr/share/scripts/service-wait.sh
+	chmod a+x /usr/share/scripts/service-wait.sh
+	_SERVICE_WAITER=/usr/share/scripts/service-wait.sh
 }
