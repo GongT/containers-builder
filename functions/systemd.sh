@@ -10,6 +10,7 @@ declare -a _S_NETWORK_ARGS
 
 function _unit_init() {
 	_S_IMAGE=
+	_S_IMAGE_PULL=never
 	_S_HOST=
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
@@ -38,8 +39,10 @@ function _unit_init() {
 
 function create_unit() {
 	_unit_init
-	_S_CURRENT_UNIT="$1.${2-service}"
-	echo "creating unit file $1.${2-service}"
+	_S_IMAGE="$1"
+	local NAME=$(basename "$1")
+	_S_CURRENT_UNIT="$NAME.${2-service}"
+	echo "creating unit file $NAME.${2-service}"
 }
 
 function unit_finish() {
@@ -124,7 +127,7 @@ PIDFile=/run/$NAME.conmon.pid"
 	for I in "${_S_VOLUME_ARG[@]}"; do
 		echo -e "\t$I \\"
 	done
-	echo -ne "\t--pull=never --rm ${_S_IMAGE:-"gongt/$NAME"}"
+	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm ${_S_IMAGE:-"$NAME"}"
 	for I in "${_S_COMMAND_LINE[@]}"; do
 		echo -n " '$I'"
 	done
@@ -227,6 +230,10 @@ function unit_podman_arguments() {
 }
 function unit_podman_hostname() {
 	_S_HOST=$1
+}
+
+function unit_podman_image_pull() {
+	_S_IMAGE_PULL=$1
 }
 function unit_podman_image() {
 	_S_IMAGE=$1
