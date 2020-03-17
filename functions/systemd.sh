@@ -15,7 +15,7 @@ function _unit_init() {
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
-	_S_INSTALL=machines.target
+	_S_INSTALL=multi-user.target
 	_S_EXEC_RELOAD=
 
 	_S_CURRENT_UNIT=
