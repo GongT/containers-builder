@@ -46,14 +46,14 @@ function create_unit() {
 }
 
 function unit_write() {
-	local UN="$_S_CURRENT_UNIT"
-	if [[ -z "$UN" ]]; then
+	if [[ -z "$_S_CURRENT_UNIT" ]]; then
 		die "create_unit first."
 	fi
-	_unit_assemble | write_file "/usr/lib/systemd/system/$UN"
+	_unit_assemble | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT"
 }
 function unit_finish() {
 	unit_write
+	local UN="$_S_CURRENT_UNIT"
 	_unit_init
 
 	if is_installing ; then
