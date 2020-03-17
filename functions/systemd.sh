@@ -18,6 +18,8 @@ function _unit_init() {
 	_S_INSTALL=multi-user.target
 	_S_EXEC_RELOAD=
 	_S_START_WAIT_SLEEP=10
+	_S_START_WAIT_OUTPUT=
+	_S_START_ACTIVE_FILE=
 
 	_S_CURRENT_UNIT=
 	_S_PREP_FOLDER=()
@@ -30,7 +32,7 @@ function _unit_init() {
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
 	_S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
-	_S_BODY_CONFIG[Restart]="always"
+	_S_BODY_CONFIG[Restart]="no"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[TimeoutStopSec]="10"
@@ -59,18 +61,18 @@ function unit_finish() {
 	local UN="$_S_CURRENT_UNIT"
 	_unit_init
 
-	if is_installing ; then
+	if is_installing; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
 			info systemctl daemon-reload
 			systemctl daemon-reload
 		fi
-		if ! systemctl is-enabled -q "$UN" ; then
+		if ! systemctl is-enabled -q "$UN"; then
 			info systemctl enable "$UN"
 			systemctl enable "$UN"
 		fi
 		info "systemd unit $UN create and enabled."
 	else
-		if systemctl is-enabled -q "$UN" ; then
+		if systemctl is-enabled -q "$UN"; then
 			info systemctl disable "$UN"
 			systemctl disable "$UN"
 		fi
@@ -79,7 +81,7 @@ function unit_finish() {
 }
 function _unit_assemble() {
 	_network_use_not_define
-	
+
 	local I
 	echo "[Unit]"
 
@@ -93,7 +95,7 @@ function _unit_assemble() {
 
 	local EXT="${_S_CURRENT_UNIT##*.}"
 	local NAME="${_S_CURRENT_UNIT%%.*}"
-	if [[ "$NAME" = *"@" ]] ; then
+	if [[ "$NAME" = *"@" ]]; then
 		NAME="${NAME%@}"
 		local SCOPE_ID="${NAME}_%I"
 	else
@@ -102,22 +104,8 @@ function _unit_assemble() {
 	echo ""
 	echo "[${EXT^}]
 Type=forking
+NotifyAccess=none
 PIDFile=/run/$SCOPE_ID.conmon.pid"
-	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
-	else
-		echo "ExecStartPre=-$_S_STOP_CMD"
-	fi
-	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
-	fi
-
-	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
-		for I in "${_S_EXEC_START_PRE[@]}"; do
-			echo -n "ExecStartPre=$I"
-		done
-		echo ''
-	fi
 
 	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
 		echo -n "ExecStartPre=/usr/bin/mkdir -p"
@@ -127,10 +115,38 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo ''
 	fi
 
-	echo "ExecStart=/usr/bin/podman run \\
+	if [[ -z "$_S_STOP_CMD" ]]; then
+		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
+	else
+		echo "ExecStartPre=-$_S_STOP_CMD"
+	fi
+	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
+		echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
+	fi
+	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
+		echo "ExecStopPost=-/usr/bin/podman rm --force $SCOPE_ID"
+	fi
+
+	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
+		for I in "${_S_EXEC_START_PRE[@]}"; do
+			echo -n "ExecStartPre=$I"
+		done
+		echo ''
+	fi
+
+	if [[ "${_SERVICE_WAITER+found}" != "found" ]]; then
+		_create_service_library
+	fi
+
+	echo "Environment=CONTAINER_ID=$SCOPE_ID"
+	echo "Environment='WAIT_TIME=$_S_START_WAIT_SLEEP'"
+	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
+	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
+	echo "ExecStart=${_SERVICE_WAITER} run \\
+	--detach-keys=q \\
 	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid \\
 	--hostname=${_S_HOST:-$SCOPE_ID} --name=$SCOPE_ID \\
-	--systemd=false --log-opt=path=/dev/null \\"
+	--systemd=false --log-opt=path=/dev/null --restart=no \\"
 	for I in "${_S_NETWORK_ARGS[@]}"; do
 		echo -e "\t$I \\"
 	done
@@ -140,16 +156,15 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	for I in "${_S_VOLUME_ARG[@]}"; do
 		echo -e "\t$I \\"
 	done
-	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm -d ${_S_IMAGE:-"$NAME"}"
+	if [[ -n "$_S_START_ACTIVE_FILE" ]] ; then
+		echo -e "\t--volume=ACTIVE_FILE:/tmp/ready-volume \\"
+		echo -e "\t'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE' \\"
+	fi
+	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm ${_S_IMAGE:-"$NAME"}"
 	for I in "${_S_COMMAND_LINE[@]}"; do
 		echo -n " '$I'"
 	done
 	echo ""
-
-	if [[ "${_SERVICE_WAITER+found}" != "found" ]]; then
-		_create_service_wait
-	fi
-	echo "ExecStartPost=$_SERVICE_WAITER $SCOPE_ID $_S_START_WAIT_SLEEP"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStop=/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
@@ -265,12 +280,37 @@ function unit_hook_stop() {
 function unit_reload_command() {
 	_S_EXEC_RELOAD="$*"
 }
-function unit_start_delay() {
-	_S_START_WAIT_SLEEP="$1"
+function unit_start_notify() {
+	local TYPE="$1" ARG="${2-}"
+	_S_START_WAIT_SLEEP=
+	_S_START_WAIT_OUTPUT=
+	_S_START_ACTIVE_FILE=
+	case "$TYPE" in
+	sleep)
+		_S_START_WAIT_SLEEP="$ARG"
+	;;
+	output)
+		_S_START_WAIT_OUTPUT="$ARG"
+	;;
+	touch)
+		if [[ -z "$ARG" ]]; then
+			ARG="$_S_CURRENT_UNIT.$RANDOM.ready"
+		fi
+		_S_START_ACTIVE_FILE="$ARG"
+	;;
+	*)
+		die "Unknown start notify method $TYPE, allow: sleep, output, touch."
+	;;
+	esac
 }
-function _create_service_wait(){
+function _create_service_library() {
 	mkdir -p /usr/share/scripts/
-	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" > /usr/share/scripts/service-wait.sh
+
+	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" >/usr/share/scripts/service-wait.sh
 	chmod a+x /usr/share/scripts/service-wait.sh
 	_SERVICE_WAITER=/usr/share/scripts/service-wait.sh
+
+	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
+	chmod a+x /usr/share/scripts/lowlevel-clear.sh
+	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
 }
