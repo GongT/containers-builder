@@ -90,17 +90,23 @@ function _unit_assemble() {
 
 	local EXT="${_S_CURRENT_UNIT##*.}"
 	local NAME="${_S_CURRENT_UNIT%%.*}"
+	if [[ "$NAME" = *"@" ]] ; then
+		NAME="${NAME%@}"
+		local SCOPE_ID="${NAME}_%I"
+	else
+		local SCOPE_ID="$NAME"
+	fi
 	echo ""
 	echo "[${EXT^}]
 Type=simple
-PIDFile=/run/$NAME.conmon.pid"
+PIDFile=/run/$SCOPE_ID.conmon.pid"
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $NAME"
+		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
 	else
 		echo "ExecStartPre=-$_S_STOP_CMD"
 	fi
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman rm --ignore --force $NAME"
+		echo "ExecStartPre=-/usr/bin/podman rm --ignore --force $SCOPE_ID"
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
@@ -119,8 +125,8 @@ PIDFile=/run/$NAME.conmon.pid"
 	fi
 
 	echo "ExecStart=/usr/bin/podman run \\
-	--conmon-pidfile=/run/$NAME.conmon.pid \\
-	--hostname=${_S_HOST:-$NAME} --name=$NAME \\
+	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid \\
+	--hostname=${_S_HOST:-$SCOPE_ID} --name=$SCOPE_ID \\
 	--systemd=false --log-opt=path=/dev/null \\"
 	for I in "${_S_NETWORK_ARGS[@]}"; do
 		echo -e "\t$I \\"
@@ -138,7 +144,7 @@ PIDFile=/run/$NAME.conmon.pid"
 	echo ""
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStop=/usr/bin/podman stop -t $_S_KILL_TIMEOUT $NAME"
+		echo "ExecStop=/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
 	else
 		echo "ExecStop=$_S_STOP_CMD"
 	fi
