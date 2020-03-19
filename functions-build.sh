@@ -14,6 +14,10 @@ function create_if_not() {
 	fi
 }
 
+function image_exists() {
+	buildah inspect --type image --format '{{.FromImageID}}' "$1" &>/dev/null
+}
+
 function new_container() {
 	local NAME=$1
 	local EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2>/dev/null || true)
