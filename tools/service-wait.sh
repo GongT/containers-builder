@@ -8,7 +8,10 @@ PIDFile=/run/$CONTAINER_ID.conmon.pid
 function debug() {
 	echo "[wait-run] $*" >&2
 }
-
+function die() {
+	debug "$*"
+	exit 1
+}
 function __run() {
 	debug " + podman ${ARGS[*]}"
 	podman "${ARGS[@]}" &
