@@ -33,9 +33,7 @@ function _unit_init() {
 	_S_NETWORK_ARGS=()
 	# _S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
 	_S_BODY_CONFIG[Restart]="no"
-	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
-	_S_BODY_CONFIG[TimeoutStopSec]="10"
 	_S_REQUIRE_INFRA=
 
 	## network.sh
@@ -167,7 +165,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo ""
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStop=/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
+		echo "ExecStop=/usr/bin/podman stop --timeout $_S_KILL_TIMEOUT $SCOPE_ID"
+		echo "TimeoutStopSec=$((_S_KILL_TIMEOUT + 10))"
 	else
 		echo "ExecStop=$_S_STOP_CMD"
 	fi
