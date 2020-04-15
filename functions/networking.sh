@@ -20,6 +20,10 @@ function network_use_auto() {
 		network_use_gateway
 	fi
 }
+function network_use_manual() {
+	_N_TYPE="manual"
+	_unit_podman_network_arg "$@"
+}
 function network_use_bridge() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'bridge' again."
 	info "Network: bridge"

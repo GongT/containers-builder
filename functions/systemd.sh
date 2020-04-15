@@ -34,6 +34,7 @@ function _unit_init() {
 	# _S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
 	_S_BODY_CONFIG[Restart]="no"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
+	_S_BODY_CONFIG[Slice]="machine.slice"
 	_S_REQUIRE_INFRA=
 
 	## network.sh
