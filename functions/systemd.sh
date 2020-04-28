@@ -3,6 +3,7 @@ declare -a _S_VOLUME_ARG
 declare -A _S_UNIT_CONFIG
 declare -A _S_BODY_CONFIG
 declare -a _S_EXEC_START_PRE
+declare -a _S_EXEC_START_POST
 declare -a _S_EXEC_STOP_POST
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
@@ -27,6 +28,7 @@ function _unit_init() {
 	_S_UNIT_CONFIG=()
 	_S_BODY_CONFIG=()
 	_S_EXEC_START_PRE=()
+	_S_EXEC_START_POST=()
 	_S_EXEC_STOP_POST=()
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
@@ -78,6 +80,21 @@ function unit_finish() {
 		info "systemd unit $UN disabled."
 	fi
 }
+function _unit_get_extension() {
+	echo "${_S_CURRENT_UNIT##*.}"
+}
+function _unit_get_name() {
+	echo "${_S_CURRENT_UNIT%%.*}"
+}
+function _unit_get_scopename() {
+	local NAME="$(_unit_get_name)"
+	if [[ "$NAME" = *"@" ]]; then
+		NAME="${NAME%@}"
+		echo "${NAME}_%I"
+	else
+		echo "$NAME"
+	fi
+}
 function _unit_assemble() {
 	_network_use_not_define
 
@@ -92,14 +109,9 @@ function _unit_assemble() {
 		echo "$VAR_NAME=${_S_UNIT_CONFIG[$VAR_NAME]}"
 	done
 
-	local EXT="${_S_CURRENT_UNIT##*.}"
-	local NAME="${_S_CURRENT_UNIT%%.*}"
-	if [[ "$NAME" = *"@" ]]; then
-		NAME="${NAME%@}"
-		local SCOPE_ID="${NAME}_%I"
-	else
-		local SCOPE_ID="$NAME"
-	fi
+	local EXT="$(_unit_get_extension)"
+	local NAME="$(_unit_get_name)"
+	local SCOPE_ID="$(_unit_get_scopename)"
 	echo ""
 	echo "[${EXT^}]
 Type=forking
@@ -128,14 +140,19 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
 		for I in "${_S_EXEC_START_PRE[@]}"; do
-			echo -n "ExecStartPre=$I"
+			echo "ExecStartPre=$I"
 		done
 		echo ''
 	fi
 
-	if [[ "${_SERVICE_WAITER+found}" != "found" ]]; then
-		_create_service_library
+	if [[ "${#_S_EXEC_START_POST[@]}" -gt 0 ]]; then
+		for I in "${_S_EXEC_START_POST[@]}"; do
+			echo "ExecStartPost=$I"
+		done
+		echo ''
 	fi
+
+	_create_service_library
 
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
 	echo "Environment='WAIT_TIME=$_S_START_WAIT_SLEEP'"
@@ -271,6 +288,9 @@ function unit_podman_image() {
 	shift
 	_S_COMMAND_LINE=("$@")
 }
+function unit_hook_poststart() {
+	_S_EXEC_START_POST+=("$*")
+}
 function unit_hook_start() {
 	_S_EXEC_START_PRE+=("$*")
 }
@@ -304,6 +324,9 @@ function unit_start_notify() {
 	esac
 }
 function _create_service_library() {
+	if [[ "${_SERVICE_WAITER+found}" == "found" ]]; then
+		return
+	fi
 	mkdir -p /usr/share/scripts/
 
 	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" >/usr/share/scripts/service-wait.sh
@@ -313,4 +336,8 @@ function _create_service_library() {
 	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
 	chmod a+x /usr/share/scripts/lowlevel-clear.sh
 	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
+
+	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" >/usr/share/scripts/update-hosts.sh
+	chmod a+x /usr/share/scripts/update-hosts.sh
+	_UPDATE_HOSTS=/usr/share/scripts/update-hosts.sh
 }

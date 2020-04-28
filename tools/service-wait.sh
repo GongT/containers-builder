@@ -6,7 +6,7 @@ ARGS=("$@")
 PIDFile=/run/$CONTAINER_ID.conmon.pid
 
 function debug() {
-	echo "[wait-run] $*" >&2
+	echo "{wait-run} $*" >&2
 }
 function die() {
 	debug "$*"
@@ -62,7 +62,7 @@ elif [[ -n "$WAIT_OUTPUT" ]]; then
 		debug "PID=$PID"
 		while read line; do
 			if echo "$line" | grep -qE "$WAIT_OUTPUT"; then
-				debug "output found"
+				debug "== ---- output found ---- =="
 				kill -SIGKILL $PID
 				exit 0
 			fi

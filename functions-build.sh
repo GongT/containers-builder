@@ -1,5 +1,7 @@
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 
+source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
+
 function create_if_not() {
     if [[ \
 		$( buildah inspect --type container --format '{{.FromImageID}}' "$1" 2>&1 ) \

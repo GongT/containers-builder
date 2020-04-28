@@ -34,6 +34,9 @@ function network_use_bridge() {
 	for i ; do
 		_unit_podman_network_arg "--publish=$i:$i --publish=$i:$i/udp"
 	done
+	_create_service_library
+	unit_hook_poststart "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS add \"$(_unit_get_scopename)\""
+	unit_hook_stop "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS del \"$(_unit_get_scopename)\""
 }
 function network_use_gateway() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'gateway' again."

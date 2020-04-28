@@ -5,9 +5,11 @@ function safe_environment() {
 	mkdir -p "$D"
 	
 	local i
+	echo -e "\e[2mPasthrough Environments:\e[0m" >&2
 	echo -n > "$F"
 	for i in "$@" ; do
 		echo "$i" >> "$F"
+		echo -e "\e[2m    $i\e[0m" >&2
 	done
 	
 	chmod 0700 "$D"
