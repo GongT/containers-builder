@@ -25,6 +25,7 @@ function _unit_init() {
 	_S_START_WAIT_SLEEP=10
 	_S_START_WAIT_OUTPUT=
 	_S_START_ACTIVE_FILE=
+	_S_SYSTEMD=false
 
 	_S_PREP_FOLDER=()
 	_S_VOLUME_ARG=()
@@ -173,29 +174,36 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment='WAIT_TIME=$_S_START_WAIT_SLEEP'"
 	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
 	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
-	echo "ExecStart=${_SERVICE_WAITER} run \\
-	--detach-keys=q \\
-	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid \\
-	--hostname=${_S_HOST:-$SCOPE_ID} --name=$SCOPE_ID \\
-	--systemd=false --log-opt=path=/dev/null --restart=no \\"
-	for I in "${_S_NETWORK_ARGS[@]}"; do
-		echo -e "\t$I \\"
-	done
-	for I in "${_S_PODMAN_ARGS[@]}"; do
-		echo -e "\t$I \\"
-	done
-	for I in "${_S_VOLUME_ARG[@]}"; do
-		echo -e "\t$I \\"
-	done
+
+	local -a STARTUP_ARGS=("'--hostname=${_S_HOST:-$SCOPE_ID}' '--name=$SCOPE_ID'")
+	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
+	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
-		echo -e "\t--volume=ACTIVE_FILE:/tmp/ready-volume \\"
-		echo -e "\t'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE' \\"
+		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
-	echo -ne "\t--pull=${_S_IMAGE_PULL-never} --rm ${_S_IMAGE:-"$NAME"}"
-	for I in "${_S_COMMAND_LINE[@]}"; do
-		echo -n " '$I'"
+	STARTUP_ARGS+=("'--pull=${_S_IMAGE_PULL-never}' --rm '${_S_IMAGE:-"$NAME"}'")
+	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
+
+	echo -n "ExecStart=${_SERVICE_WAITER} run \\
+	--detach-keys=q \\
+	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid"
+	for I in "${STARTUP_ARGS[@]}"; do
+		echo -ne " \\\\\n\t${I}"
 	done
 	echo ""
+
+	echo -n "# podman run -it"
+	for I in "${STARTUP_ARGS[@]}"; do
+		echo -n " ${I}"
+	done
+	echo ""
+	{
+		echo -n "podman run -it"
+		for I in "${STARTUP_ARGS[@]}"; do
+			echo -ne " \\\\\n\t${I}"
+		done
+		echo ' "$@"'
+	} | write_file "/usr/share/scripts/debug-startup-$NAME.sh"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStop=/usr/bin/podman stop --timeout $_S_KILL_TIMEOUT $SCOPE_ID"
@@ -233,7 +241,9 @@ function unit_data() {
 		die "unit_data <safe|danger>"
 	fi
 }
-
+function unit_using_systemd() {
+	_S_SYSTEMD=true
+}
 function unit_fs_tempfs() {
 	local SIZE="$1" PATH="$2"
 	_S_VOLUME_ARG+=("'--mount=type=tmpfs,tmpfs-size=$SIZE,destination=$PATH'")
