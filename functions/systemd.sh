@@ -11,6 +11,10 @@ declare -a _S_NETWORK_ARGS
 
 function _unit_init() {
 	_S_IMAGE=
+	_S_CURRENT_UNIT_SERVICE_TYPE=
+	_S_CURRENT_UNIT_TYPE=
+	_S_CURRENT_UNIT_NAME=
+	_S_CURRENT_UNIT_FILE=
 	_S_IMAGE_PULL=never
 	_S_HOST=
 	_S_STOP_CMD=
@@ -22,7 +26,6 @@ function _unit_init() {
 	_S_START_WAIT_OUTPUT=
 	_S_START_ACTIVE_FILE=
 
-	_S_CURRENT_UNIT=
 	_S_PREP_FOLDER=()
 	_S_VOLUME_ARG=()
 	_S_UNIT_CONFIG=()
@@ -43,23 +46,35 @@ function _unit_init() {
 	_N_TYPE=
 }
 
-function create_unit() {
+function create_pod_service_unit() {
+	__create_unit__ pod "$1" service
+}
+function __create_unit__() {
 	_unit_init
-	_S_IMAGE="$1"
-	local NAME=$(basename "$1")
-	_S_CURRENT_UNIT="$NAME.${2-service}"
-	echo "creating unit file $NAME.${2-service}"
+	_S_CURRENT_UNIT_SERVICE_TYPE="$1"
+	_S_IMAGE="$2"
+	_S_CURRENT_UNIT_TYPE="${3-service}"
+
+	local NAME=$(basename "$_S_IMAGE")
+	_S_CURRENT_UNIT_NAME="$NAME"
+
+	if [[ "$_S_CURRENT_UNIT_SERVICE_TYPE" ]]; then
+		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_SERVICE_TYPE.$_S_CURRENT_UNIT_TYPE"
+	else
+		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_TYPE"
+	fi
+	echo "creating unit file $_S_CURRENT_UNIT_FILE"
 }
 
 function unit_write() {
-	if [[ -z "$_S_CURRENT_UNIT" ]]; then
-		die "create_unit first."
+	if [[ -z "$_S_CURRENT_UNIT_FILE" ]]; then
+		die "create_xxxx_unit first."
 	fi
-	_unit_assemble | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT"
+	_unit_assemble | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE"
 }
 function unit_finish() {
 	unit_write
-	local UN="$_S_CURRENT_UNIT"
+	local UN="$_S_CURRENT_UNIT_FILE"
 	_unit_init
 
 	if is_installing; then
@@ -81,10 +96,10 @@ function unit_finish() {
 	fi
 }
 function _unit_get_extension() {
-	echo "${_S_CURRENT_UNIT##*.}"
+	echo "${_S_CURRENT_UNIT_TYPE}"
 }
 function _unit_get_name() {
-	echo "${_S_CURRENT_UNIT%%.*}"
+	echo "${_S_CURRENT_UNIT_NAME}"
 }
 function _unit_get_scopename() {
 	local NAME="$(_unit_get_name)"
@@ -172,7 +187,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	for I in "${_S_VOLUME_ARG[@]}"; do
 		echo -e "\t$I \\"
 	done
-	if [[ -n "$_S_START_ACTIVE_FILE" ]] ; then
+	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
 		echo -e "\t--volume=ACTIVE_FILE:/tmp/ready-volume \\"
 		echo -e "\t'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE' \\"
 	fi
@@ -308,19 +323,19 @@ function unit_start_notify() {
 	case "$TYPE" in
 	sleep)
 		_S_START_WAIT_SLEEP="$ARG"
-	;;
+		;;
 	output)
 		_S_START_WAIT_OUTPUT="$ARG"
-	;;
+		;;
 	touch)
 		if [[ -z "$ARG" ]]; then
-			ARG="$_S_CURRENT_UNIT.$RANDOM.ready"
+			ARG="$_S_CURRENT_UNIT_FILE.$RANDOM.ready"
 		fi
 		_S_START_ACTIVE_FILE="$ARG"
-	;;
+		;;
 	*)
 		die "Unknown start notify method $TYPE, allow: sleep, output, touch."
-	;;
+		;;
 	esac
 }
 function _create_service_library() {
