@@ -12,6 +12,7 @@ declare -a _S_NETWORK_ARGS
 function _unit_init() {
 	_S_IMAGE=
 	_S_CURRENT_UNIT_SERVICE_TYPE=
+	_S_AT_=
 	_S_CURRENT_UNIT_TYPE=
 	_S_CURRENT_UNIT_NAME=
 	_S_CURRENT_UNIT_FILE=
@@ -57,12 +58,18 @@ function __create_unit__() {
 	_S_CURRENT_UNIT_TYPE="${3-service}"
 
 	local NAME=$(basename "$_S_IMAGE")
+
+	if [[ "$NAME" == *@ ]]; then
+		NAME="${NAME:0:-1}"
+		_S_AT_='@'
+	fi
+
 	_S_CURRENT_UNIT_NAME="$NAME"
 
 	if [[ "$_S_CURRENT_UNIT_SERVICE_TYPE" ]]; then
-		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_SERVICE_TYPE.$_S_CURRENT_UNIT_TYPE"
+		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_SERVICE_TYPE$_S_AT_.$_S_CURRENT_UNIT_TYPE"
 	else
-		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_TYPE"
+		_S_CURRENT_UNIT_FILE="$NAME$_S_AT_.$_S_CURRENT_UNIT_TYPE"
 	fi
 	echo "creating unit file $_S_CURRENT_UNIT_FILE"
 }
