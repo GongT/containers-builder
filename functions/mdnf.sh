@@ -18,5 +18,21 @@ function run_dnf() {
 	} | buildah run \
 		--volume "$MNT:/install-root" \
 		--volume "/var/cache/dnf:/install-root/var/cache/dnf" \
-	"$DNF" bash
+		"$DNF" bash
+}
+
+function dev_dnf() {
+	local CONTAINER="$1"
+	shift
+	buildah copy "$CONTAINER" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
+	if [[ "$PROXY" ]]; then
+		buildah run "$CONTAINER" sh -c "echo 'proxy=$PROXY' >> /etc/dnf/dnf.conf"
+	else
+		buildah run "$CONTAINER" sh -c "sed -i '/^proxy=/d' /etc/dnf/dnf.conf"
+	fi
+
+	buildah run \
+		--volume "/var/cache/dnf:/var/cache/dnf" \
+		"$CONTAINER" /usr/bin/dnf install -y \
+		"$@"
 }

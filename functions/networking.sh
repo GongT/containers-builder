@@ -9,7 +9,7 @@ fi
 
 function _network_use_not_define() {
 	if [[ -z "$_N_TYPE" ]] ; then
-		network_use_auto
+		network_use_auto "$@"
 	fi
 }
 function network_use_auto() {
@@ -42,7 +42,7 @@ function network_use_gateway() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'gateway' again."
 	info "Network: gateway"
 	_N_TYPE="gateway"
-	unit_depend "virtual-gateway.service"
+	unit_depend "virtual-gateway.pod.service"
 	_unit_podman_network_arg "--network=container:virtual-gateway"
 }
 function network_use_host() {

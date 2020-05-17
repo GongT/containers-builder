@@ -150,15 +150,15 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	fi
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman stop -t $_S_KILL_TIMEOUT $SCOPE_ID"
+		echo "ExecStartPre=/usr/bin/podman stop --ignore --time $_S_KILL_TIMEOUT $SCOPE_ID"
 	else
 		echo "ExecStartPre=-$_S_STOP_CMD"
 	fi
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
+		echo "ExecStartPre=/usr/bin/podman rm --ignore --force $SCOPE_ID"
 	fi
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStopPost=-/usr/bin/podman rm --force $SCOPE_ID"
+		echo "ExecStopPost=/usr/bin/podman rm --ignore --force $SCOPE_ID"
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
@@ -213,7 +213,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	} | write_file "/usr/share/scripts/debug-startup-$NAME.sh"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStop=/usr/bin/podman stop --timeout $_S_KILL_TIMEOUT $SCOPE_ID"
+		echo "ExecStop=/usr/bin/podman stop --time $_S_KILL_TIMEOUT $SCOPE_ID"
 		echo "TimeoutStopSec=$((_S_KILL_TIMEOUT + 10))"
 	else
 		echo "ExecStop=$_S_STOP_CMD"
@@ -273,7 +273,7 @@ function unit_depend() {
 		unit_unit After "$*"
 		unit_unit Requires "$*"
 
-		if echo "$*" | grep -q -- "virtual-gateway.service"; then
+		if echo "$*" | grep -q -- "virtual-gateway.pod.service"; then
 			_S_REQUIRE_INFRA=yes
 		fi
 	fi
