@@ -9,6 +9,12 @@ declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
 declare -a _S_NETWORK_ARGS
 
+if podman run --help 2>&1 | grep -q -- '--ignore' ; then
+	declare -r PODMAN_USE_IGNORE=yes
+else
+	declare -r PODMAN_USE_IGNORE=
+fi
+
 function _unit_init() {
 	_S_IMAGE=
 	_S_CURRENT_UNIT_SERVICE_TYPE=
@@ -150,15 +156,22 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	fi
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStartPre=/usr/bin/podman stop --ignore --time $_S_KILL_TIMEOUT $SCOPE_ID"
+		if [[ "$PODMAN_USE_IGNORE" ]]; then
+			echo "ExecStartPre=/usr/bin/podman stop --ignore --time $_S_KILL_TIMEOUT $SCOPE_ID"
+		else
+			echo "ExecStartPre=-/usr/bin/podman stop --time $_S_KILL_TIMEOUT $SCOPE_ID"
+		fi
 	else
 		echo "ExecStartPre=-$_S_STOP_CMD"
 	fi
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStartPre=/usr/bin/podman rm --ignore --force $SCOPE_ID"
-	fi
-	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		echo "ExecStopPost=/usr/bin/podman rm --ignore --force $SCOPE_ID"
+		if [[ "$PODMAN_USE_IGNORE" ]]; then
+			echo "ExecStartPre=/usr/bin/podman rm --ignore --force $SCOPE_ID"
+			echo "ExecStopPost=/usr/bin/podman rm --ignore --force $SCOPE_ID"
+		else
+			echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
+			echo "ExecStopPost=-/usr/bin/podman rm --force $SCOPE_ID"
+		fi
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
