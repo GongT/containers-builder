@@ -126,6 +126,7 @@ function _unit_get_scopename() {
 }
 function _unit_assemble() {
 	_network_use_not_define
+	_create_service_library
 
 	local I
 	echo "[Unit]"
@@ -188,8 +189,6 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo ''
 	fi
 
-	_create_service_library
-
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
 	echo "Environment='WAIT_TIME=$_S_START_WAIT_SLEEP'"
 	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
@@ -226,7 +225,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	} | write_file "/usr/share/scripts/debug-startup-$NAME.sh"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
-		echo "ExecStop=/usr/bin/podman stop --time $_S_KILL_TIMEOUT $SCOPE_ID"
+		echo "ExecStop=${_CONTAINER_STOP} $_S_KILL_TIMEOUT $SCOPE_ID"
 		echo "TimeoutStopSec=$((_S_KILL_TIMEOUT + 10))"
 	else
 		echo "ExecStop=$_S_STOP_CMD"
@@ -377,6 +376,10 @@ function _create_service_library() {
 	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" >/usr/share/scripts/service-wait.sh
 	chmod a+x /usr/share/scripts/service-wait.sh
 	_SERVICE_WAITER=/usr/share/scripts/service-wait.sh
+
+	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" >/usr/share/scripts/stop-container.sh
+	chmod a+x /usr/share/scripts/stop-container.sh
+	_CONTAINER_STOP=/usr/share/scripts/stop-container.sh
 
 	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
 	chmod a+x /usr/share/scripts/lowlevel-clear.sh

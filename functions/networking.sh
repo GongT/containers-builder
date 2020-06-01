@@ -1,23 +1,25 @@
 _N_TYPE=
 if [[ "${DEFAULT_USED_NETWORK+found}" == found ]]; then
-	if [[ "$DEFAULT_USED_NETWORK" != "bridge" ]] && [[ "$DEFAULT_USED_NETWORK" != "gateway" ]]; then
-		die "Environment variable DEFAULT_USED_NETWORK is invalid, please set to 'bridge' or 'gateway'."
+	if [[ "$DEFAULT_USED_NETWORK" != "bridge" ]] && [[ "$DEFAULT_USED_NETWORK" != "gateway" ]] && [[ "$DEFAULT_USED_NETWORK" != "host" ]]; then
+		die "Environment variable DEFAULT_USED_NETWORK is invalid, please set to 'bridge' or 'gateway' or 'host'."
 	fi
 else
-	die "Environment variable DEFAULT_USED_NETWORK is not set, please set to 'bridge' or 'gateway'."
+	die "Environment variable DEFAULT_USED_NETWORK is not set, please set to 'bridge' or 'gateway' or 'host'."
 fi
 
 function _network_use_not_define() {
-	if [[ -z "$_N_TYPE" ]] ; then
+	if [[ -z "$_N_TYPE" ]]; then
 		network_use_auto "$@"
 	fi
 }
 function network_use_auto() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'auto' again."
-	if [[ "$DEFAULT_USED_NETWORK" == "bridge" ]]; then
-		network_use_bridge "$@"
-	else
+	if [[ "$DEFAULT_USED_NETWORK" == "gateway" ]]; then
 		network_use_gateway
+	elif [[ "$DEFAULT_USED_NETWORK" == "host" ]]; then
+		network_use_host "$@"
+	else
+		network_use_bridge "$@"
 	fi
 }
 function network_use_manual() {
@@ -31,7 +33,7 @@ function network_use_bridge() {
 	unit_depend "network-online.target"
 	unit_unit After "firewalld.service"
 	unit_unit PartOf "firewalld.service"
-	for i ; do
+	for i; do
 		_unit_podman_network_arg "--publish=$i:$i --publish=$i:$i/udp"
 	done
 	_create_service_library
