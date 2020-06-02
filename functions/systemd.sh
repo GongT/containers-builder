@@ -84,7 +84,8 @@ function unit_write() {
 	if [[ -z "$_S_CURRENT_UNIT_FILE" ]]; then
 		die "create_xxxx_unit first."
 	fi
-	_unit_assemble | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE"
+	local -r UNIT_DATA=$(_unit_assemble)
+	echo "$UNIT_DATA" | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE"
 }
 function unit_finish() {
 	unit_write

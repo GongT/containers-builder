@@ -1,14 +1,27 @@
 declare -a _REG_FILES=()
 
 function write_file() {
-	local F="$1"
+	local -r F="$1"
 	_REG_FILES+=("$F")
 	if [[ ! -d "$(dirname "$F")" ]]; then
 		echo -e "\e[2m * create directory: $F\e[0m" >&2
 		mkdir -p "$(dirname "$F")"
 	fi
-	echo -e "\e[2m * write file: $F\e[0m" >&2
-	cat > "$F"
+	echo -ne "\e[2m * write file: $F" >&2
+
+	if [[ -e "$F" ]] ; then
+		local -r TMPF="/tmp/${RANDOM}"
+		cat > "$TMPF"
+		if [[ "$(< $TMPF)" = "$(<$F)" ]] ; then
+			echo -ne " - same" >&2
+		else
+			cat "$TMPF" > "$F"
+		fi
+		rm -f "$TMPF"
+	else
+		cat > "$TMPF"
+	fi
+	echo -e "\e[0m" >&2
 }
 function find_command() { 
     env sh --noprofile --norc -c "command -v \"$@\"" -- "$1"
