@@ -19,7 +19,7 @@ function write_file() {
 		fi
 		rm -f "$TMPF"
 	else
-		cat > "$TMPF"
+		cat > "$F"
 	fi
 	echo -e "\e[0m" >&2
 }
