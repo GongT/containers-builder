@@ -9,6 +9,8 @@ declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
 declare -a _S_NETWORK_ARGS
 
+declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
+
 if podman run --help 2>&1 | grep -q -- '--ignore' ; then
 	declare -r PODMAN_USE_IGNORE=yes
 else
@@ -287,17 +289,17 @@ function unit_fs_bind() {
 	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
 }
 function shared_sockets_use() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep /dev/shm/container-shared-socksets ; then
-		unit_fs_bind /dev/shm/container-shared-socksets /run/sockets
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH ; then
+		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
 	fi
 }
 function shared_sockets_provide() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep /dev/shm/container-shared-socksets ; then
-		unit_fs_bind /dev/shm/container-shared-socksets /run/sockets
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH ; then
+		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
 	fi
 	local -a FULLPATH=()
 	for i ; do
-		FULLPATH+=("'/dev/shm/container-shared-socksets/$i.sock'")
+		FULLPATH+=("'$SHARED_SOCKET_PATH/$i.sock'")
 	done
 	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
 	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
