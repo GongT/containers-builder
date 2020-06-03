@@ -120,9 +120,9 @@ function _unit_get_name() {
 }
 function _unit_get_scopename() {
 	local NAME="$(_unit_get_name)"
-	if [[ "$NAME" = *"@" ]]; then
+	if [[ "$_S_AT_" ]]; then
 		NAME="${NAME%@}"
-		echo "${NAME}_%I"
+		echo "${NAME}_%i"
 	else
 		echo "$NAME"
 	fi
