@@ -2,6 +2,8 @@ source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 
 source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 source "$COMMON_LIB_ROOT/functions/mdnf.sh"
+source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
+source "$COMMON_LIB_ROOT/functions/alpine.sh"
 
 function create_if_not() {
 	local NAME=$1 BASE=$2
@@ -56,4 +58,16 @@ if [ -n "$PROXY" ]; then
 	export https_proxy="$PROXY"
 fi
 '
+}
+
+function buildah_run_perfer_proxy() {
+	if [[ "${PROXY+found}" = "found" ]]; then
+		http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
+	else
+		buildah run "$@"
+	fi
+}
+
+function buildah_run_deny_proxy() {
+	http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= buildah run "$@"
 }

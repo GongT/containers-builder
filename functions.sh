@@ -6,11 +6,15 @@ declare -r COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 declare -r MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
 declare -r CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")")"
 declare -r CURRENT_DIR="$(dirname "$(realpath -m "${BASH_SOURCE[-1]}")")"
-if [[ "$CURRENT_DIR" == "." ]] ; then
-	echo "Error: can't get current script location.">&2
+if [[ "$CURRENT_DIR" == "." ]]; then
+	echo "Error: can't get current script location." >&2
 	exit 1
 fi
 PROJECT_NAME="$(basename "${CURRENT_DIR}")"
+
+if [[ "${SYSTEM_COMMON_CACHE+found}" != "found" ]]; then
+	SYSTEM_COMMON_CACHE='/var/cache'
+fi
 
 source "$COMMON_LIB_ROOT/functions/fs.sh"
 source "$COMMON_LIB_ROOT/functions/output.sh"
