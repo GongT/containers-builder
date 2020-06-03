@@ -176,6 +176,12 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		fi
 	fi
 
+	if [[ "${_S_IMAGE_PULL-never}" = "missing" ]]; then
+		: # TODO
+	elif [[ "${_S_IMAGE_PULL-never}" = "always" ]]; then
+		echo "ExecStartPre=/usr/bin/podman pull '${_S_IMAGE:-"$NAME"}'"
+	fi
+
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
 		for I in "${_S_EXEC_START_PRE[@]}"; do
 			echo "ExecStartPre=$I"
@@ -201,7 +207,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
 		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
-	STARTUP_ARGS+=("'--pull=${_S_IMAGE_PULL-never}' --rm '${_S_IMAGE:-"$NAME"}'")
+	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
 	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 
 	echo -n "ExecStart=${_SERVICE_WAITER} run \\
@@ -280,7 +286,22 @@ function unit_fs_bind() {
 	_S_PREP_FOLDER+=("$FROM")
 	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
 }
-
+function shared_sockets_use() {
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep /dev/shm/container-shared-socksets ; then
+		unit_fs_bind /dev/shm/container-shared-socksets /run/sockets
+	fi
+}
+function shared_sockets_provide() {
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep /dev/shm/container-shared-socksets ; then
+		unit_fs_bind /dev/shm/container-shared-socksets /run/sockets
+	fi
+	local -a FULLPATH=()
+	for i ; do
+		FULLPATH+=("'/dev/shm/container-shared-socksets/$i.sock'")
+	done
+	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
+	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
+}
 function unit_depend() {
 	if [[ -n "$*" ]]; then
 		unit_unit After "$*"
