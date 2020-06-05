@@ -5,9 +5,9 @@ function safe_environment() {
 
 	local i
 	echo -e "\e[2mPasthrough Environments:\e[0m" >&2
-	echo -n >"$F"
+	echo -n > "$F"
 	for i in "$@"; do
-		echo "$i" >>"$F"
+		echo "$i" >> "$F"
 		echo -e "\e[2m    $i\e[0m" >&2
 	done
 

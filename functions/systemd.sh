@@ -11,7 +11,7 @@ declare -a _S_NETWORK_ARGS
 
 declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
 
-if podman run --help 2>&1 | grep -q -- '--ignore' ; then
+if podman run --help 2>&1 | grep -q -- '--ignore'; then
 	declare -r PODMAN_USE_IGNORE=yes
 else
 	declare -r PODMAN_USE_IGNORE=
@@ -299,16 +299,16 @@ function unit_fs_bind() {
 	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
 }
 function shared_sockets_use() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH ; then
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
 		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
 	fi
 }
 function shared_sockets_provide() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH ; then
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
 		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
 	fi
 	local -a FULLPATH=()
-	for i ; do
+	for i; do
 		FULLPATH+=("'$SHARED_SOCKET_PATH/$i.sock'")
 	done
 	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
@@ -407,19 +407,19 @@ function _create_service_library() {
 	fi
 	mkdir -p /usr/share/scripts/
 
-	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" >/usr/share/scripts/service-wait.sh
+	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" > /usr/share/scripts/service-wait.sh
 	chmod a+x /usr/share/scripts/service-wait.sh
 	_SERVICE_WAITER=/usr/share/scripts/service-wait.sh
 
-	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" >/usr/share/scripts/stop-container.sh
+	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" > /usr/share/scripts/stop-container.sh
 	chmod a+x /usr/share/scripts/stop-container.sh
 	_CONTAINER_STOP=/usr/share/scripts/stop-container.sh
 
-	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
+	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" > /usr/share/scripts/lowlevel-clear.sh
 	chmod a+x /usr/share/scripts/lowlevel-clear.sh
 	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
 
-	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" >/usr/share/scripts/update-hosts.sh
+	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" > /usr/share/scripts/update-hosts.sh
 	chmod a+x /usr/share/scripts/update-hosts.sh
 	_UPDATE_HOSTS=/usr/share/scripts/update-hosts.sh
 }

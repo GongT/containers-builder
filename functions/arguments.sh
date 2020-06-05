@@ -87,10 +87,10 @@ function arg_finish() {
 	local _PROGRAM_ARGS=()
 	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
 		eval _check_arg $(
-			cat "$MONO_ROOT_DIR/environment" |
-				grep -E "^$PROJECT_NAME" |
-				grep -E "$CURRENT_ACTION" |
-				sed -E 's/^[^:]+:\s*\S+\s*//g'
+			cat "$MONO_ROOT_DIR/environment" \
+				| grep -E "^$PROJECT_NAME" \
+				| grep -E "$CURRENT_ACTION" \
+				| sed -E 's/^[^:]+:\s*\S+\s*//g'
 		)
 	fi
 	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
@@ -100,7 +100,7 @@ function arg_finish() {
 	# if [[ ${#_PROGRAM_ARGS[@]} -eq 0 ]]; then
 	# 	_PROGRAM_ARGS=()
 	# fi
-	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
+	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 > /dev/null || true)
 	if [[ "$E" ]]; then
 		die "$E"
 	fi

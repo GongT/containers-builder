@@ -6,8 +6,8 @@ function callstack() {
 	local -i SKIP=${1-1}
 	local -i i
 	for i in $(seq $SKIP $((${#FUNCNAME[@]} - 1))); do
-		if [[ "${BASH_SOURCE[$i+1]+found}" = "found" ]]; then
-			echo "  $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}()"
+		if [[ "${BASH_SOURCE[$((i + 1))]+found}" = "found" ]]; then
+			echo "  $i: ${BASH_SOURCE[$((i + 1))]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}()"
 		else
 			echo "  $i: ${FUNCNAME[$i]}()"
 		fi

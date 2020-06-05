@@ -5,7 +5,7 @@ function install_script() {
 		die "Cannot found script file: $F"
 	fi
 	BASE=$(basename "$F")
-	
+
 	mkdir -p /usr/share/scripts
 	cat "$F" | write_file "/usr/share/scripts/$BASE"
 	chmod a+x "/usr/share/scripts/$BASE"

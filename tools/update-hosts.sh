@@ -11,7 +11,7 @@ function info() {
 TAG=" ### auto:$MACHINE"
 OLD_VALUE=$(grep --fixed-strings "$TAG" /etc/hosts | grep -Eo '^\S+' || echo '')
 
-function signal_dnsmasq(){
+function signal_dnsmasq() {
 	info "send SIGHUP to dnsmasq..."
 	PID_DNS=$(systemctl show --property MainPID --value dnsmasq)
 	if [[ "$PID_DNS" -gt 0 ]]; then
@@ -36,7 +36,7 @@ function add() {
 	{
 		echo "$HOSTS"
 		echo "$IP $MACHINE $TAG"
-	} >/etc/hosts
+	} > /etc/hosts
 	info 'ok.'
 	signal_dnsmasq
 }
@@ -45,7 +45,7 @@ function del() {
 	info "remove ip address of $MACHINE"
 	if [[ "$OLD_VALUE" ]]; then
 		HOSTS="$(grep --fixed-strings -v "$TAG" /etc/hosts)"
-		echo "$HOSTS" >/etc/hosts
+		echo "$HOSTS" > /etc/hosts
 	else
 		info "not exists"
 		return

@@ -19,15 +19,15 @@ function write_file() {
 
 	if [[ -e "$F" ]]; then
 		local -r TMPF="/tmp/${RANDOM}"
-		cat >"$TMPF"
-		if [[ "$(<$TMPF)" = "$(<$F)" ]]; then
+		cat > "$TMPF"
+		if [[ "$(< $TMPF)" = "$(< $F)" ]]; then
 			echo -ne " - same" >&2
 		else
-			cat "$TMPF" >"$F"
+			cat "$TMPF" > "$F"
 		fi
 		rm -f "$TMPF"
 	else
-		cat >"$F"
+		cat > "$F"
 	fi
 	echo -e "\e[0m" >&2
 }

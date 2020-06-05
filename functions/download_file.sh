@@ -9,8 +9,8 @@ function download_file() {
 		info " * downloading $NAME ..."
 		wget "${URL}" \
 			-O "${OUTFILE}.downloading" \
-			--quiet --continue --show-progress --progress=bar:force:noscroll >&2 ||
-			die "Cannot download from dl.google"
+			--quiet --continue --show-progress --progress=bar:force:noscroll >&2 \
+			|| die "Cannot download from dl.google"
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 	fi
 	info "    downloaded."
@@ -47,7 +47,7 @@ function extract_zip() {
 	local -I STRIP="${2}"
 	local TDIR="$TARGET/.extract"
 	mkdir -p "$TDIR"
-	pushd "$TDIR" &>/dev/null
+	pushd "$TDIR" &> /dev/null
 
 	unzip -q -o -d . "$FILE"
 
@@ -60,5 +60,5 @@ function extract_zip() {
 
 	mv -f $STRIPSTR -t "$TARGET"
 
-	popd &>/dev/null
+	popd &> /dev/null
 }

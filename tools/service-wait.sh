@@ -19,7 +19,7 @@ function __run() {
 	while [[ $I -gt 0 ]]; do
 		I=$(($I - 1))
 		if [[ -e "$PIDFile" ]]; then
-			debug "Conmon PID: $(<$PIDFile)"
+			debug "Conmon PID: $(< $PIDFile)"
 			return
 		fi
 		debug "   wait pid $I/10"
@@ -41,7 +41,7 @@ if [[ -n "$WAIT_TIME" ]]; then
 	I=$WAIT_TIME
 	while [[ "$I" -gt 0 ]]; do
 		I=$(($I - 1))
-		if ! podman inspect --type=container "$CONTAINER_ID" &>/dev/null; then
+		if ! podman inspect --type=container "$CONTAINER_ID" &> /dev/null; then
 			debug "Failed wait container $CONTAINER_ID to stable." >&2
 			sdnotify --status="gone"
 			exit 1
@@ -57,7 +57,7 @@ elif [[ -n "$WAIT_OUTPUT" ]]; then
 	(
 		IN=/tmp/$RANDOM.in.fifo
 		mkfifo $IN
-		podman attach --detach-keys=q --no-stdin=true --sig-proxy=false "$CONTAINER_ID" &>$IN &
+		podman attach --detach-keys=q --no-stdin=true --sig-proxy=false "$CONTAINER_ID" &> $IN &
 		PID=$!
 		debug "PID=$PID"
 		while read line; do
@@ -66,7 +66,7 @@ elif [[ -n "$WAIT_OUTPUT" ]]; then
 				kill -SIGKILL $PID
 				exit 0
 			fi
-		done <$IN
+		done < $IN
 	) || die "Can not read output!"
 	debug "got string"
 elif [[ -n "$ACTIVE_FILE" ]]; then
@@ -92,4 +92,4 @@ else
 fi
 
 sdnotify --ready --status="ok"
-debug "Conmon PID: $(<$PIDFile)"
+debug "Conmon PID: $(< $PIDFile)"

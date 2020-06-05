@@ -1,0 +1,9 @@
+[*.sh]
+indent_style = tab
+indent_size = 0
+shell_variant      = bash # like -ln=posix
+binary_next_line   = true  # like -bn
+switch_case_indent = false  # like -ci
+space_redirects    = true  # like -sr
+keep_padding       = false  # like -kp
+function_next_line = true  # like -fn

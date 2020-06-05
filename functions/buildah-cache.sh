@@ -61,7 +61,7 @@ function buildah_cache() {
 	buildah config --add-history \
 		--annotation "me.gongt.cache.hash=$WANTED_HASH" \
 		--annotation "me.gongt.cache.prevstage=$PREVIOUS_ID" \
-		"$CONTAINER_ID" >/dev/null
+		"$CONTAINER_ID" > /dev/null
 	info_note "commit"
 	BUILDAH_LAST_IMAGE=$(buildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note $BUILDAH_LAST_IMAGE
