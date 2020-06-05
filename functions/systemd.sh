@@ -245,8 +245,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
 
 	echo -n "ExecStart=${_SERVICE_WAITER} run \\
-	--detach-keys=q \\
-	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid"
+	--detach-keys=q --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
 	local -a STARTUP_ARGS=()
 	_create_startup_arguments
@@ -281,7 +280,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
-	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}' '--name=$SCOPE_ID'")
+	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
 	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then

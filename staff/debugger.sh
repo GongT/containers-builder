@@ -44,6 +44,8 @@ function XX() {
 	echo
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo -e "\e[0m"
+
+	exec "$@"
 }
 
 # append
