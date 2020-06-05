@@ -1,7 +1,19 @@
 function die() {
-	echo "$@" >&2
+	echo -e "Error: $*\n\e[2m$(callstack)\e[0m" >&2
 	exit 1
 }
+function callstack() {
+	local -i SKIP=${1-1}
+	local -i i
+	for i in $(seq $SKIP $((${#FUNCNAME[@]} - 1))); do
+		if [[ "${BASH_SOURCE[$i+1]+found}" = "found" ]]; then
+			echo "  $i: ${BASH_SOURCE[$i+1]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}()"
+		else
+			echo "  $i: ${FUNCNAME[$i]}()"
+		fi
+	done
+}
+
 function info() {
 	echo -e "$_CURRENT_INDENT\e[38;5;14m$*\e[0m" >&2
 }

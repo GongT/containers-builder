@@ -1,8 +1,7 @@
-_F_UNINSTALL=""
 function is_uninstalling() {
-	[[ -n "$_F_UNINSTALL" ]]
+	[[ -n "$_ACTION_UNINSTALL" ]]
 }
 function is_installing() {
-	[[ -z "$_F_UNINSTALL" ]]
+	[[ -z "$_ACTION_UNINSTALL" ]]
 }
-arg_flag _F_UNINSTALL uninstall "uninstall (remove files)"
+arg_flag _ACTION_UNINSTALL uninstall "uninstall (remove files)"

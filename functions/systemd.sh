@@ -57,6 +57,7 @@ function _unit_init() {
 }
 
 function create_pod_service_unit() {
+	_arg_ensure_finish
 	__create_unit__ pod "$1" service
 }
 function __create_unit__() {
@@ -94,6 +95,12 @@ function unit_finish() {
 	local UN="$_S_CURRENT_UNIT_FILE"
 	_unit_init
 
+	apply_systemd_service "$UN"
+}
+function apply_systemd_service() {
+	local UN="$1"
+
+	echo -ne "\e[2m"
 	if is_installing; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
 			info systemctl daemon-reload
@@ -103,12 +110,15 @@ function unit_finish() {
 			info systemctl enable "$UN"
 			systemctl enable "$UN"
 		fi
+		echo -ne "\e[0m"
 		info "systemd unit $UN create and enabled."
 	else
 		if systemctl is-enabled -q "$UN"; then
 			info systemctl disable "$UN"
 			systemctl disable "$UN"
+			systemctl reset-failed "$UN"
 		fi
+		echo -ne "\e[0m"
 		info "systemd unit $UN disabled."
 	fi
 }

@@ -5,6 +5,7 @@ declare -A _ARG_INPUT
 declare -A _ARG_OUTPUT
 declare -A _ARG_RESULT
 declare -A _ARG_REQUIRE
+_ARG_HAS_FINISH=no
 function arg_string() {
 	if [[ "$1" == '+' ]]; then
 		shift
@@ -52,11 +53,21 @@ function arg_flag() {
 function _check_arg() {
 	_PROGRAM_ARGS=("$@")
 }
+function _arg_ensure_finish() {
+	if [[ "$_ARG_HAS_FINISH" != "yes" ]]; then
+		arg_finish
+	fi
+}
 function arg_finish() {
+	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
+		die "Error: arg_finish called twice!"
+	fi
+
+	declare -gr _ARG_HAS_FINISH=yes
 	local ARGS=(--name "$0")
 	if [[ -n "${_ARG_GETOPT_LONG[*]}" ]]; then
 		local S=''
-		for I in "${_ARG_GETOPT_LONG[@]}" ; do
+		for I in "${_ARG_GETOPT_LONG[@]}"; do
 			S+=",$I"
 		done
 		S=${S:1}
@@ -64,7 +75,7 @@ function arg_finish() {
 	fi
 	if [[ -n "${_ARG_GETOPT_SHORT[*]}" ]]; then
 		local S='+'
-		for I in "${_ARG_GETOPT_SHORT[@]}" ; do
+		for I in "${_ARG_GETOPT_SHORT[@]}"; do
 			S+="$I"
 		done
 		ARGS+=(--options "$S")
@@ -73,41 +84,54 @@ function arg_finish() {
 	fi
 	# echo "${ARGS[@]} -- $@"
 
+	local _PROGRAM_ARGS=()
 	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
-		local _PROGRAM_ARGS=()
 		eval _check_arg $(
-			cat "$MONO_ROOT_DIR/environment" | \
-			grep -E "^$PROJECT_NAME" | \
-			grep -E "$CURRENT_ACTION" | \
-			sed -E 's/^[^:]+:\s*\S+\s*//g'
-		) "$@"
-	else
-		local _PROGRAM_ARGS=("$@")
+			cat "$MONO_ROOT_DIR/environment" |
+				grep -E "^$PROJECT_NAME" |
+				grep -E "$CURRENT_ACTION" |
+				sed -E 's/^[^:]+:\s*\S+\s*//g'
+		)
 	fi
+	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
+		_PROGRAM_ARGS+=("${BASH_ARGV[$i]}")
+	done
+
 	# if [[ ${#_PROGRAM_ARGS[@]} -eq 0 ]]; then
 	# 	_PROGRAM_ARGS=()
 	# fi
-	getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" >/dev/null || arg_usage
+	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
+	if [[ "$E" ]]; then
+		die "$E"
+	fi
 	eval "_arg_set $(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}")"
+
+	if [[ "$_ACTION_HELP" = "yes" ]]; then
+		arg_get_usage
+		exit 0
+	fi
 }
-function arg_usage() {
-	echo -e "\e[38;5;14mUsage: $0 <options>\e[0m" >&2
+function arg_print_usage() {
+	arg_get_usage >&2
+	exit 1
+}
+function arg_get_usage() {
+	echo -e "\e[38;5;14mUsage: $0 <options>\e[0m"
 	local K
 	{
-		for K in "${!_ARG_INPUT[@]}" ; do
+		for K in "${!_ARG_INPUT[@]}"; do
 			echo -e "  \e[2m${_ARG_INPUT[$K]}\e[0m|${_ARG_COMMENT[$K]}"
 		done
-	} | column -t -c "${COLUMNS-80}" -s '|' >&2
-	exit 1
+	} | column -t -c "${COLUMNS-80}" -s '|'
 }
 function _arg_parse_name() {
 	local NAME=$1
 	local A=${NAME%%/*} B=${NAME##*/}
 
-	if [[ "$A" == "$B" ]] ; then
+	if [[ "$A" == "$B" ]]; then
 		LONG=$A
 		SHORT=""
-	elif [[ ${#A} -gt ${#B} ]] ; then
+	elif [[ ${#A} -gt ${#B} ]]; then
 		LONG=$A
 		SHORT=$B
 	else
@@ -115,12 +139,12 @@ function _arg_parse_name() {
 		SHORT=$A
 	fi
 
-	if [[ -z "$SHORT" ]] && [[ ${#LONG} -eq 1 ]] ; then
+	if [[ -z "$SHORT" ]] && [[ ${#LONG} -eq 1 ]]; then
 		SHORT=$LONG
 		LONG=
 	fi
 
-	if ! echo "$LONG$SHORT" | grep -qE "^[0-9a-z_-]+$" ; then
+	if ! echo "$LONG$SHORT" | grep -qE "^[0-9a-z_-]+$"; then
 		die "Invalid argument define: $NAME (LONG=$LONG, SHORT=$SHORT)"
 	fi
 
@@ -142,18 +166,20 @@ function _arg_set() {
 	done
 
 	shift
-	
+
 	if [[ $# -gt 0 ]]; then
 		die "Unknown argument '$1'"
 	fi
 
-	for VAR_NAME in "${!_ARG_RESULT[@]}" ; do
+	for VAR_NAME in "${!_ARG_RESULT[@]}"; do
 		if [[ -z "${_ARG_RESULT[$VAR_NAME]}" ]] && [[ -n "${_ARG_REQUIRE[$VAR_NAME]-}" ]]; then
 			die "Argument '${_ARG_INPUT[$VAR_NAME]}' is required"
 		fi
 		declare -rg "$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}"
 	done
-	for VAR_NAME in "${!_ARG_RESULT[@]}" ; do
+	for VAR_NAME in "${!_ARG_RESULT[@]}"; do
 		echo -e "\e[2m$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}\e[0m" >&2
 	done
 }
+
+arg_flag _ACTION_HELP help "show help"
