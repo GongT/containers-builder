@@ -87,34 +87,65 @@ function unit_write() {
 	if [[ -z "$_S_CURRENT_UNIT_FILE" ]]; then
 		die "create_xxxx_unit first."
 	fi
-	local -r UNIT_DATA=$(_unit_assemble)
-	echo "$UNIT_DATA" | write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE"
+	local -r TF=$(mktemp -u)
+	_unit_assemble > $TF
+	write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" < $TF
+	unlink $TF
 }
+_get_debugger_script() {
+	echo "/usr/share/scripts/debug-startup-$(_unit_get_name).sh"
+}
+_debugger_file_write() {
+	local -r TF=$(mktemp -u)
+	local -r DEBUG_SCRIPT=
+	local -a STARTUP_ARGS=()
+
+	_create_startup_arguments
+	{
+		echo "#!/usr/bin/env bash"
+		echo "declare -r SCOPE_ID='$(_unit_get_scopename)'"
+		echo "declare -r NAME='$(_unit_get_name)'"
+		echo "declare -r SERVICE_FILE='$_S_CURRENT_UNIT_FILE'"
+
+		cat "$COMMON_LIB_ROOT/staff/debugger.sh"
+
+		echo -n "X podman run -it"
+		for I in "${STARTUP_ARGS[@]}"; do
+			echo -ne " \\\\\n\t${I}"
+		done
+		echo ''
+	} > $TF
+
+	local OF="$(_get_debugger_script)"
+	write_file "$OF" < "$TF"
+	chmod a+x "$OF"
+}
+
 function unit_finish() {
 	unit_write
-	local UN="$_S_CURRENT_UNIT_FILE"
-	_unit_init
 
-	apply_systemd_service "$UN"
+	_debugger_file_write
+
+	apply_systemd_service "$_S_CURRENT_UNIT_FILE"
+
+	_unit_init
 }
 function apply_systemd_service() {
+	_arg_ensure_finish
 	local UN="$1"
 
 	echo -ne "\e[2m"
 	if is_installing; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
-			info systemctl daemon-reload
 			systemctl daemon-reload
 		fi
 		if ! systemctl is-enabled -q "$UN"; then
-			info systemctl enable "$UN"
 			systemctl enable "$UN"
 		fi
 		echo -ne "\e[0m"
 		info "systemd unit $UN create and enabled."
 	else
 		if systemctl is-enabled -q "$UN"; then
-			info systemctl disable "$UN"
 			systemctl disable "$UN"
 			systemctl reset-failed "$UN"
 		fi
@@ -213,35 +244,17 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
 	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
 
-	local -a STARTUP_ARGS=("'--hostname=${_S_HOST:-$SCOPE_ID}' '--name=$SCOPE_ID'")
-	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
-	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
-	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
-		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
-	fi
-	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
-	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
-
 	echo -n "ExecStart=${_SERVICE_WAITER} run \\
 	--detach-keys=q \\
 	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid"
+
+	local -a STARTUP_ARGS=()
+	_create_startup_arguments
 	for I in "${STARTUP_ARGS[@]}"; do
 		echo -ne " \\\\\n\t${I}"
 	done
 	echo ""
-
-	echo -n "# podman run -it"
-	for I in "${STARTUP_ARGS[@]}"; do
-		echo -n " ${I}"
-	done
-	echo ""
-	{
-		echo -n "podman run -it"
-		for I in "${STARTUP_ARGS[@]}"; do
-			echo -ne " \\\\\n\t${I}"
-		done
-		echo ' "$@"'
-	} | write_file "/usr/share/scripts/debug-startup-$NAME.sh"
+	echo "# debug script: $(_get_debugger_script)"
 
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		echo "ExecStop=${_CONTAINER_STOP} $_S_KILL_TIMEOUT $SCOPE_ID"
@@ -264,6 +277,18 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo ""
 	echo "[Install]"
 	echo "WantedBy=$_S_INSTALL"
+}
+
+function _create_startup_arguments() {
+	local -r SCOPE_ID="$(_unit_get_scopename)"
+	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}' '--name=$SCOPE_ID'")
+	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
+	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
+	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
+		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
+	fi
+	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
+	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 }
 
 declare -r BIND_RBIND="noexec,nodev,nosuid,rw,rbind"
@@ -352,7 +377,10 @@ function _unit_podman_network_arg() {
 	_S_NETWORK_ARGS+=("$*")
 }
 function unit_podman_arguments() {
-	_S_PODMAN_ARGS+=("$@")
+	local I
+	for I; do
+		_S_PODMAN_ARGS+=("'$I'")
+	done
 }
 function unit_podman_hostname() {
 	_S_HOST=$1

@@ -1,6 +1,7 @@
 declare -a _REG_FILES=()
 
 function write_file() {
+	_arg_ensure_finish
 	local -r F="$1"
 	if is_uninstalling; then
 		if [[ -e "$F" ]]; then
@@ -17,17 +18,26 @@ function write_file() {
 	fi
 	echo -ne "\e[2m * write file: $F" >&2
 
-	if [[ -e "$F" ]]; then
-		local -r TMPF="/tmp/${RANDOM}"
-		cat > "$TMPF"
-		if [[ "$(< $TMPF)" = "$(< $F)" ]]; then
+	if [[ "$#" -eq 1 ]]; then
+		if [[ -e "$F" ]]; then
+			local -r TMPF="/tmp/${RANDOM}"
+			cat > "$TMPF"
+			if [[ "$(< $TMPF)" = "$(< $F)" ]]; then
+				echo -ne " - same" >&2
+			else
+				cat "$TMPF" > "$F"
+			fi
+			rm -f "$TMPF"
+		else
+			cat > "$F"
+		fi
+	else
+		local -r CONTENT=$2
+		if [[ -e "$F" ]] && [[ "$CONTENT" = "$(< $F)" ]]; then
 			echo -ne " - same" >&2
 		else
-			cat "$TMPF" > "$F"
+			echo "$2" > "$F"
 		fi
-		rm -f "$TMPF"
-	else
-		cat > "$F"
 	fi
 	echo -e "\e[0m" >&2
 }

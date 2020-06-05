@@ -5,7 +5,7 @@ declare -A _ARG_INPUT
 declare -A _ARG_OUTPUT
 declare -A _ARG_RESULT
 declare -A _ARG_REQUIRE
-_ARG_HAS_FINISH=no
+declare -g _ARG_HAS_FINISH=no
 function arg_string() {
 	if [[ "$1" == '+' ]]; then
 		shift
@@ -54,16 +54,19 @@ function _check_arg() {
 	_PROGRAM_ARGS=("$@")
 }
 function _arg_ensure_finish() {
+	if [[ "$BASH_SUBSHELL" -ne 0 ]] ; then
+		die "invalid usage, some function has drop into a subshell, use arg_finish before it."
+	fi
 	if [[ "$_ARG_HAS_FINISH" != "yes" ]]; then
-		arg_finish
+		arg_finish >&2
 	fi
 }
 function arg_finish() {
 	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
 		die "Error: arg_finish called twice!"
 	fi
-
 	declare -gr _ARG_HAS_FINISH=yes
+
 	local ARGS=(--name "$0")
 	if [[ -n "${_ARG_GETOPT_LONG[*]}" ]]; then
 		local S=''
@@ -177,9 +180,11 @@ function _arg_set() {
 		fi
 		declare -rg "$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}"
 	done
+	echo -ne "\e[2m"
 	for VAR_NAME in "${!_ARG_RESULT[@]}"; do
-		echo -e "\e[2m$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}\e[0m" >&2
+		echo -e "$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}" >&2
 	done
+	echo -ne "\e[0m"
 }
 
 arg_flag _ACTION_HELP help "show help"

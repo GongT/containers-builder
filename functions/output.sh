@@ -14,6 +14,16 @@ function callstack() {
 	done
 }
 
+function _exit_handle() {
+	RET=$?
+	echo -ne "\e[0m"
+	if [[ "$RET" -ne 0 ]]; then
+		callstack
+	fi
+	exit $RET
+}
+trap _exit_handle EXIT
+
 function info() {
 	echo -e "$_CURRENT_INDENT\e[38;5;14m$*\e[0m" >&2
 }

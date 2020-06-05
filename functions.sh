@@ -1,3 +1,6 @@
+set -Eeuo pipefail
+shopt -s lastpipe
+
 if [[ "${CONTAINERS_DATA_PATH+found}" != "found" ]]; then
 	export CONTAINERS_DATA_PATH="/data/AppData"
 fi
