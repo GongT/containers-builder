@@ -33,6 +33,7 @@ function network_use_bridge() {
 	unit_depend "network-online.target"
 	unit_unit After "firewalld.service"
 	unit_unit PartOf "firewalld.service"
+	unit_podman_arguments --dns=h.o.s.t
 	for i; do
 		_unit_podman_network_arg "--publish=$i:$i --publish=$i:$i/udp"
 	done

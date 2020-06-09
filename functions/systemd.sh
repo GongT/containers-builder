@@ -46,7 +46,7 @@ function _unit_init() {
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
-	# _S_BODY_CONFIG[RestartPreventExitStatus]="125 126 127"
+	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
 	_S_BODY_CONFIG[Restart]="no"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="machine.slice"
@@ -138,12 +138,13 @@ function apply_systemd_service() {
 	if is_installing; then
 		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
 			systemctl daemon-reload
-		fi
-		if ! systemctl is-enabled -q "$UN"; then
-			systemctl enable "$UN"
+			if ! systemctl is-enabled -q "$UN"; then
+				systemctl enable "$UN"
+			fi
+			echo -ne "\e[0m"
+			info "systemd unit $UN create and enabled."
 		fi
 		echo -ne "\e[0m"
-		info "systemd unit $UN create and enabled."
 	else
 		if systemctl is-enabled -q "$UN"; then
 			systemctl disable "$UN"

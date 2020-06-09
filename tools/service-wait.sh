@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
-ARGS=("$@")
-
+ARGS=()
 PIDFile=/run/$CONTAINER_ID.conmon.pid
 
 function debug() {
@@ -33,6 +32,22 @@ function sdnotify() {
 		systemd-notify "$@"
 	fi
 }
+function find_bridge_ip() {
+	podman network inspect podman | grep -oE '"gateway": ".+",?$' | sed 's/"gateway": "\(.*\)".*/\1/g'
+}
+
+for i; do
+	if [[ "$i" == "--dns=h.o.s.t" ]]; then
+		HOST_IP=$(find_bridge_ip)
+		if [[ ! "$HOST_IP" ]]; then
+			echo "Can not get information about default podman network (podman0), podman configure failed." >&2
+			exit 233
+		fi
+		ARGS+=("--dns=$HOST_IP")
+	else
+		ARGS+=("$i")
+	fi
+done
 
 debug "Wait container $CONTAINER_ID."
 if [[ -n "$WAIT_TIME" ]]; then
