@@ -1,8 +1,14 @@
-source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
+#!/usr/bin/env bash
 
+# shellcheck source=./functions.sh
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
+# shellcheck source=./functions/shared_projects.sh
 source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
+# shellcheck source=./functions/mdnf.sh
 source "$COMMON_LIB_ROOT/functions/mdnf.sh"
+# shellcheck source=./functions/buildah-cache.sh
 source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
+# shellcheck source=./functions/alpine.sh
 source "$COMMON_LIB_ROOT/functions/alpine.sh"
 
 function create_if_not() {
@@ -38,7 +44,8 @@ function image_exists() {
 
 function new_container() {
 	local NAME=$1
-	local EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2>/dev/null || true)
+	local EXISTS
+	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2>/dev/null || true)
 	if [[ -n "$EXISTS" ]]; then
 		echo "Remove exists container '$EXISTS'" >&2
 		buildah rm "$EXISTS" &>/dev/null
@@ -51,6 +58,7 @@ function new_container() {
 
 function SHELL_USE_PROXY() {
 	echo "PROXY=$PROXY"
+	# shellcheck disable=SC2016
 	echo '
 if [ -n "$PROXY" ]; then
 	echo "using proxy: ${PROXY}..." >&2
@@ -69,5 +77,5 @@ function buildah_run_perfer_proxy() {
 }
 
 function buildah_run_deny_proxy() {
-	http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= buildah run "$@"
+	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' buildah run "$@"
 }
