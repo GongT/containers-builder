@@ -32,20 +32,28 @@ fi
 
 declare -a PARENT_ARGS=("$@")
 
+function find_bridge_ip() {
+	podman network inspect podman | grep -oE '"gateway": ".+",?$' | sed 's/"gateway": "\(.*\)".*/\1/g'
+}
+
 function XX() {
+	local ARGS=("$@")
 	echo -ne "\e[2m"
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo
 	echo -n "$1"
-	for i in $(seq 2 $(($# ))); do
+	for i in $(seq 2 $(($#))); do
+		if [[ "${ARGS[$i]}" == "--dns=h.o.s.t" ]]; then
+			ARGS[$i]="--dns=$(find_bridge_ip)"
+		fi
 		echo -ne " \\\\\n  "
-		echo -n "'${!i}'"
+		echo -n "'${ARGS[$i]}'"
 	done
 	echo
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo -e "\e[0m"
 
-	exec "$@"
+	exec "${ARGS[@]}"
 }
 
 # append

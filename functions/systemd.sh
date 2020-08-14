@@ -11,9 +11,11 @@ declare -a _S_NETWORK_ARGS
 
 declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
 
-if podman run --help 2>&1 | grep -q -- '--ignore'; then
+if podman stop --help 2>&1 | grep -q -- '--ignore'; then
+	info_note "podman support --ignore flag"
 	declare -r PODMAN_USE_IGNORE=yes
 else
+	echo "podman version is old. can't use --ignore flag">&2
 	declare -r PODMAN_USE_IGNORE=
 fi
 
@@ -114,11 +116,8 @@ _debugger_file_write() {
 			echo -ne " \\\\\n\t${I}"
 		done
 		echo ''
-	} > $TF
-
-	local OF="$(_get_debugger_script)"
-	write_file "$OF" < "$TF"
-	chmod a+x "$OF"
+	} | write_file "$(_get_debugger_script)"
+	chmod a+x "$(_get_debugger_script)"
 }
 
 function unit_finish() {

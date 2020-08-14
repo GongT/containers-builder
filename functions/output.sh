@@ -1,7 +1,10 @@
+#!/usr/bin/env bash
+
 function die() {
 	echo -e "Error: $*\n\e[2m$(callstack)\e[0m" >&2
 	exit 1
 }
+
 function callstack() {
 	local -i SKIP=${1-1}
 	local -i i
@@ -18,7 +21,7 @@ function _exit_handle() {
 	RET=$?
 	echo -ne "\e[0m"
 	if [[ "$RET" -ne 0 ]]; then
-		callstack
+		callstack 1
 	fi
 	exit $RET
 }
