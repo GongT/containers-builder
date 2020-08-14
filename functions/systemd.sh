@@ -244,7 +244,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
 	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
 
-	echo -n "ExecStart=${_SERVICE_WAITER} run \\
+	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--detach-keys=q --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
 	local -a STARTUP_ARGS=()

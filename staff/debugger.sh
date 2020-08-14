@@ -3,7 +3,7 @@ echo -ne "\ec"
 echo -ne "\e[2m"
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
-systemctl cat $SERVICE_FILE --no-pager | sed -E "s/^/\x1B[2m/mg" || true
+systemctl cat "$SERVICE_FILE" --no-pager | sed -E "s/^/\x1B[2m/mg" || true
 
 if echo "$SCOPE_ID" | grep -q '%i'; then
 	template_id=$1

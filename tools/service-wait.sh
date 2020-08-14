@@ -13,7 +13,7 @@ function die() {
 }
 function __run() {
 	debug " + podman ${ARGS[*]}"
-	podman "${ARGS[@]}" &
+	podman run "${ARGS[@]}" &
 	local I=10
 	while [[ $I -gt 0 ]]; do
 		I=$(($I - 1))
