@@ -78,7 +78,8 @@ elif [[ -n "$WAIT_OUTPUT" ]]; then
 		while read line; do
 			if echo "$line" | grep -qE "$WAIT_OUTPUT"; then
 				debug "== ---- output found ---- =="
-				kill -SIGKILL $PID
+				sleep 5
+				kill -SIGKILL $PID || die "process died."
 				exit 0
 			fi
 		done < $IN

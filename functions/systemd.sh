@@ -1,4 +1,5 @@
 declare -a _S_PREP_FOLDER
+declare -a _S_LINUX_CAP
 declare -a _S_VOLUME_ARG
 declare -A _S_UNIT_CONFIG
 declare -A _S_BODY_CONFIG
@@ -15,7 +16,7 @@ if podman stop --help 2>&1 | grep -q -- '--ignore'; then
 	info_note "podman support --ignore flag"
 	declare -r PODMAN_USE_IGNORE=yes
 else
-	echo "podman version is old. can't use --ignore flag">&2
+	echo "podman version is old. can't use --ignore flag" >&2
 	declare -r PODMAN_USE_IGNORE=
 fi
 
@@ -39,6 +40,7 @@ function _unit_init() {
 	_S_SYSTEMD=false
 
 	_S_PREP_FOLDER=()
+	_S_LINUX_CAP=()
 	_S_VOLUME_ARG=()
 	_S_UNIT_CONFIG=()
 	_S_BODY_CONFIG=()
@@ -58,6 +60,9 @@ function _unit_init() {
 	_N_TYPE=
 }
 
+function auto_create_pod_service_unit() {
+	create_pod_service_unit "$(basename "$(pwd)")"
+}
 function create_pod_service_unit() {
 	_arg_ensure_finish
 	__create_unit__ pod "$1" service
@@ -239,10 +244,14 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo ''
 	fi
 
+	WAIT_ENV_FILE=$(
+		save_environments start-params \
+			"WAIT_TIME=$_S_START_WAIT_SLEEP" \
+			"WAIT_OUTPUT=$_S_START_WAIT_OUTPUT" \
+			"ACTIVE_FILE=$_S_START_ACTIVE_FILE"
+	)
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
-	echo "Environment='WAIT_TIME=$_S_START_WAIT_SLEEP'"
-	echo "Environment='WAIT_OUTPUT=$_S_START_WAIT_OUTPUT'"
-	echo "Environment='ACTIVE_FILE=$_S_START_ACTIVE_FILE'"
+	echo "EnvironmentFile=$WAIT_ENV_FILE"
 
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--detach-keys=q --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
@@ -283,6 +292,13 @@ function _create_startup_arguments() {
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
 	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
+	if [[ "${#_S_LINUX_CAP[@]}" -gt 0 ]]; then
+		local CAP_ITEM CAP_LIST=""
+		for CAP_ITEM in "${_S_LINUX_CAP[@]}"; do
+			CAP_LIST+=",$CAP_ITEM"
+		done
+		STARTUP_ARGS+=("--cap-add=${CAP_LIST:1}")
+	fi
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
 		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
@@ -342,6 +358,7 @@ function unit_depend() {
 	if [[ -n "$*" ]]; then
 		unit_unit After "$*"
 		unit_unit Requires "$*"
+		unit_unit PartOf "$*"
 
 		if echo "$*" | grep -q -- "virtual-gateway.pod.service"; then
 			_S_REQUIRE_INFRA=yes
@@ -364,8 +381,11 @@ function unit_body() {
 	local K="$1"
 	shift
 	local V="$*"
-	if echo "$K" | grep -qE '^(RestartPreventExitStatus)$'; then
-		_S_BODY_CONFIG[$K]+=" $V"
+	if echo "$K" | grep -qE '^(RestartPreventExitStatus|Environment)$'; then
+		if [[ "${_S_BODY_CONFIG[$K]+found}" = "found" ]]; then
+			_S_BODY_CONFIG[$K]+=" "
+		fi
+		_S_BODY_CONFIG[$K]+="$V"
 	elif echo "$K" | grep -qE '^(ExecStop)$'; then
 		_S_STOP_CMD="$V"
 	else

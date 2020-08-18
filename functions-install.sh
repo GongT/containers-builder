@@ -13,3 +13,5 @@ source "$COMMON_LIB_ROOT/functions/systemd.sh"
 source "$COMMON_LIB_ROOT/functions/install.sh"
 # shellcheck source=./functions/uninstall.sh
 source "$COMMON_LIB_ROOT/functions/uninstall.sh"
+# shellcheck source=./functions/cap.sh
+source "$COMMON_LIB_ROOT/functions/cap.sh"

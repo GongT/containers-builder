@@ -24,7 +24,7 @@ function network_use_auto() {
 }
 function network_use_manual() {
 	_N_TYPE="manual"
-	_unit_podman_network_arg --cap-add=NET_ADMIN "$@"
+	_unit_podman_network_arg "$@"
 }
 function network_use_bridge() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'bridge' again."
@@ -41,12 +41,15 @@ function network_use_bridge() {
 	unit_hook_poststart "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS add \"$(_unit_get_scopename)\""
 	unit_hook_stop "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS del \"$(_unit_get_scopename)\""
 }
-function network_use_gateway() {
+function network_use_container() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'gateway' again."
 	info "Network: gateway"
 	_N_TYPE="gateway"
-	unit_depend "virtual-gateway.pod.service"
-	_unit_podman_network_arg "--network=container:virtual-gateway"
+	unit_depend "$1.pod.service"
+	_unit_podman_network_arg "--network=container:$1"
+}
+function network_use_gateway() {
+	network_use_container "virtual-gateway"
 }
 function network_use_host() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'host' again."

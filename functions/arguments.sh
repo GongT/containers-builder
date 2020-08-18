@@ -7,6 +7,7 @@ declare -A _ARG_RESULT
 declare -A _ARG_REQUIRE
 declare -g _ARG_HAS_FINISH=no
 function arg_string() {
+	_ARG_USING=yes
 	if [[ "$1" == '+' ]]; then
 		shift
 		_ARG_REQUIRE[$1]=yes
@@ -16,7 +17,6 @@ function arg_string() {
 	_arg_parse_name $1
 	shift
 	_ARG_COMMENT[$VAR_NAME]="$*"
-	declare $VAR_NAME=""
 	[[ -n "$LONG" ]] && {
 		IN+="/--$LONG"
 		_ARG_GETOPT_LONG+=("$LONG:")
@@ -27,10 +27,14 @@ function arg_string() {
 		_ARG_GETOPT_SHORT+=("$SHORT:")
 		_ARG_OUTPUT["-$SHORT"]=$VAR_NAME
 	}
-	_ARG_RESULT[$VAR_NAME]=""
+	if [[ "${!VAR_NAME+found}" != found ]]; then
+		declare $VAR_NAME=""
+	fi
+	_ARG_RESULT[$VAR_NAME]="${!VAR_NAME}"
 	_ARG_INPUT[$VAR_NAME]="${IN:1} <$VAR_NAME>"
 }
 function arg_flag() {
+	_ARG_USING=yes
 	local VAR_NAME=$1 SHORT LONG IN=''
 	shift
 	_arg_parse_name $1
@@ -54,12 +58,13 @@ function _check_arg() {
 	_PROGRAM_ARGS=("$@")
 }
 function _arg_ensure_finish() {
-	if [[ "$BASH_SUBSHELL" -ne 0 ]] ; then
+	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
+		return
+	fi
+	if [[ "${_ARG_USING+found}" = found ]] && [[ "$BASH_SUBSHELL" -ne 0 ]]; then
 		die "invalid usage, some function has drop into a subshell, use arg_finish before it."
 	fi
-	if [[ "$_ARG_HAS_FINISH" != "yes" ]]; then
-		arg_finish >&2
-	fi
+	arg_finish >&2
 }
 function arg_finish() {
 	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
