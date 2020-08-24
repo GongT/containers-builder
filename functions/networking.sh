@@ -34,8 +34,23 @@ function network_use_bridge() {
 	unit_unit After "firewalld.service"
 	unit_unit PartOf "firewalld.service"
 	unit_podman_arguments --dns=h.o.s.t
+	local i
 	for i; do
-		_unit_podman_network_arg "--publish=$i:$i --publish=$i:$i/udp"
+		local from="" to="" proto=""
+		if [[ "$i" == *":"* ]]; then
+			from="${i%%:*}"
+			i="${i##*:}"
+			to="${i%%/*}"
+		else
+			from="${i%%/*}"
+			to="${i%%/*}"
+		fi
+		if [[ "$i" == *"/"* ]]; then
+			proto="${i##*/}"
+			_unit_podman_network_arg "--publish=$from:$to/$proto"
+		else
+			_unit_podman_network_arg "--publish=$from:$to/tcp --publish=$from:$to/udp"
+		fi
 	done
 	_create_service_library
 	unit_hook_poststart "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS add \"$(_unit_get_scopename)\""
