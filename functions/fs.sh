@@ -42,5 +42,5 @@ function write_file() {
 	echo -e "\e[0m" >&2
 }
 function find_command() {
-	env sh --noprofile --norc -c "command -v \"$@\"" -- "$1"
+	env -i "PATH=$PATH" sh --noprofile --norc -c "command -v '$1'"
 }

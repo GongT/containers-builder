@@ -6,10 +6,10 @@ shopt -s lastpipe
 if [[ "${CONTAINERS_DATA_PATH+found}" != "found" ]]; then
 	export CONTAINERS_DATA_PATH="/data/AppData"
 fi
-declare -r CONTAINERS_DATA_PATH="${CONTAINERS_DATA_PATH}"
-declare -r COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-declare -r MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
-declare -r CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
+declare -xr CONTAINERS_DATA_PATH="${CONTAINERS_DATA_PATH}"
+declare -xr COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+declare -xr MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
+declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
 
 if [[ "${CURRENT_DIR+found}" != "found" ]]; then
 	CURRENT_DIR="$(dirname "$(realpath -m "${BASH_SOURCE[-1]}")")"
@@ -26,6 +26,10 @@ PROJECT_NAME="$(basename "${CURRENT_DIR}")"
 if [[ "${SYSTEM_COMMON_CACHE+found}" != "found" ]]; then
 	SYSTEM_COMMON_CACHE='/var/cache'
 fi
+
+declare -xr ANNOID_CACHE_PREV_STAGE="me.gongt.cache.prevstage"
+declare -xr ANNOID_CACHE_HASH="me.gongt.cache.hash"
+declare -xr LABELID_RESULT_HASH="me.gongt.hash"
 
 # shellcheck source=./functions/fs.sh
 source "$COMMON_LIB_ROOT/functions/fs.sh"

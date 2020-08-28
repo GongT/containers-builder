@@ -39,8 +39,8 @@ function buildah_cache() {
 	if [[ "${BUILDAH_FORCE-no}" = "yes" ]]; then
 		info_note "cache skip <BUILDAH_FORCE=yes>"
 	elif image_exists "$BUILDAH_TO"; then
-		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" me.gongt.cache.prevstage)"
-		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" me.gongt.cache.hash)"
+		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
+		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
 		info_note "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
 		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" = "$WANTED_HASH++$PREVIOUS_ID" ]]; then
 			dedent
@@ -61,8 +61,8 @@ function buildah_cache() {
 	fi
 
 	buildah config --add-history \
-		--annotation "me.gongt.cache.hash=$WANTED_HASH" \
-		--annotation "me.gongt.cache.prevstage=$PREVIOUS_ID" \
+		--annotation "$ANNOID_CACHE_HASH=$WANTED_HASH" \
+		--annotation "$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
 		"$CONTAINER_ID" > /dev/null
 	info_note "commit"
 	BUILDAH_LAST_IMAGE=$(buildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
@@ -70,9 +70,4 @@ function buildah_cache() {
 
 	dedent
 	info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE"
-}
-
-function builah_get_annotation() {
-	local IMAGE=$1 ANNO_NAME="$2"
-	buildah inspect --type image -f "{{index .ImageAnnotations \"$ANNO_NAME\"}}" "$IMAGE"
 }

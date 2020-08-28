@@ -8,20 +8,26 @@ source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 source "$COMMON_LIB_ROOT/functions/mdnf.sh"
 # shellcheck source=./functions/buildah-cache.sh
 source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
+# shellcheck source=./functions/buildah.hooks.sh
+source "$COMMON_LIB_ROOT/functions/buildah.hooks.sh"
 # shellcheck source=./functions/alpine.sh
 source "$COMMON_LIB_ROOT/functions/alpine.sh"
+# shellcheck source=./functions/build-folder-hash.sh
+source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 
 function create_if_not() {
 	local NAME=$1 BASE=$2
-	if [[ "${CI+found}" = "found" ]]; then
-		echo "[CI] Create container '$NAME' from image '$BASE'." >&2
-		new_container "$NAME" "$BASE"
-	elif [[ "$BASE" = "scratch" ]]; then
+
+	# if [[ "${CI+found}" = "found" ]]; then
+	# 	echo "[CI] Create container '$NAME' from image '$BASE'." >&2
+	# 	new_container "$NAME" "$BASE"
+	# el
+	if [[ "$BASE" = "scratch" ]]; then
 		if container_exists "$NAME"; then
 			echo "Using exists container '$NAME'." >&2
 			buildah inspect --type container --format '{{.Container}}' "$NAME"
 		else
-			echo "Create container '$NAME' from image '$BASE'." >&2
+			echo "Create container '$NAME' from image $BASE." >&2
 			new_container "$NAME" "$BASE"
 		fi
 	elif [[ \
@@ -38,25 +44,30 @@ function create_if_not() {
 }
 
 function container_exists() {
-	buildah inspect --type container --format '{{.FromImageID}}' "$1" &>/dev/null
+	buildah inspect --type container --format '{{.FromImageID}}' "$1" &> /dev/null
 }
 
 function image_exists() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1" &>/dev/null
+	buildah inspect --type image --format '{{.FromImageID}}' "$1" &> /dev/null
 }
 
 function new_container() {
 	local NAME=$1
 	local EXISTS
-	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2>/dev/null || true)
+	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2> /dev/null || true)
 	if [[ -n "$EXISTS" ]]; then
 		echo "Remove exists container '$EXISTS'" >&2
-		buildah rm "$EXISTS" &>/dev/null
+		buildah rm "$EXISTS" &> /dev/null
 	fi
-	if [[ -n "$2" ]] && ! buildah inspect --type image --format '{{.FromImageID}}' "$2" &>/dev/null; then
+	if [[ -n "$2" ]] && ! buildah inspect --type image --format '{{.FromImageID}}' "$2" &> /dev/null; then
 		echo "Missing base image '$2'" >&2
 	fi
-	buildah from --name "$NAME" "${2-scratch}"
+	local FROM="${2-scratch}"
+	if ! image_exists "$FROM"; then
+		info_note "missing base image $FROM, pulling from registry..."
+		buildah pull "$FROM"
+	fi
+	buildah from --pull-never --name "$NAME" "$FROM"
 }
 
 function SHELL_USE_PROXY() {
