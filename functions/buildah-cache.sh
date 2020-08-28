@@ -1,6 +1,8 @@
 declare -A _CURRENT_STAGE_STORE=()
 declare -r BUILDAH_CACHE_BASE=cache.example.com
 
+# buildah_cache "$PREVIOUS_ID" hash_function build_function
+# build_function <RESULT_CONTAINER_NAME>
 function buildah_cache() {
 	local -r BUILDAH_NAME_BASE=$1
 
@@ -71,6 +73,6 @@ function buildah_cache() {
 }
 
 function builah_get_annotation() {
-	local IMAGE=$1 IMAGE_NAME="$2"
-	buildah inspect --type image -f '{{index .ImageAnnotations "'$IMAGE_NAME'"}}' "$1"
+	local IMAGE=$1 ANNO_NAME="$2"
+	buildah inspect --type image -f "{{index .ImageAnnotations \"$ANNO_NAME\"}}" "$IMAGE"
 }

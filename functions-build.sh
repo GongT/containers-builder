@@ -13,7 +13,10 @@ source "$COMMON_LIB_ROOT/functions/alpine.sh"
 
 function create_if_not() {
 	local NAME=$1 BASE=$2
-	if [[ "$BASE" = "scratch" ]]; then
+	if [[ "${CI+found}" = "found" ]]; then
+		echo "[CI] Create container '$NAME' from image '$BASE'." >&2
+		new_container "$NAME" "$BASE"
+	elif [[ "$BASE" = "scratch" ]]; then
 		if container_exists "$NAME"; then
 			echo "Using exists container '$NAME'." >&2
 			buildah inspect --type container --format '{{.Container}}' "$NAME"
