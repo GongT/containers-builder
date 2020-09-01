@@ -26,7 +26,7 @@ function dev_dnf() {
 	local CONTAINER="$1"
 	shift
 	buildah copy "$CONTAINER" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
-	if [[ "$PROXY" ]]; then
+	if [[ "${PROXY+found}" = found ]] && [[ "$PROXY" ]]; then
 		buildah run "$CONTAINER" sh -c "echo 'proxy=$PROXY' >> /etc/dnf/dnf.conf"
 	else
 		buildah run "$CONTAINER" sh -c "sed -i '/^proxy=/d' /etc/dnf/dnf.conf"
