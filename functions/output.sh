@@ -2,7 +2,14 @@
 
 function die() {
 	echo -e "Error: $*\n\e[2m$(callstack)\e[0m" >&2
+	control_ci "::error ::$*"
 	exit 1
+}
+
+function control_ci() {
+	if [[ "${CI+found}" = found ]]; then
+		echo "$*" >&2
+	fi
 }
 
 function callstack() {
@@ -22,6 +29,7 @@ function _exit_handle() {
 	RET=$?
 	echo -ne "\e[0m"
 	if [[ "$RET" -ne 0 ]]; then
+		control_ci "::error ::bash exit with error code $RET"
 		callstack 1
 	fi
 	exit $RET

@@ -32,7 +32,7 @@ function buildah() {
 	local EXARGS=()
 	case "$ACTION" in
 	from)
-		echo "::set-env name=BASE_IMAGE_NAME::${PASSARGS[*]: -1}" >&2
+		control_ci "::set-env name=BASE_IMAGE_NAME::${PASSARGS[*]: -1}"
 		;;
 	commit)
 		if [[ "${REWRITE_IMAGE_NAME+found}" = found ]]; then
@@ -41,10 +41,10 @@ function buildah() {
 			PASSARGS=("${PASSARGS[@]:0:$LEN}" "$REWRITE_IMAGE_NAME")
 		fi
 
-		local IID="${PASSARGS[*]: -1}"
-		echo "::set-env name=LAST_COMMITED_IMAGE::$IID" >&2
-
 		if [[ "${CI+found}" = found ]]; then
+			local IID="${PASSARGS[*]: -1}"
+			control_ci "::set-env name=LAST_COMMITED_IMAGE::$IID"
+
 			EXARGS+=("--rm")
 
 			export LAST_COMMITED_IMAGE="$IID"
