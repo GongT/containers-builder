@@ -17,7 +17,7 @@ function xbuildah() {
 		echo -ne "\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m "
 		local I
 		for I; do
-			echo -n "'$I' "
+			echo -n "[$I] "
 		done
 		echo -e "\e[0m"
 	} >&2

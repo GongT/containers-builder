@@ -27,11 +27,10 @@ source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 function create_if_not() {
 	local NAME=$1 BASE=$2
 
-	# if [[ "${CI+found}" = "found" ]]; then
-	# 	echo "[CI] Create container '$NAME' from image '$BASE'." >&2
-	# 	new_container "$NAME" "$BASE"
-	# el
-	if [[ "$BASE" = "scratch" ]]; then
+	if [[ "${CI+found}" = "found" ]]; then
+		echo "[CI] Create container '$NAME' from image '$BASE'." >&2
+		new_container "$NAME" "$BASE"
+	elif [[ "$BASE" = "scratch" ]]; then
 		if container_exists "$NAME"; then
 			echo "Using exists container '$NAME'." >&2
 			buildah inspect --type container --format '{{.Container}}' "$NAME"
@@ -69,11 +68,14 @@ function new_container() {
 		buildah rm "$EXISTS" &> /dev/null
 	fi
 	local FROM="${2-scratch}"
-	if [[ "$FROM" != scratch ]] && ! image_exists "$FROM"; then
+	if [[ "${CI+found}" = "found" ]]; then
+		info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
+		buildah pull "$FROM"
+	elif [[ "$FROM" != scratch ]] && ! image_exists "$FROM"; then
 		info_note "missing base image $FROM, pulling from registry (proxy=$http_proxy)..."
 		buildah pull "$FROM"
 	fi
-	buildah from --pull-never --name "$NAME" "$FROM"
+	buildah from --name "$NAME" "$FROM"
 }
 
 function SHELL_USE_PROXY() {
