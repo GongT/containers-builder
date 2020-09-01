@@ -2,6 +2,10 @@
 
 # shellcheck source=./functions.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
+
+BUILDAH="$(find_command buildah)"
+declare -rx BUILDAH
+
 # shellcheck source=./functions/shared_projects.sh
 source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 # shellcheck source=./functions/mdnf.sh

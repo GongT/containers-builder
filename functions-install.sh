@@ -3,9 +3,6 @@
 # shellcheck source=./functions.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 
-BUILDAH="$(find_command buildah)"
-declare -rx BUILDAH
-
 # shellcheck source=./functions/networking.sh
 source "$COMMON_LIB_ROOT/functions/networking.sh"
 # shellcheck source=./functions/environments.sh
