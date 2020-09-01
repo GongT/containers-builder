@@ -18,6 +18,7 @@ function callstack() {
 }
 
 function _exit_handle() {
+	set +xe
 	RET=$?
 	echo -ne "\e[0m"
 	if [[ "$RET" -ne 0 ]]; then

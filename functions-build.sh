@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ "${__PRAGMA_ONCE_FUNCTIONS_BUILD_SH+found}" = found ]]; then
+	return
+fi
+declare -rx __PRAGMA_ONCE_FUNCTIONS_BUILD_SH=yes
+
 # shellcheck source=./functions.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 

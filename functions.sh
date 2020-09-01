@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ "${__PRAGMA_ONCE_FUNCTIONS_SH+found}" = found ]]; then
+	return
+fi
+declare -rx __PRAGMA_ONCE_FUNCTIONS_SH=yes
+
 set -Eeuo pipefail
 shopt -s lastpipe
 

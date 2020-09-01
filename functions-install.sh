@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
+if [[ "${__PRAGMA_ONCE_FUNCTIONS_INSTALL_SH+found}" = found ]]; then
+	return
+fi
+declare -rx __PRAGMA_ONCE_FUNCTIONS_INSTALL_SH=yes
+
 # shellcheck source=./functions.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
+
+PODMAN="$(find_command podman)"
+declare -rx PODMAN
 
 # shellcheck source=./functions/networking.sh
 source "$COMMON_LIB_ROOT/functions/networking.sh"
