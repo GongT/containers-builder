@@ -9,6 +9,7 @@ function die() {
 function control_ci() {
 	if [[ "${CI+found}" = found ]]; then
 		echo "$*" >&2
+		echo "[CI]! $*" >&2
 	fi
 }
 
