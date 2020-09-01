@@ -31,22 +31,26 @@ function buildah() {
 	local PASSARGS=("$@")
 	local EXARGS=()
 	case "$ACTION" in
+	from)
+		echo "::set-env name=BASE_IMAGE_NAME::${PASSARGS[*]: -1}" >&2
+		;;
 	commit)
 		if [[ "${REWRITE_IMAGE_NAME+found}" = found ]]; then
 			info "rewrite commit image name: $REWRITE_IMAGE_NAME"
-			shift
-			PASSARGS=("$@" "$REWRITE_IMAGE_NAME")
+			local LEN=$((${#PASSARGS[@]} - 1))
+			PASSARGS=("${PASSARGS[@]:0:$LEN}" "$REWRITE_IMAGE_NAME")
 		fi
+
+		local IID="${PASSARGS[*]: -1}"
+		echo "::set-env name=LAST_COMMITED_IMAGE::$IID" >&2
 
 		if [[ "${CI+found}" = found ]]; then
 			EXARGS+=("--rm")
 
-			local IID="${PASSARGS[*]: -1}"
 			export LAST_COMMITED_IMAGE="$IID"
 			local CID="${PASSARGS[*]: -2:1}"
 			local HASH
 			HASH=$(hash_current_folder)
-			info_note "set image hash: $HASH"
 			xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
 		else
 			xbuildah config --label "$LABELID_RESULT_HASH=" "$CID"
