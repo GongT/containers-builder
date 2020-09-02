@@ -79,7 +79,11 @@ function new_container() {
 }
 
 function SHELL_USE_PROXY() {
-	echo "PROXY=$PROXY"
+	if [[ "${PROXY+found}" = found ]]; then
+		echo "PROXY=$PROXY"
+	else
+		echo "PROXY="
+	fi
 	# shellcheck disable=SC2016
 	echo '
 if [ -n "$PROXY" ]; then
