@@ -65,15 +65,15 @@ function new_container() {
 	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2> /dev/null || true)
 	if [[ -n "$EXISTS" ]]; then
 		echo "Remove exists container '$EXISTS'" >&2
-		buildah rm "$EXISTS" &> /dev/null
+		buildah rm "$EXISTS" >&2
 	fi
 	local FROM="${2-scratch}"
 	if [[ "${CI+found}" = "found" ]]; then
 		info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
-		buildah pull "$FROM"
+		buildah pull "$FROM" >&2
 	elif [[ "$FROM" != scratch ]] && ! image_exists "$FROM"; then
 		info_note "missing base image $FROM, pulling from registry (proxy=$http_proxy)..."
-		buildah pull "$FROM"
+		buildah pull "$FROM" >&2
 	fi
 	buildah from --name "$NAME" "$FROM"
 }
