@@ -68,12 +68,14 @@ function new_container() {
 		buildah rm "$EXISTS" >&2
 	fi
 	local FROM="${2-scratch}"
-	if [[ "${CI+found}" = "found" ]]; then
-		info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
-		buildah pull "$FROM" >&2
-	elif [[ "$FROM" != scratch ]] && ! image_exists "$FROM"; then
-		info_note "missing base image $FROM, pulling from registry (proxy=$http_proxy)..."
-		buildah pull "$FROM" >&2
+	if [[ "$FROM" != scratch ]]; then
+		if [[ "${CI+found}" = "found" ]]; then
+			info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
+			buildah pull "$FROM" >&2
+		elif ! image_exists "$FROM"; then
+			info_note "missing base image $FROM, pulling from registry (proxy=$http_proxy)..."
+			buildah pull "$FROM" >&2
+		fi
 	fi
 	buildah from --name "$NAME" "$FROM"
 }
