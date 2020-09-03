@@ -253,6 +253,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
 	echo "EnvironmentFile=$WAIT_ENV_FILE"
 
+	local _SERVICE_WAITER
+	_SERVICE_WAITER=$(install_script_as "$COMMON_LIB_ROOT/tools/service-wait.sh" "$(_unit_get_name).pod")
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--detach-keys=q --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
@@ -449,14 +451,10 @@ function unit_start_notify() {
 	esac
 }
 function _create_service_library() {
-	if [[ "${_SERVICE_WAITER+found}" == "found" ]]; then
+	if [[ "${_CONTAINER_STOP+found}" == "found" ]]; then
 		return
 	fi
 	mkdir -p /usr/share/scripts/
-
-	cat "$COMMON_LIB_ROOT/tools/service-wait.sh" > /usr/share/scripts/service-wait.sh
-	chmod a+x /usr/share/scripts/service-wait.sh
-	_SERVICE_WAITER=/usr/share/scripts/service-wait.sh
 
 	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" > /usr/share/scripts/stop-container.sh
 	chmod a+x /usr/share/scripts/stop-container.sh

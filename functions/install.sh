@@ -1,17 +1,21 @@
 function install_script() {
-	local F BASE VAR_NAME=$2
+	local R VAR_NAME=$2
+	R=$(install_script_as "$1" "$(basename "$1")")
+	declare -xr "$VAR_NAME=$R"
+}
+function install_script_as() {
+	local F BASE=$2
 	F=$(realpath -m "$1")
 	if ! [[ -f "$F" ]]; then
 		die "Cannot found script file: $F"
 	fi
-	BASE=$(basename "$F")
 
 	mkdir -p /usr/share/scripts
 	write_file "/usr/share/scripts/$BASE" < "$F"
 	if is_installing; then
 		chmod a+x "/usr/share/scripts/$BASE"
 	fi
-	declare -gr "$VAR_NAME=/usr/share/scripts/$BASE"
+	echo "/usr/share/scripts/$BASE"
 }
 function install_binary() {
 	local F=$1 AS="${2-$(basename "$1" .sh)}"
