@@ -1,7 +1,5 @@
 function install_script() {
-	local R VAR_NAME=$2
-	R=$(install_script_as "$1" "$(basename "$1")")
-	declare -xr "$VAR_NAME=$R"
+	install_script_as "$1" "$(basename "$1")"
 }
 function install_script_as() {
 	local F BASE=$2
