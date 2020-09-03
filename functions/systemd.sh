@@ -27,7 +27,7 @@ function _unit_init() {
 	_S_CURRENT_UNIT_TYPE=
 	_S_CURRENT_UNIT_NAME=
 	_S_CURRENT_UNIT_FILE=
-	_S_IMAGE_PULL=never
+	_S_IMAGE_PULL=
 	_S_HOST=
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
@@ -224,10 +224,12 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		fi
 	fi
 
-	if [[ "${_S_IMAGE_PULL-never}" = "missing" ]]; then
+	if [[ "${_S_IMAGE_PULL}" = "missing" ]]; then
 		: # TODO
-	elif [[ "${_S_IMAGE_PULL-never}" = "always" ]]; then
-		echo "ExecStartPre=/usr/bin/podman pull '${_S_IMAGE:-"$NAME"}'"
+	elif [[ "${_S_IMAGE_PULL}" = "never" ]]; then
+		:   # Nothing
+	else # always
+		echo "ExecStartPre=-/usr/bin/podman pull '${_S_IMAGE:-"$NAME"}'"
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
