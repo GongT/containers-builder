@@ -12,7 +12,7 @@ function die() {
 	exit 1
 }
 function __run() {
-	debug " + podman ${ARGS[*]}"
+	debug " + podman run ${ARGS[*]}"
 	podman run "${ARGS[@]}" &
 	local I=10
 	while [[ $I -gt 0 ]]; do
