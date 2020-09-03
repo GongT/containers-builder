@@ -4,9 +4,10 @@ function run_dnf() {
 
 	local MNT=$(buildah mount $WORKER)
 
-	local DNF=$(create_if_not "mdnf" fedora)
+	local DNF=$(CI="" create_if_not "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
 	if [[ "${PROXY+found}" = found ]] && [[ "$PROXY" ]]; then
+		info_warn "dnf is using proxy."
 		buildah run "$DNF" sh -c "echo 'proxy=$PROXY' >> /etc/dnf/dnf.conf"
 	fi
 	info "dnf contianer created."

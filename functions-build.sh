@@ -15,6 +15,8 @@ declare -rx BUILDAH
 source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 # shellcheck source=./functions/mdnf.sh
 source "$COMMON_LIB_ROOT/functions/mdnf.sh"
+# shellcheck source=./functions/mcompile.sh
+source "$COMMON_LIB_ROOT/functions/mcompile.sh"
 # shellcheck source=./functions/buildah-cache.sh
 source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
 # shellcheck source=./functions/buildah.hooks.sh
@@ -27,27 +29,39 @@ source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 function create_if_not() {
 	local NAME=$1 BASE=$2
 
-	if [[ "${CI+found}" = "found" ]]; then
-		echo "[CI] Create container '$NAME' from image '$BASE'." >&2
+	if is_ci; then
+		info_log "[CI] Create container '$NAME' from image '$BASE'."
 		new_container "$NAME" "$BASE"
 	elif [[ "$BASE" = "scratch" ]]; then
 		if container_exists "$NAME"; then
-			echo "Using exists container '$NAME'." >&2
+			info_log "Using exists container '$NAME'."
 			buildah inspect --type container --format '{{.Container}}' "$NAME"
 		else
-			echo "Create container '$NAME' from image $BASE." >&2
+			info_log "Create container '$NAME' from image $BASE."
 			new_container "$NAME" "$BASE"
 		fi
-	elif [[ \
-		$(buildah inspect --type container --format '{{.FromImageID}}' "$NAME" 2>&1) == \
-		\
-		$(buildah inspect --type image --format '{{.FromImageID}}' "$BASE" 2>&1) ]] \
-			; then
-		echo "Using exists container '$NAME'." >&2
-		buildah inspect --type container --format '{{.Container}}' "$NAME"
 	else
-		echo "Create container '$NAME' from image '$BASE'." >&2
-		new_container "$NAME" "$BASE"
+		if ! image_exists "$BASE"; then
+			info_note "missing base image $BASE, pulling from registry (proxy=$http_proxy)..."
+			buildah pull "$BASE" >&2
+		fi
+
+		local EXPECT GOT
+		GOT=$(buildah inspect --type container --format '{{.FromImageID}}' "$NAME" 2> /dev/null)
+		EXPECT=$(buildah inspect --type image --format '{{.FromImageID}}' "$BASE")
+		if [[ "$EXPECT" == "$GOT" ]]; then
+			info_log "Using exists container '$NAME'."
+			buildah inspect --type container --format '{{.Container}}' "$NAME"
+		elif [[ "$GOT" ]]; then
+			info_log "Not using exists container: $BASE is updated"
+			info_log "    current image:          $EXPECT"
+			info_log "    exists container based: $GOT"
+			buildah rm "$NAME" > /dev/null
+			new_container "$NAME" "$BASE"
+		else
+			info_log "Create container '$NAME' from image '$BASE'."
+			new_container "$NAME" "$BASE"
+		fi
 	fi
 }
 
@@ -64,12 +78,12 @@ function new_container() {
 	local EXISTS
 	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2> /dev/null || true)
 	if [[ -n "$EXISTS" ]]; then
-		echo "Remove exists container '$EXISTS'" >&2
-		buildah rm "$EXISTS" >&2
+		info_log "Remove exists container '$EXISTS'"
+		buildah rm "$EXISTS" > /dev/null
 	fi
 	local FROM="${2-scratch}"
 	if [[ "$FROM" != scratch ]]; then
-		if [[ "${CI+found}" = "found" ]]; then
+		if is_ci; then
 			info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
 			buildah pull "$FROM" >&2
 		elif ! image_exists "$FROM"; then

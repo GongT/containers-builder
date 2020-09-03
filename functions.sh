@@ -44,3 +44,5 @@ source "$COMMON_LIB_ROOT/functions/output.sh"
 source "$COMMON_LIB_ROOT/functions/arguments.sh"
 # shellcheck source=./functions/download_file.sh
 source "$COMMON_LIB_ROOT/functions/download_file.sh"
+# shellcheck source=./functions/ci.sh
+source "$COMMON_LIB_ROOT/functions/ci.sh"

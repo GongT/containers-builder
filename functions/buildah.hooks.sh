@@ -14,7 +14,7 @@ function xbuildah() {
 	local ACT=$1
 	shift
 	{
-		echo -ne "\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m "
+		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m "
 		local I
 		for I; do
 			echo -n "[$I] "
@@ -41,20 +41,23 @@ function buildah() {
 			PASSARGS=("${PASSARGS[@]:0:$LEN}" "$REWRITE_IMAGE_NAME")
 		fi
 
-		if [[ "${CI+found}" = found ]]; then
-			local IID="${PASSARGS[*]: -1}"
+		local IID="${PASSARGS[*]: -1}"
+		local CID="${PASSARGS[*]: -2:1}"
+
+		if is_ci; then
 			control_ci "::set-env name=LAST_COMMITED_IMAGE::$IID"
 
 			EXARGS+=("--rm")
 
 			export LAST_COMMITED_IMAGE="$IID"
-			local CID="${PASSARGS[*]: -2:1}"
 			local HASH
 			HASH=$(hash_current_folder)
 			xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
 		else
-			xbuildah config --label "$LABELID_RESULT_HASH=" "$CID"
+			xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
 		fi
+
+		xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
 		;;
 	esac
 

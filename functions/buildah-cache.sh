@@ -34,7 +34,7 @@ function buildah_cache() {
 		local -r PREVIOUS_ID="none"
 	fi
 	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
-	local -r WANTED_HASH=$("$BUILDAH_HASH_CALLBACK")
+	local -r WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
 
 	if [[ "${BUILDAH_FORCE-no}" = "yes" ]]; then
 		info_note "cache skip <BUILDAH_FORCE=yes>"
@@ -43,8 +43,9 @@ function buildah_cache() {
 		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
 		info_note "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
 		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" = "$WANTED_HASH++$PREVIOUS_ID" ]]; then
-			dedent
 			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")
+			dedent
+			info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE"
 			return
 		fi
 		info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
@@ -66,7 +67,7 @@ function buildah_cache() {
 		"$CONTAINER_ID" > /dev/null
 	info_note "commit"
 	BUILDAH_LAST_IMAGE=$(buildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
-	info_note $BUILDAH_LAST_IMAGE
+	info_note "$BUILDAH_LAST_IMAGE"
 
 	dedent
 	info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE"
