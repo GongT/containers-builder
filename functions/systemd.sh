@@ -27,7 +27,7 @@ function _unit_init() {
 	_S_CURRENT_UNIT_TYPE=
 	_S_CURRENT_UNIT_NAME=
 	_S_CURRENT_UNIT_FILE=
-	_S_IMAGE_PULL=
+	_S_IMAGE_PULL=never
 	_S_HOST=
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
@@ -306,7 +306,7 @@ function _create_startup_arguments() {
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
 		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
-	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
+	STARTUP_ARGS+=("'--pull=missing' --rm '${_S_IMAGE:-"$NAME"}'")
 	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 }
 
