@@ -14,6 +14,8 @@ function run_dnf() {
 	fi
 	info "dnf contianer created."
 	buildah run "$DNF" bash < "$COMMON_LIB_ROOT/staff/mdnf/prepare.sh"
+
+	mkdir -p /var/lib/dnf/repos /var/cache/dnf
 	{
 		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
 	} | buildah run \
