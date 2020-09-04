@@ -44,20 +44,19 @@ function buildah() {
 		local IID="${PASSARGS[*]: -1}"
 		local CID="${PASSARGS[*]: -2:1}"
 
-		if is_ci; then
-			control_ci "::set-env name=LAST_COMMITED_IMAGE::$IID"
-
-			EXARGS+=("--rm")
-
-			export LAST_COMMITED_IMAGE="$IID"
-			local HASH
-			HASH=$(hash_current_folder)
-			xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
-		else
-			xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
-		fi
-
 		if [[ "$CID" != "$BUILDAH_CACHE_BASE/"* ]]; then
+			if is_ci; then
+				control_ci "::set-env name=LAST_COMMITED_IMAGE::$IID"
+
+				EXARGS+=("--rm")
+
+				export LAST_COMMITED_IMAGE="$IID"
+				local HASH
+				HASH=$(hash_current_folder)
+				xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
+			else
+				xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
+			fi
 			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
 		fi
 		;;
