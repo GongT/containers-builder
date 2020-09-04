@@ -4,6 +4,12 @@ declare -r BUILDAH_CACHE_BASE=cache.example.com
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
 # build_function <RESULT_CONTAINER_NAME>
 function buildah_cache() {
+	local _STITLE=""
+	if [[ "${STEP+found}" = found ]]; then
+		_STITLE="$STEP"
+		unset STEP
+	fi
+
 	local -r BUILDAH_NAME_BASE=$1
 
 	# no arg callback
@@ -21,7 +27,7 @@ function buildah_cache() {
 	fi
 	_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]="$NEXT_STAGE"
 
-	info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE:"
+	info "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE: \e[0;38;5;11m$_STITLE"
 	indent
 
 	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE/$BUILDAH_NAME_BASE:stage-$CURRENT_STAGE"
@@ -44,8 +50,7 @@ function buildah_cache() {
 		info_note "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
 		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" = "$WANTED_HASH++$PREVIOUS_ID" ]]; then
 			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")
-			dedent
-			info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE"
+			_buildah_cache_done
 			return
 		fi
 		info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
@@ -68,7 +73,14 @@ function buildah_cache() {
 	info_note "commit"
 	BUILDAH_LAST_IMAGE=$(xbuildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
+	_buildah_cache_done
+}
 
+_buildah_cache_done() {
 	dedent
-	info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE"
+	if [[ "$_STITLE" ]]; then
+		info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE (\e[0;38;5;13m$_STITLE\e[0;2m) DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
+	else
+		info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
+	fi
 }
