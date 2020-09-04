@@ -66,7 +66,7 @@ function buildah_cache() {
 		--annotation "$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
 		"$CONTAINER_ID" > /dev/null
 	info_note "commit"
-	BUILDAH_LAST_IMAGE=$(buildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
+	BUILDAH_LAST_IMAGE=$(xbuildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
 
 	dedent

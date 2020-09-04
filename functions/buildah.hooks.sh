@@ -57,7 +57,9 @@ function buildah() {
 			xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
 		fi
 
-		xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
+		if [[ "$CID" != "$BUILDAH_CACHE_BASE/"* ]]; then
+			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
+		fi
 		;;
 	esac
 

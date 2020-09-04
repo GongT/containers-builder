@@ -26,8 +26,8 @@ function callstack() {
 }
 
 function _exit_handle() {
-	set +xe
 	RET=$?
+	set +xe
 	echo -ne "\e[0m"
 	if [[ "$RET" -ne 0 ]]; then
 		control_ci "::error ::bash exit with error code $RET"

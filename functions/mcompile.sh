@@ -1,7 +1,12 @@
 function run_compile() {
 	local PROJECT_ID="$1" WORKER="$2" SCRIPT="$3"
 
-	local PROJECT_SRC="/opt/projects/$PROJECT_ID"
+	if [[ "${SOURCE_DIRECTORY+found}" = found ]]; then
+		SOURCE_DIRECTORY="$(realpath "$SOURCE_DIRECTORY")"
+	else
+		local SOURCE_DIRECTORY
+		SOURCE_DIRECTORY="$(pwd)/source/$PROJECT_ID"
+	fi
 
 	mkdir -p "$SYSTEM_COMMON_CACHE/ccache"
 
@@ -15,5 +20,5 @@ function run_compile() {
 		cat "$SCRIPT"
 	} | buildah \
 		"--volume=$SYSTEM_COMMON_CACHE/ccache:/opt/cache" \
-		"--volume=$(pwd)/source/$P:$PROJECT_SRC" run "$BUILDER" bash
+		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" run "$BUILDER" bash
 }

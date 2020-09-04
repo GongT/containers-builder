@@ -9,18 +9,24 @@ function run_dnf() {
 	if [[ "${PROXY+found}" = found ]] && [[ "$PROXY" ]]; then
 		info_warn "dnf is using proxy."
 		buildah run "$DNF" sh -c "echo 'proxy=$PROXY' >> /etc/dnf/dnf.conf"
+	else
+		buildah run "$DNF" sh -c "sed -i '/proxy=/d' /etc/dnf/dnf.conf"
 	fi
 	info "dnf contianer created."
-
+	buildah run "$DNF" bash < "$COMMON_LIB_ROOT/staff/mdnf/prepare.sh"
 	{
-		echo "declare -a ARGS=($*)"
-		echo "declare -r WORKER='$WORKER'"
 		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
 	} | buildah run \
-		--volume "$MNT:/install-root" \
-		--volume "/var/cache/dnf:/var/cache/dnf" \
-		--volume "/var/cache/dnf:/install-root/var/cache/dnf" \
-		"$DNF" bash
+		"--cap-add=CAP_SYS_ADMIN" \
+		"--volume=$MNT:/install-root" \
+		"--volume=/var/lib/dnf/repos:/var/lib/dnf/repos" \
+		"--volume=/var/cache/dnf:/var/cache/dnf" \
+		"$DNF" bash -s - "$@"
+}
+
+function delete_rpm_files() {
+	local CONTAINER="$1"
+	podman run "$CONTAINER" bash -c "rm -rf /var/lib/dnf /var/lib/rpm /var/cache"
 }
 
 function dev_dnf() {

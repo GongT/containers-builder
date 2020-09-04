@@ -1,24 +1,38 @@
+#!/usr/bin/env bash
+
 set -Eeuo pipefail
 
-rm -rf /install-root/var/lib/dnf
-rm -rf /install-root/var/lib/rpm
-mkdir -p /install-root/var/lib
-ln -s "/cache/$WORKER/dnf" /install-root/var/lib/dnf
-ln -s "/cache/$WORKER/rpm" /install-root/var/lib/rpm
-
-if [[ ! -e "/install-root/var/lib/dnf.signal" ]]; then
-	rm -rf "/cache/$WORKER/dnf" "/cache/$WORKER/rpm"
-	touch /install-root/var/lib/dnf.signal
-fi
-mkdir -p "/cache/$WORKER/dnf" "/cache/$WORKER/rpm"
-
-echo "    installing ${ARGS[*]}" >&2
 cd /
-/usr/bin/dnf install -y --releasever=/ --installroot=/install-root \
-	--setopt=cachedir=../../../../../var/cache/dnf \
-	"${ARGS[@]}"
 
-DIRS_SHOULD_EMPTY=(/install-root/var/log /install-root/tmp)
-rm -rf "${DIRS_SHOULD_EMPTY[@]}" /install-root/var/lib/dnf /install-root/var/lib/rpm
-mkdir -p "${DIRS_SHOULD_EMPTY[@]}"
-chmod 0777 "${DIRS_SHOULD_EMPTY[@]}"
+mkdir -p /install-root/etc/dnf
+cp /etc/dnf/dnf.conf /install-root/etc/dnf/dnf.conf
+
+TO_UNMOUNT=()
+
+bind_fs() {
+	local FS=$1
+	rm -rf "/install-root$FS"
+	mkdir -p "/install-root$FS" "$FS"
+	mount --bind "$FS" "/install-root$FS"
+	TO_UNMOUNT+=("/install-root$FS")
+}
+
+bind_fs /var/lib/dnf/repos
+bind_fs /var/cache/dnf
+
+_exit() {
+	R=$?
+
+	umount "${TO_UNMOUNT[@]}"
+
+	DIRS_SHOULD_EMPTY=(/install-root/var/log /install-root/tmp)
+	rm -rf "${DIRS_SHOULD_EMPTY[@]}"
+	mkdir -p "${DIRS_SHOULD_EMPTY[@]}"
+	chmod 0777 "${DIRS_SHOULD_EMPTY[@]}"
+
+	exit $R
+}
+
+trap _exit EXIT
+
+/usr/bin/dnf install -y --releasever=/ --installroot=/install-root "${@}"
