@@ -332,8 +332,8 @@ function unit_fs_tempfs() {
 }
 function unit_fs_bind() {
 	local FROM="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
-	if [[ "${3+'set'}" == 'set' ]]; then
-		RO=":$3"
+	if [[ $# -gt 2 ]]; then
+		OPTIONS+=",$3"
 	fi
 	if [[ "${FROM:0:1}" != "/" ]]; then
 		FROM="$CONTAINERS_DATA_PATH/$FROM"
