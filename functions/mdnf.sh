@@ -30,8 +30,13 @@ function make_base_image_by_dnf() {
 		CONTAINER=$(new_container "$1" "scratch")
 		run_dnf "$CONTAINER" "${PKGS[@]}"
 	}
-	buildah_cache "$NAME" _dnf_hash_cb _dnf_build_cb
-	
+
+	if [[ "${FORCE_DNF+found}" != found ]]; then
+		local FORCE_DNF=""
+	fi
+
+	BUILDAH_FORCE="$FORCE_DNF" buildah_cache "$NAME" _dnf_hash_cb _dnf_build_cb
+
 	unset -f _dnf_hash_cb _dnf_build_cb
 }
 

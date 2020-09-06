@@ -37,6 +37,16 @@ function _exit_handle() {
 }
 trap _exit_handle EXIT
 
+function SHELL_ERROR_HANDLER() {
+	declare -f _exit_handle callstack
+	echo "trap _exit_handle EXIT
+control_ci() {
+	:
+}
+
+"
+}
+
 function info() {
 	echo -e "$_CURRENT_INDENT\e[38;5;14m$*\e[0m" >&2
 }
