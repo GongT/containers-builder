@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+function mount_tmpfs() {
+	local PATH=$1 SIZE="4G"
+	shift
+	if [[ $# -gt 0 ]]; then
+		SIZE=$1
+	fi
+	echo "--mount=type=tmpfs,tmpfs-size=$SIZE,destination=$PATH"
+}
+
 function builah_get_annotation() {
 	local IMAGE=$1 ANNO_NAME="$2"
 	xbuildah inspect --type image -f "{{index .ImageAnnotations \"$ANNO_NAME\"}}" "$IMAGE"

@@ -73,6 +73,10 @@ function image_exists() {
 	buildah inspect --type image --format '{{.FromImageID}}' "$1" &> /dev/null
 }
 
+function image_get_id() {
+	buildah inspect --type image --format '{{.FromImageID}}' "$1"
+}
+
 function new_container() {
 	local NAME=$1
 	local EXISTS

@@ -67,11 +67,12 @@ function buildah_cache() {
 	fi
 
 	buildah config --add-history \
-		--annotation "$ANNOID_CACHE_HASH=$WANTED_HASH" \
-		--annotation "$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
+		"--annotation=$ANNOID_CACHE_HASH=$WANTED_HASH" \
+		"--annotation=$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
+		"--created-by=# layer <$CURRENT_STAGE> to <$NEXT_STAGE> base $BUILDAH_NAME_BASE" \
 		"$CONTAINER_ID" > /dev/null
 	info_note "commit"
-	BUILDAH_LAST_IMAGE=$(xbuildah commit --rm "$CONTAINER_ID" "$BUILDAH_TO")
+	BUILDAH_LAST_IMAGE=$(xbuildah commit --omit-timestamp --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
 	_buildah_cache_done
 }
@@ -83,4 +84,151 @@ _buildah_cache_done() {
 	else
 		info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
 	fi
+}
+
+function buildah_cache_start() {
+	local NAME=$1 BASE_IMG=$2
+	if [[ "$BASE_IMG" != scratch ]]; then
+		if ! image_exists "$BASE_IMG"; then
+			podman pull "$BASE_IMG"
+		fi
+		BUILDAH_LAST_IMAGE=$(image_get_id "$BASE_IMG")
+	else
+		BUILDAH_LAST_IMAGE="$BASE_IMG"
+	fi
+}
+
+# buildah_cache2
+function buildah_cache2() {
+	local -r NAME=$1 HASH_CALLBACK=$2 BUILD_CALLBACK=$3
+
+	_hash_cb() {
+		{
+			echo "$BUILDAH_LAST_IMAGE"
+			"$HASH_CALLBACK"
+		} | md5sum
+	}
+	_build_cb() {
+		local CONTAINER
+		CONTAINER=$(new_container "$1" "$BUILDAH_LAST_IMAGE")
+		"$BUILD_CALLBACK" "$CONTAINER"
+	}
+
+	buildah_cache "$NAME" _hash_cb _build_cb
+
+	unset -f _hash_cb _build_cb
+}
+
+function buildah_cache_fork() {
+	local -r NAME=$1
+	shift
+	local -r NEW_BASE=$1
+	shift
+	local -r HASH_CALLBACK=$1
+	shift
+	local -r BUILD_CALLBACK=$1
+
+	local -r FROM_IMAGE="$BUILDAH_LAST_IMAGE"
+	buildah_cache_start "$NAME" "$NEW_BASE"
+
+	_hash_bcf_cb() {
+		{
+			echo "base: $BUILDAH_LAST_IMAGE"
+			echo "from: $FROM_IMAGE"
+			"$HASH_CALLBACK"
+		} | md5sum
+	}
+	_build_bcf_cb() {
+		local SOURCE TARGET MNT
+		SOURCE=$(new_container "${NAME}-fork-from" "$FROM_IMAGE")
+
+		TARGET=$(new_container "$1" "$BUILDAH_LAST_IMAGE")
+		MNT=$(buildah mount "$TARGET")
+
+		"$BUILD_CALLBACK" "$SOURCE" "$TARGET" "$MNT"
+	}
+
+	buildah_cache "$NAME" _hash_bcf_cb _build_bcf_cb
+
+	unset -f _hash_bcf_cb _build_bcf_cb
+}
+
+function buildah_cache_fork_script() {
+	local -r NAME=$1
+	shift
+	local -r NEW_BASE=$1
+	shift
+	local -r BUILD_SCRIPT=$1
+	shift
+	local -ar BARGS=("$@")
+
+	_hash_cfs_cb() {
+		{
+			echo "script: $BUILD_SCRIPT"
+			echo "args: ${BARGS[*]}"
+		} | md5sum
+	}
+	_build_cfs_cb() {
+		{
+			echo "set -Eeuo pipefail"
+			echo "declare -rx DIST_FOLDER=/mnt/dist"
+			cat "$BUILD_SCRIPT"
+		} | buildah run "--volume=$MNT:/mnt/dist" "$SOURCE" bash -s - "${BARGS[@]}"
+	}
+
+	buildah_cache_fork "$NAME" "$NEW_BASE" _hash_cfs_cb _build_cfs_cb
+
+	unset -f _hash_cfs_cb _build_cfs_cb
+}
+
+## buildah_cache_run ID ScriptFilePath [Bind:Mount ...] -- [bash args...]
+function buildah_cache_run() {
+	local NAME=$1
+	shift
+	local -r BUILD_SCRIPT=$1
+	shift
+
+	local -a BASH_ARGS=()
+	local -a RUN_ARGS=()
+	local -a HASH_FOLDERS=()
+	if [[ $# -gt 0 ]]; then
+		local SPFOUND=no
+		for I; do
+			if [[ "$SPFOUND" == yes ]]; then
+				BASH_ARGS+=("$I")
+			elif [[ "$I" == '--' ]]; then
+				SPFOUND=yes
+			else
+				RUN_ARGS+=("$I")
+				if [[ "$I" == "--volume="* ]]; then
+					local X="${I//:*/}"
+					HASH_FOLDERS+=("${X#--volume=}")
+				fi
+			fi
+		done
+		if [[ "$SPFOUND" == no ]]; then
+			die "argument list require a '--'"
+		fi
+	fi
+
+	_hash_cb() {
+		{
+			echo "last: $BUILDAH_LAST_IMAGE"
+			cat "script: $BUILD_SCRIPT"
+			echo "run: ${RUN_ARGS[*]}"
+			echo "bash: ${BASH_ARGS[*]}"
+			git ls-tree -r -t HEAD "${HASH_FOLDERS[@]}" || true
+		} | md5sum
+	}
+	_build_cb() {
+		local CONTAINER
+		CONTAINER=$(new_container "$1" "$BUILDAH_LAST_IMAGE")
+
+		buildah run "--cap-add=CAP_SYS_ADMIN" "${RUN_ARGS[@]}" "$CONTAINER" \
+			bash -s - "${BASH_ARGS[@]}" < "$BUILD_SCRIPT"
+	}
+
+	buildah_cache "$NAME" _hash_cb _build_cb
+
+	unset -f _hash_cb _build_cb
 }
