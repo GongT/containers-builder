@@ -42,7 +42,7 @@ function create_if_not() {
 		fi
 	else
 		if ! image_exists "$BASE"; then
-			info_note "missing base image $BASE, pulling from registry (proxy=$http_proxy)..."
+			info_note "missing base image $BASE, pulling from registry (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "$BASE" >&2
 		fi
 
@@ -88,10 +88,10 @@ function new_container() {
 	local FROM="${2-scratch}"
 	if [[ "$FROM" != scratch ]]; then
 		if is_ci; then
-			info_note "[CI] base image $FROM, pulling from registry (proxy=$http_proxy)..."
+			info_note "[CI] base image $FROM, pulling from registry (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "$FROM" >&2
 		elif ! image_exists "$FROM"; then
-			info_note "missing base image $FROM, pulling from registry (proxy=$http_proxy)..."
+			info_note "missing base image $FROM, pulling from registry (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "$FROM" >&2
 		fi
 	fi
