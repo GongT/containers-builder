@@ -1,3 +1,7 @@
+function unit_podman_safe_environment() {
+	unit_podman_arguments "$(safe_environment "$@")"
+}
+
 function safe_environment() {
 	local D="$CONTAINERS_DATA_PATH/save_environments"
 	local F="$D/$PROJECT_NAME.txt"
@@ -25,7 +29,7 @@ function save_environments() {
 	local F="$D/$NAME.txt"
 	mkdir -p "$D"
 
-local ARGS=("$@")
+	local ARGS=("$@")
 	{
 		local i
 		echo -n

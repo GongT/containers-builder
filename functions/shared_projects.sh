@@ -7,28 +7,23 @@ function get_shared_project_location() {
 }
 
 function install_shared_project() {
+	declare -xr PROJECT_NAME="$1"
+	declare -xr INSTALL_TO="$2"
+
 	declare -xr SYS_INSTALL=$(find_command install)
 	(
 		function install() {
-			local ARGS=() FOUND_SP_ARG=
-			while [[ "$#" -gt 0 ]]; do
-				ARGS+=("$1")
-				if [[ "$1" = "-d" ]] || [[ "$1" = "-t" ]]; then
-					shift
-					FOUND_SP_ARG=yes
-					ARGS+=("$(realpath --canonicalize-missing --no-symlinks "$INSTALL_TO/$1")")
+			echo -e "\e[2m + install $*\e[0m" >&2
+			local I
+			for I; do
+				if [[ "$I" = "$INSTALL_TO"* ]]; then
+					"$SYS_INSTALL" "$@"
+					return
 				fi
-				shift
 			done
-			if [[ "$FOUND_SP_ARG" != "yes" ]]; then
-				local -i L="${#ARGS} - 1"
-				ARGS[$L]="$(realpath --canonicalize-missing --no-symlinks "$INSTALL_TO/${ARGS[$L]}")"
-			fi
-
-			"$SYS_INSTALL"
+			die 'install must have an argument starts with $INSTALL_TO, or you will overwrite system file'
 		}
 
-		declare -xr PROJECT_NAME="$1"
 		declare -xr PROJECT_ROOT="$(get_shared_project_location "$PROJECT_NAME")"
 		declare -r BUILD_SCRIPT="$SHARED_PROJECTS_ROOT/build-script/$PROJECT_NAME.sh"
 		info "build ${PROJECT_NAME}..."
@@ -40,7 +35,9 @@ function install_shared_project() {
 			die "Fatal: missing shared project folder: $PROJECT_ROOT"
 		fi
 
-		declare -xr INSTALL_TO="$2"
+		if ! [[ -d "$INSTALL_TO" ]]; then
+			mkdir "$INSTALL_TO"
+		fi
 
 		declare -xr MOUNT_INSTALL_TARGET="--volume=$INSTALL_TO:/install"
 		declare -xr MOUNT_BUILD_SOURCE="--volume=$PROJECT_ROOT:/build"
