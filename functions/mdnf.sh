@@ -58,5 +58,5 @@ function run_dnf() {
 
 function delete_rpm_files() {
 	local CONTAINER="$1"
-	podman run "$CONTAINER" bash -c "rm -rf /var/lib/dnf /var/lib/rpm /var/cache"
+	buildah run "$CONTAINER" bash -c "rm -rf /var/lib/dnf /var/lib/rpm /var/cache"
 }

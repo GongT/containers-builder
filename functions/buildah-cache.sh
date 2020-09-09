@@ -43,7 +43,7 @@ function buildah_cache() {
 	local -r WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
 
 	if [[ "${BUILDAH_FORCE-no}" = "yes" ]]; then
-		info_note "cache skip <BUILDAH_FORCE=yes>"
+		info_note "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
 	elif image_exists "$BUILDAH_TO"; then
 		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
 		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
@@ -55,7 +55,7 @@ function buildah_cache() {
 		fi
 		info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
 	else
-		info_note "cache not exists"
+		info_note "step result not cached: target=$WANTED_HASH"
 	fi
 
 	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${CURRENT_STAGE}_to${NEXT_STAGE}"
@@ -71,7 +71,6 @@ function buildah_cache() {
 		"--annotation=$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
 		"--created-by=# layer <$CURRENT_STAGE> to <$NEXT_STAGE> base $BUILDAH_NAME_BASE" \
 		"$CONTAINER_ID" > /dev/null
-	info_note "commit"
 	BUILDAH_LAST_IMAGE=$(xbuildah commit --omit-timestamp --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
 	_buildah_cache_done
@@ -90,7 +89,7 @@ function buildah_cache_start() {
 	local NAME=$1 BASE_IMG=$2
 	if [[ "$BASE_IMG" != scratch ]]; then
 		if ! image_exists "$BASE_IMG"; then
-			podman pull "$BASE_IMG"
+			podman pull --quiet "$BASE_IMG"
 		fi
 		BUILDAH_LAST_IMAGE=$(image_get_id "$BASE_IMG")
 	else

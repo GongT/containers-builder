@@ -9,7 +9,7 @@ function die() {
 function control_ci() {
 	if is_ci; then
 		echo "$*" >&2
-		echo "[CI]! $*" >&2
+		info_log "[CI]! $*" >&2
 	fi
 }
 
