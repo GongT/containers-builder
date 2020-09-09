@@ -1,28 +1,43 @@
-function use_volume() {
-	podman volume inspect $1 --format "{{.Mountpoint}}" || {
-		podman volume create $1
-		podman volume inspect $1 --format "{{.Mountpoint}}"
-	}
+declare -r BIND_RBIND="noexec,nodev,nosuid,rw,rbind"
+
+function unit_fs_tempfs() {
+	local SIZE="$1" PATH="$2"
+	_S_VOLUME_ARG+=("'--mount=type=tmpfs,tmpfs-size=$SIZE,destination=$PATH'")
 }
-
-function _bind_anon() {
-	echo -n "\"--volume=$1:$2\""
-}
-
-function bind() {
-	if [[ "${1:0:1}" == "/" ]]; then
-		if echo "$1" | grep -qE '/.+\..+$'; then
-			mkdir -p "$(dirname "$1")"
-			touch "$1"
-		else
-			mkdir -p "$1"
-		fi
-		_bind_anon "$1" "$2"
-	else
-		if ! podman volume inspect "$1" &> /dev/null; then
-			echo -e "\e[38;5;9mRequired volume $1 is not exists. must run create-volume.sh first.\e[0m" >&2
-		fi
-
-		_bind_anon "$1" "$2"
+function unit_volume() {
+	local NAME="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
+	if [[ $# -gt 2 ]]; then
+		OPTIONS+=",$3"
 	fi
+
+	_S_PREP_FOLDER+=("$NAME")
+	_S_VOLUME_ARG+=("'--volume=$NAME:$TO$OPTIONS'")
+}
+function unit_fs_bind() {
+	local FROM="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
+	if [[ $# -gt 2 ]]; then
+		OPTIONS+=",$3"
+	fi
+	if [[ "${FROM:0:1}" != "/" ]]; then
+		FROM="$CONTAINERS_DATA_PATH/$FROM"
+	fi
+
+	_S_PREP_FOLDER+=("$FROM")
+	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
+}
+function shared_sockets_use() {
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
+		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
+	fi
+}
+function shared_sockets_provide() {
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
+		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
+	fi
+	local -a FULLPATH=()
+	for i; do
+		FULLPATH+=("'$SHARED_SOCKET_PATH/$i.sock'")
+	done
+	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
+	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
 }

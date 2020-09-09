@@ -26,6 +26,8 @@ function network_use_manual() {
 	_N_TYPE="manual"
 	_unit_podman_network_arg "$@"
 }
+
+# use podman0
 function network_use_bridge() {
 	[[ -z "$_N_TYPE" ]] || die "Network already set to $_N_TYPE, can not set to 'bridge' again."
 	info "Network: bridge"

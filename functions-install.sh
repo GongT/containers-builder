@@ -15,6 +15,8 @@ declare -rx PODMAN
 source "$COMMON_LIB_ROOT/functions/networking.sh"
 # shellcheck source=./functions/environments.sh
 source "$COMMON_LIB_ROOT/functions/environments.sh"
+# shellcheck source=./functions/volumes.sh
+source "$COMMON_LIB_ROOT/functions/volumes.sh"
 # shellcheck source=./functions/systemd.sh
 source "$COMMON_LIB_ROOT/functions/systemd.sh"
 # shellcheck source=./functions/install.sh

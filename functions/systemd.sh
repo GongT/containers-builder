@@ -27,7 +27,7 @@ function _unit_init() {
 	_S_CURRENT_UNIT_TYPE=
 	_S_CURRENT_UNIT_NAME=
 	_S_CURRENT_UNIT_FILE=
-	_S_IMAGE_PULL=never
+	_S_IMAGE_PULL=always
 	_S_HOST=
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
@@ -54,7 +54,6 @@ function _unit_init() {
 	_S_BODY_CONFIG[Restart]="no"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="machine.slice"
-	_S_REQUIRE_INFRA=
 
 	## network.sh
 	_N_TYPE=
@@ -193,43 +192,37 @@ function _unit_assemble() {
 	local SCOPE_ID="$(_unit_get_scopename)"
 	echo ""
 	echo "[${EXT^}]
-Type=forking
-NotifyAccess=none
+Type=notify
+NotifyAccess=all
 PIDFile=/run/$SCOPE_ID.conmon.pid"
 
-	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
-		echo -n "ExecStartPre=/usr/bin/mkdir -p"
-		for I in "${_S_PREP_FOLDER[@]}"; do
-			echo -n " '$I'"
-		done
-		echo ''
-	fi
-
+	local _EXEC_START_STOP=""
 	if [[ -z "$_S_STOP_CMD" ]]; then
 		if [[ "$PODMAN_USE_IGNORE" ]]; then
-			echo "ExecStartPre=/usr/bin/podman stop --ignore --time $_S_KILL_TIMEOUT $SCOPE_ID"
+			_EXEC_START_STOP="/usr/bin/podman stop --ignore --time '$_S_KILL_TIMEOUT' '$SCOPE_ID'"
 		else
-			echo "ExecStartPre=-/usr/bin/podman stop --time $_S_KILL_TIMEOUT $SCOPE_ID"
+			_EXEC_START_STOP="/usr/bin/podman stop --time '$_S_KILL_TIMEOUT' '$SCOPE_ID' || true"
 		fi
 	else
 		echo "ExecStartPre=-$_S_STOP_CMD"
 	fi
+	local _EXEC_START_RM=""
 	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
 		if [[ "$PODMAN_USE_IGNORE" ]]; then
-			echo "ExecStartPre=/usr/bin/podman rm --ignore --force $SCOPE_ID"
+			_EXEC_START_RM="/usr/bin/podman rm --ignore --force '$SCOPE_ID'"
 			echo "ExecStopPost=/usr/bin/podman rm --ignore --force $SCOPE_ID"
 		else
-			echo "ExecStartPre=-/usr/bin/podman rm --force $SCOPE_ID"
+			_EXEC_START_RM="/usr/bin/podman rm --force '$SCOPE_ID' || true"
 			echo "ExecStopPost=-/usr/bin/podman rm --force $SCOPE_ID"
 		fi
 	fi
 
-	if [[ "${_S_IMAGE_PULL}" = "missing" ]]; then
-		: # TODO
-	elif [[ "${_S_IMAGE_PULL}" = "never" ]]; then
+	if [[ "${_S_IMAGE_PULL}" = "never" ]]; then
 		:   # Nothing
 	else # always
-		echo "ExecStartPre=-/usr/bin/podman pull '${_S_IMAGE:-"$NAME"}'"
+		local _PULL_HELPER
+		_PULL_HELPER=$(install_script "$COMMON_LIB_ROOT/tools/pull-image.sh")
+		echo "ExecStartPre=/usr/bin/env bash '$_PULL_HELPER' '${_S_IMAGE:-"$NAME"}' '${_S_IMAGE_PULL}'"
 	fi
 
 	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
@@ -246,19 +239,40 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo ''
 	fi
 
-	WAIT_ENV_FILE=$(
-		save_environments start-params \
-			"WAIT_TIME=$_S_START_WAIT_SLEEP" \
-			"WAIT_OUTPUT=$_S_START_WAIT_OUTPUT" \
-			"ACTIVE_FILE=$_S_START_ACTIVE_FILE"
-	)
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
-	echo "EnvironmentFile=$WAIT_ENV_FILE"
+	echo "Environment=PODMAN_SYSTEMD_UNIT=%n"
 
-	local _SERVICE_WAITER
-	_SERVICE_WAITER=$(install_script_as "$COMMON_LIB_ROOT/tools/service-wait.sh" "$(_unit_get_name).pod")
+	local PREP_FOLDERS_INS=()
+	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
+		for I in "${_S_PREP_FOLDER[@]}"; do
+			PREP_FOLDERS_INS+=("'$I'")
+		done
+	fi
+
+	local _SERVICE_WAITER="/usr/share/scripts/$(_unit_get_name).pod"
+	{
+		cat "$COMMON_LIB_ROOT/tools/service-wait.sh"
+		cat <<- ENV
+			declare -r WAIT_TIME='$_S_START_WAIT_SLEEP'
+			declare -r WAIT_OUTPUT='$_S_START_WAIT_OUTPUT'
+			declare -r ACTIVE_FILE='$_S_START_ACTIVE_FILE'
+			declare -r NETWORK_TYPE='$_N_TYPE'
+			declare -r USING_SYSTEMD='$_S_SYSTEMD'
+
+			function prestart_hooks() {
+				${_EXEC_START_STOP}
+				${_EXEC_START_RM}
+
+				ensure_mounts ${PREP_FOLDERS_INS[*]}
+				podman volume prune -f &>/dev/null || true
+			}
+
+			prestart_hooks
+			main "\$@"
+		ENV
+	} | write_file "$_SERVICE_WAITER"
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
-	--detach-keys=q --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
+	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
 	local -a STARTUP_ARGS=()
 	_create_startup_arguments
@@ -294,7 +308,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
-	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-opt=path=/dev/null --restart=no")
+	#  --sdnotify=ignore  --log-driver=path=/dev/null  '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
+	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-driver=none --restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ "${#_S_LINUX_CAP[@]}" -gt 0 ]]; then
 		local CAP_ITEM CAP_LIST=""
@@ -306,11 +321,9 @@ function _create_startup_arguments() {
 	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
 		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
-	STARTUP_ARGS+=("'--pull=missing' --rm '${_S_IMAGE:-"$NAME"}'")
+	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
 	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 }
-
-declare -r BIND_RBIND="noexec,nodev,nosuid,rw,rbind"
 
 function unit_data() {
 	if [[ "$1" == "safe" ]]; then
@@ -326,56 +339,11 @@ function unit_data() {
 function unit_using_systemd() {
 	_S_SYSTEMD=true
 }
-function unit_fs_tempfs() {
-	local SIZE="$1" PATH="$2"
-	_S_VOLUME_ARG+=("'--mount=type=tmpfs,tmpfs-size=$SIZE,destination=$PATH'")
-}
-function unit_volume() {
-	local NAME="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
-	if [[ $# -gt 2 ]]; then
-		OPTIONS+=",$3"
-	fi
-
-	_S_PREP_FOLDER+=("$NAME")
-	_S_VOLUME_ARG+=("'--volume=$NAME:$TO$OPTIONS'")
-}
-function unit_fs_bind() {
-	local FROM="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
-	if [[ $# -gt 2 ]]; then
-		OPTIONS+=",$3"
-	fi
-	if [[ "${FROM:0:1}" != "/" ]]; then
-		FROM="$CONTAINERS_DATA_PATH/$FROM"
-	fi
-
-	_S_PREP_FOLDER+=("$FROM")
-	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
-}
-function shared_sockets_use() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
-		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
-	fi
-}
-function shared_sockets_provide() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
-		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
-	fi
-	local -a FULLPATH=()
-	for i; do
-		FULLPATH+=("'$SHARED_SOCKET_PATH/$i.sock'")
-	done
-	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
-	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
-}
 function unit_depend() {
 	if [[ -n "$*" ]]; then
 		unit_unit After "$*"
 		unit_unit Requires "$*"
 		unit_unit PartOf "$*"
-
-		if echo "$*" | grep -q -- "virtual-gateway.pod.service"; then
-			_S_REQUIRE_INFRA=yes
-		fi
 	fi
 }
 function unit_unit() {
