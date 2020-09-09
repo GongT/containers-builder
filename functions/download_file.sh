@@ -10,7 +10,7 @@ function download_file() {
 		wget "${URL}" \
 			-O "${OUTFILE}.downloading" \
 			--quiet --continue --show-progress --progress=bar:force:noscroll >&2 \
-			|| die "Cannot download from dl.google"
+			|| die "Cannot download from $URL"
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 	fi
 	info "    downloaded."
