@@ -287,7 +287,12 @@ function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
 	#  --sdnotify=ignore  --log-driver=path=/dev/null  '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
-	STARTUP_ARGS+=("--systemd=$_S_SYSTEMD --log-driver=none --restart=no")
+	if [[ "$_S_SYSTEMD" = "true" ]]; then
+		STARTUP_ARGS+=(--systemd=always --tty)
+	else
+		STARTUP_ARGS+=(--systemd=false)
+	fi
+	STARTUP_ARGS+=(" --log-driver=none --restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ "${#_S_LINUX_CAP[@]}" -gt 0 ]]; then
 		local CAP_ITEM CAP_LIST=""

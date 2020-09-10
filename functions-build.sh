@@ -11,6 +11,8 @@ source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 BUILDAH="$(find_command buildah)"
 declare -rx BUILDAH
 
+declare -r FEDORA_SYSTEMD_COMMAND='/lib/systemd/systemd --system --log-target=console --show-status=yes --log-color=no systemd.journald.forward_to_console=yes'
+
 # shellcheck source=./functions/shared_projects.sh
 source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 # shellcheck source=./functions/mdnf.sh

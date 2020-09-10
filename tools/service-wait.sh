@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
-ARGS=("--attach=stdin,stdout,stderr")
+ARGS=()
+# ARGS+=("--attach=stdin,stdout,stderr")
 # ARGS+=("--log-level=debug")
 declare -r PIDFile=/run/$CONTAINER_ID.conmon.pid
 
