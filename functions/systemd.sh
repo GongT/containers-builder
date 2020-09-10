@@ -196,27 +196,6 @@ Type=notify
 NotifyAccess=all
 PIDFile=/run/$SCOPE_ID.conmon.pid"
 
-	local _EXEC_START_STOP=""
-	if [[ -z "$_S_STOP_CMD" ]]; then
-		if [[ "$PODMAN_USE_IGNORE" ]]; then
-			_EXEC_START_STOP="/usr/bin/podman stop --ignore --time '$_S_KILL_TIMEOUT' '$SCOPE_ID'"
-		else
-			_EXEC_START_STOP="/usr/bin/podman stop --time '$_S_KILL_TIMEOUT' '$SCOPE_ID' || true"
-		fi
-	else
-		echo "ExecStartPre=-$_S_STOP_CMD"
-	fi
-	local _EXEC_START_RM=""
-	if [[ "$_S_KILL_FORCE" == "yes" ]]; then
-		if [[ "$PODMAN_USE_IGNORE" ]]; then
-			_EXEC_START_RM="/usr/bin/podman rm --ignore --force '$SCOPE_ID'"
-			echo "ExecStopPost=/usr/bin/podman rm --ignore --force $SCOPE_ID"
-		else
-			_EXEC_START_RM="/usr/bin/podman rm --force '$SCOPE_ID' || true"
-			echo "ExecStopPost=-/usr/bin/podman rm --force $SCOPE_ID"
-		fi
-	fi
-
 	if [[ "${_S_IMAGE_PULL}" = "never" ]]; then
 		:   # Nothing
 	else # always
@@ -258,11 +237,10 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 			declare -r ACTIVE_FILE='$_S_START_ACTIVE_FILE'
 			declare -r NETWORK_TYPE='$_N_TYPE'
 			declare -r USING_SYSTEMD='$_S_SYSTEMD'
+			declare -r KILL_TIMEOUT='$_S_KILL_TIMEOUT'
+			declare -r KILL_IF_TIMEOUT='$_S_KILL_FORCE'
 
 			function prestart_hooks() {
-				${_EXEC_START_STOP}
-				${_EXEC_START_RM}
-
 				ensure_mounts ${PREP_FOLDERS_INS[*]}
 				podman volume prune -f &>/dev/null || true
 			}

@@ -47,7 +47,7 @@ echo "Pull image $IMAGE_TO_PULL from registry..."
 
 sdnotify "--status=EXTEND_TIMEOUT_USEC=$((60 * 1000 * 1000))"
 
-podman pull "$IMAGE_TO_PULL"
+podman pull "$IMAGE_TO_PULL" || exit 233
 
 NEW_ID=$(image_get_id)
 
