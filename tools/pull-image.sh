@@ -26,4 +26,11 @@ sdnotify "--status=EXTEND_TIMEOUT_USEC=$((60 * 1000 * 1000))"
 
 podman pull "$IMAGE_TO_PULL"
 
+echo "removing images:" >&2
+podman images \
+	| grep --fixed-strings '<none>' \
+	| awk '{print $3}' \
+	| xargs --no-run-if-empty --verbose --no-run-if-empty \
+		podman rmi || true
+
 sdnotify "--status=EXTEND_TIMEOUT_USEC=$((30 * 1000 * 1000))"
