@@ -46,10 +46,8 @@ function load_sdnotify() {
 		echo "[SDNOTIFY] using socket: $NOTIFY_SOCKET"
 		__NOTIFYSOCKET="$NOTIFY_SOCKET"
 
-		if [[ "$USING_SYSTEMD" = 'false' ]]; then # or always/true
-			echo "[SDNOTIFY] hide socket from podman"
-			unset NOTIFY_SOCKET
-		fi
+		echo "[SDNOTIFY] hide socket from podman"
+		unset NOTIFY_SOCKET
 
 		function sdnotify() {
 			if [[ "$*" != "--status="* ]]; then
@@ -111,10 +109,13 @@ function make_arguments() {
 function wait_by_sleep() {
 	__run
 
+	local PID
+	PID=$(< "$PIDFile")
+
 	local -i I=$WAIT_TIME
 	while [[ $I -gt 0 ]]; do
 		I="$I - 1"
-		if ! podman inspect --type=container "$CONTAINER_ID" &> /dev/null; then
+		if [[ "$(readlink "/proc/$PID/exe")" != /usr/bin/conmon ]]; then
 			debug "Failed wait container $CONTAINER_ID to stable." >&2
 			sdnotify --status="gone"
 			exit 1
