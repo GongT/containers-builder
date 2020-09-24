@@ -249,6 +249,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 			main "\$@"
 		ENV
 	} | write_file "$_SERVICE_WAITER"
+	chmod a+x "$_SERVICE_WAITER"
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
@@ -286,13 +287,22 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
-	#  --sdnotify=ignore  --log-driver=path=/dev/null  '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
+	#  --sdnotify=ignore    '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
 	if [[ "$_S_SYSTEMD" = "true" ]]; then
 		STARTUP_ARGS+=(--systemd=always --tty)
 	else
 		STARTUP_ARGS+=(--systemd=false)
 	fi
-	STARTUP_ARGS+=(" --log-driver=none --restart=no")
+	local PODMANV=$(podman info -f '{{.Version.Version}}')
+	if [[ "$PODMANV" == "<no value>"  ]]; then
+		info_note "Using $PODMAN version 1."
+		STARTUP_ARGS+=("--log-opt=path=/dev/null")
+	else
+		STARTUP_ARGS+=("--log-driver=none")
+	fi
+
+
+	STARTUP_ARGS+=("--restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ "${#_S_LINUX_CAP[@]}" -gt 0 ]]; then
 		local CAP_ITEM CAP_LIST=""
