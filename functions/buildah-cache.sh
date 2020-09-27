@@ -40,7 +40,8 @@ function buildah_cache() {
 		local -r PREVIOUS_ID="none"
 	fi
 	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
-	local -r WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
+	local WANTED_HASH
+	WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
 
 	if [[ "${BUILDAH_FORCE-no}" = "yes" ]]; then
 		info_note "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
