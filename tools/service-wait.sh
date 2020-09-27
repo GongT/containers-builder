@@ -38,7 +38,9 @@ function __run() {
 }
 
 function self_journal() {
-	journalctl "_SYSTEMD_INVOCATION_ID=$INVOCATION_ID" -f
+	debug "journalctl _SYSTEMD_INVOCATION_ID=$INVOCATION_ID -f"
+	journalctl "_SYSTEMD_INVOCATION_ID=$INVOCATION_ID" -f &> "$1" &
+	JOURNAL_JOB_ID=$!
 }
 
 __NOTIFYSOCKET=
@@ -173,9 +175,14 @@ function wait_by_output() {
 
 	__run
 
+	local PID
+	PID=$(< "$PIDFile")
+
 	local TMP=$(mktemp -u)
 	mkfifo "$TMP"
-	self_journal &> "$TMP" &
+	local JOURNAL_JOB_ID
+	self_journal "$TMP"
+	local RET=0
 	while read -r line; do
 		sdnotify "--status=EXTEND_TIMEOUT_USEC=$((10 * 1000 * 1000))"
 		if echo "$line" | grep -qE "$WAIT_OUTPUT"; then
@@ -183,6 +190,7 @@ function wait_by_output() {
 			break
 		fi
 	done < "$TMP"
+	kill -SIGTERM "$JOURNAL_JOB_ID"
 	rm "$TMP"
 }
 
@@ -231,7 +239,7 @@ function main() {
 		debug "   method: sleep $WAIT_TIME seconds"
 		wait_by_sleep
 	elif [[ -n "$WAIT_OUTPUT" ]]; then
-		debug "   method: wait output '$WAIT_OUTPUT'"
+		debug "   method: wait output [${WAIT_OUTPUT:0:1}][${WAIT_OUTPUT:1}]"
 		wait_by_output
 	elif [[ -n "$ACTIVE_FILE" ]]; then
 		debug "   method: wait file $ACTIVE_FILE_ABS to exists"
