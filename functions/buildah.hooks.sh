@@ -38,15 +38,31 @@ function buildah() {
 	shift
 
 	local PASSARGS=("$@")
+	local -i LEN=$((${#PASSARGS[@]} - 1))
 	local EXARGS=()
 	case "$ACTION" in
+	copy)
+		local DEST="${PASSARGS[*]: -1}"
+		local -i I="$LEN - 1"
+		while [[ "$I" -gt 0 ]]; do
+			local CCI=$I
+			I="$I - 1"
+			if [[ "${PASSARGS[$I]}" == -* ]]; then
+				break
+			fi
+
+			local SRCF="${PASSARGS[$CCI]}"
+			if [[ "${SRCF}" != /* ]]; then
+				PASSARGS[$CCI]="$(pwd)/$SRCF"
+			fi
+		done
+		;;
 	from)
 		control_ci "::set-env name=BASE_IMAGE_NAME::${PASSARGS[*]: -1}"
 		;;
 	commit)
 		if [[ "${REWRITE_IMAGE_NAME+found}" = found ]]; then
 			info "rewrite commit image name: $REWRITE_IMAGE_NAME"
-			local LEN=$((${#PASSARGS[@]} - 1))
 			PASSARGS=("${PASSARGS[@]:0:$LEN}" "$REWRITE_IMAGE_NAME")
 		fi
 
