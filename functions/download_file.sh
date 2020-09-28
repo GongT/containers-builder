@@ -1,4 +1,4 @@
-declare -r LOCAL_TMP="$MONO_ROOT_DIR/.download"
+declare -r LOCAL_TMP="$SYSTEM_COMMON_CACHE/Download"
 
 function download_file_force() {
 	local FILE="download_$RANDOM" URL="$1"
