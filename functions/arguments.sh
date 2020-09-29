@@ -11,6 +11,8 @@ function arg_string() {
 	if [[ "$1" == '+' ]]; then
 		shift
 		_ARG_REQUIRE[$1]=yes
+	elif [[ "$1" == '-' ]]; then
+		shift
 	fi
 	local VAR_NAME=$1 SHORT LONG IN=''
 	shift
@@ -54,9 +56,6 @@ function arg_flag() {
 	_ARG_RESULT[$VAR_NAME]=""
 	_ARG_INPUT[$VAR_NAME]="${IN:1}"
 }
-function _check_arg() {
-	_PROGRAM_ARGS=("$@")
-}
 function _arg_ensure_finish() {
 	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
 		return
@@ -94,12 +93,14 @@ function arg_finish() {
 
 	local _PROGRAM_ARGS=()
 	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
-		eval _check_arg $(
-			cat "$MONO_ROOT_DIR/environment" \
-				| grep -E "^$PROJECT_NAME" \
-				| grep -E "$CURRENT_ACTION" \
-				| sed -E 's/^[^:]+:\s*\S+\s*//g'
+		local -a ENV_ARGS
+		mapfile -t ENV_ARGS < <(
+			(grep -E "^$PROJECT_NAME:" "$MONO_ROOT_DIR/environment" || [[ $? == 1 ]]) \
+				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
+				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
+				| sed -E 's/\s+/\n/g'
 		)
+		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 	fi
 	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
 		_PROGRAM_ARGS+=("${BASH_ARGV[$i]}")
@@ -181,7 +182,7 @@ function _arg_set() {
 
 	for VAR_NAME in "${!_ARG_RESULT[@]}"; do
 		if [[ -z "${_ARG_RESULT[$VAR_NAME]}" ]] && [[ -n "${_ARG_REQUIRE[$VAR_NAME]-}" ]]; then
-			die "Argument '${_ARG_INPUT[$VAR_NAME]}' is required"
+			die "Argument '${_ARG_INPUT[$VAR_NAME]} - ${_ARG_COMMENT[$VAR_NAME]:-}' is required"
 		fi
 		declare -rg "$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}"
 	done
