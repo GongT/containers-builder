@@ -231,15 +231,17 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	local _SERVICE_WAITER="/usr/share/scripts/$(_unit_get_name).pod"
 	{
 		cat "$COMMON_LIB_ROOT/tools/service-wait.sh"
+		(
+			declare -r WAIT_TIME="$_S_START_WAIT_SLEEP"
+			declare -r WAIT_OUTPUT="$_S_START_WAIT_OUTPUT"
+			declare -r ACTIVE_FILE="$_S_START_ACTIVE_FILE"
+			declare -r NETWORK_TYPE="$_N_TYPE"
+			declare -r USING_SYSTEMD="$_S_SYSTEMD"
+			declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
+			declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
+			declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
+		)
 		cat <<- ENV
-			declare -r WAIT_TIME='$_S_START_WAIT_SLEEP'
-			declare -r WAIT_OUTPUT='$_S_START_WAIT_OUTPUT'
-			declare -r ACTIVE_FILE='$_S_START_ACTIVE_FILE'
-			declare -r NETWORK_TYPE='$_N_TYPE'
-			declare -r USING_SYSTEMD='$_S_SYSTEMD'
-			declare -r KILL_TIMEOUT='$_S_KILL_TIMEOUT'
-			declare -r KILL_IF_TIMEOUT='$_S_KILL_FORCE'
-
 			function prestart_hooks() {
 				ensure_mounts ${PREP_FOLDERS_INS[*]}
 				podman volume prune -f &>/dev/null || true
@@ -294,13 +296,12 @@ function _create_startup_arguments() {
 		STARTUP_ARGS+=(--systemd=false)
 	fi
 	local PODMANV=$(podman info -f '{{.Version.Version}}')
-	if [[ "$PODMANV" == "<no value>"  ]]; then
+	if [[ "$PODMANV" == "<no value>" ]]; then
 		info_note "Using $PODMAN version 1."
 		STARTUP_ARGS+=("--log-opt=path=/dev/null")
 	else
 		STARTUP_ARGS+=("--log-driver=none")
 	fi
-
 
 	STARTUP_ARGS+=("--restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")

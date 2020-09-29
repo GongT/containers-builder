@@ -39,8 +39,7 @@ function __run() {
 
 function self_journal() {
 	debug "journalctl _SYSTEMD_INVOCATION_ID=$INVOCATION_ID -f"
-	journalctl "_SYSTEMD_INVOCATION_ID=$INVOCATION_ID" -f &> "$1" &
-	JOURNAL_JOB_ID=$!
+	journalctl "_SYSTEMD_INVOCATION_ID=$INVOCATION_ID" -f 2>&1
 }
 
 __NOTIFYSOCKET=
@@ -53,7 +52,7 @@ function load_sdnotify() {
 		unset NOTIFY_SOCKET
 
 		function sdnotify() {
-			if [[ "$*" != "--status="* ]]; then
+			if [[ "$*" != "--status="* ]] || [[ "$*" != "EXTEND_TIMEOUT_USEC="* ]]; then
 				echo "[SDNOTIFY] ($__NOTIFYSOCKET) ===== $*" >&2
 			fi
 			NOTIFY_SOCKET="$__NOTIFYSOCKET" systemd-notify "$@"
@@ -178,20 +177,13 @@ function wait_by_output() {
 	local PID
 	PID=$(< "$PIDFile")
 
-	local TMP=$(mktemp -u)
-	mkfifo "$TMP"
-	local JOURNAL_JOB_ID
-	self_journal "$TMP"
-	local RET=0
-	while read -r line; do
-		sdnotify "--status=EXTEND_TIMEOUT_USEC=$((10 * 1000 * 1000))"
+	self_journal | while read -r line; do
+		sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
 		if echo "$line" | grep -qE "$WAIT_OUTPUT"; then
 			debug "== ---- output found ---- =="
-			break
+			startup_done
 		fi
-	done < "$TMP"
-	kill -SIGTERM "$JOURNAL_JOB_ID"
-	rm "$TMP"
+	done
 }
 
 function wait_by_create_file() {
@@ -241,6 +233,7 @@ function main() {
 	elif [[ -n "$WAIT_OUTPUT" ]]; then
 		debug "   method: wait output [${WAIT_OUTPUT:0:1}][${WAIT_OUTPUT:1}]"
 		wait_by_output
+		exit 1 # never return here
 	elif [[ -n "$ACTIVE_FILE" ]]; then
 		debug "   method: wait file $ACTIVE_FILE_ABS to exists"
 		wait_by_create_file
@@ -248,7 +241,12 @@ function main() {
 		debug "   method: none"
 	fi
 
+	startup_done
+}
+
+function startup_done() {
 	sdnotify --ready --status="ok"
 	debug "Finish, Ok."
+	sleep 2
 	exit 0
 }

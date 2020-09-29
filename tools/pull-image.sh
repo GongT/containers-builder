@@ -45,9 +45,18 @@ unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 
 echo "Pull image $IMAGE_TO_PULL from registry..."
 
-sdnotify "--status=EXTEND_TIMEOUT_USEC=$((60 * 1000 * 1000))"
+(
+	while true; do
+		sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
+		sleep 2
+	done
+) &
+CPID=$!
 
 podman pull "$IMAGE_TO_PULL" || exit 233
+
+kill -SIGTERM "$CPID"
+sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
 
 NEW_ID=$(image_get_id)
 
@@ -65,4 +74,4 @@ podman images \
 	| xargs --no-run-if-empty --verbose --no-run-if-empty \
 		podman rmi || true
 
-sdnotify "--status=EXTEND_TIMEOUT_USEC=$((30 * 1000 * 1000))"
+sdnotify "EXTEND_TIMEOUT_USEC=$((10 * 1000000))"
