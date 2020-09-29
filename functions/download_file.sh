@@ -76,9 +76,22 @@ function extract_zip() {
 	popd &> /dev/null
 }
 
+function http_get_github_release_id() {
+	local REPO="$1" ID
+	local URL="https://api.github.com/repos/$REPO/releases/latest"
+	info_log " * fetching release id (+commit hash) from $URL ... "
+	ID=$(curl -s "$URL" | jq -r '(.id|tostring) + "-" + .target_commitish')
+	info_log "       = $ID"
+	if [[ "$ID" ]]; then
+		echo "$ID"
+	else
+		die "failed get ETag"
+	fi
+}
+
 function http_get_etag() {
 	local URL="$1" ETAG
-	info_log " * fetching ETag from $URL... "
+	info_log " * fetching ETag from $URL ... "
 	echo -ne "\e[2m" >&2
 	ETAG=$(curl -I --http1.1 --retry 3 --location "$URL" | grep -E '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/g' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2
