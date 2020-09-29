@@ -12,7 +12,7 @@ function run_apt() {
 		echo "APK: install $*"
 		echo "HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY ALL_PROXY=$ALL_PROXY http_proxy=$http_proxy https_proxy=$https_proxy all_proxy=$all_proxy"
 		I=0
-		while [ "$I" -lt 3 ] ; do
+		while [ "$I" -lt 10 ] ; do
 			if apk add "$@" ; then
 				exit 0
 			fi
