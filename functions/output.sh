@@ -2,14 +2,30 @@
 
 function die() {
 	echo -e "Error: $*\n\e[2m$(callstack)\e[0m" >&2
-	control_ci "::error ::$*"
+	control_ci error "$*"
 	exit 1
 }
 
 function control_ci() {
 	if is_ci; then
-		echo "$*" >&2
-		info_log "[CI]! $*" >&2
+		local -r ACTION="$1"
+		shift
+		info_log "[CI] Action=$ACTION, Args=$*" >&2
+		case "$ACTION" in
+		set-env)
+			{
+				echo "$1<<EOF"
+				echo "$2"
+				echo 'EOF'
+			} >> "$GITHUB_ENV"
+			;;
+		error)
+			echo "$*" >&2
+			;;
+		*)
+			die "[CI] not support action: $ACTION"
+			;;
+		esac
 	fi
 }
 
@@ -30,7 +46,7 @@ function _exit_handle() {
 	set +xe
 	echo -ne "\e[0m"
 	if [[ "$RET" -ne 0 ]]; then
-		control_ci "::error ::bash exit with error code $RET"
+		control_ci error "bash exit with error code $RET"
 		callstack 1
 	fi
 	exit $RET

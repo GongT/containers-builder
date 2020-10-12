@@ -58,7 +58,7 @@ function buildah() {
 		done
 		;;
 	from)
-		control_ci "::set-env name=BASE_IMAGE_NAME::${PASSARGS[*]: -1}"
+		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
 		;;
 	commit)
 		if [[ "${REWRITE_IMAGE_NAME+found}" = found ]]; then
@@ -71,7 +71,7 @@ function buildah() {
 
 		if [[ "$CID" != "$BUILDAH_CACHE_BASE/"* ]]; then
 			if is_ci; then
-				control_ci "::set-env name=LAST_COMMITED_IMAGE::$IID"
+				control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
 
 				EXARGS+=("--rm")
 
