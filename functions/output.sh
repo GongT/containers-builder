@@ -7,43 +7,47 @@ function die() {
 }
 
 function control_ci() {
-	if is_ci; then
-		local -r ACTION="$1"
-		shift
-		info_log "[CI] Action=$ACTION, Args=$*" >&2
-		case "$ACTION" in
-		set-env)
-			if [[ "${GITHUB_ENV:-}" ]]; then
+	local -r ACTION="$1"
+	shift
+	info_log "[CI] Action=$ACTION, Args=$*" >&2
+	case "$ACTION" in
+	set-env)
+		local -r TMPF="$(mktemp)"
+		echo "$2" >"$TMPF"
+		eval "$1=\"\$(< '$TMPF')\""
+		export "$1"
+		if ! is_ci; then
+			return
+		elif [[ "${GITHUB_ENV:-}" ]]; then
+			{
+				echo "$1<<EOF"
+				echo "$2"
+				echo 'EOF'
+			} >>"$GITHUB_ENV"
+		elif [[ "${GITLAB_CI:-}" ]]; then
+			if [[ "${GITLAB_ENV:-}" ]]; then
 				{
-					echo "$1<<EOF"
+					echo "$1=\$( cat <<EOF"
 					echo "$2"
 					echo 'EOF'
-				} >>"$GITHUB_ENV"
-			elif [[ "${GITLAB_CI:-}" ]]; then
-				if [[ "${GITLAB_ENV:-}" ]]; then
-					{
-						echo "$1=\$( cat <<EOF"
-						echo "$2"
-						echo 'EOF'
-						echo ')'
-					} >>"$GITLAB_ENV"
-				fi
-			else
-				die "[CI] does not support current ci."
+					echo ')'
+				} >>"$GITLAB_ENV"
 			fi
-			;;
-		error)
-			if [[ "${GITHUB_ACTIONS:-}" ]]; then
-				echo "::error ::$*" >&2
-			else
-				echo "[CI] Error $*" >&2
-			fi
-			;;
-		*)
-			die "[CI] not support action: $ACTION"
-			;;
-		esac
-	fi
+		else
+			die "[CI] does not support current ci."
+		fi
+		;;
+	error)
+		if [[ "${GITHUB_ACTIONS:-}" ]]; then
+			echo "::error ::$*" >&2
+		else
+			echo "[CI] Error $*" >&2
+		fi
+		;;
+	*)
+		die "[CI] not support action: $ACTION"
+		;;
+	esac
 }
 
 function callstack() {
