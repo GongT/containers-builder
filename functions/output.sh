@@ -13,14 +13,31 @@ function control_ci() {
 		info_log "[CI] Action=$ACTION, Args=$*" >&2
 		case "$ACTION" in
 		set-env)
-			{
-				echo "$1<<EOF"
-				echo "$2"
-				echo 'EOF'
-			} >> "$GITHUB_ENV"
+			if [[ "${GITHUB_ENV:-}" ]]; then
+				{
+					echo "$1<<EOF"
+					echo "$2"
+					echo 'EOF'
+				} >>"$GITHUB_ENV"
+			elif [[ "${GITLAB_CI:-}" ]]; then
+				if [[ "${GITLAB_ENV:-}" ]]; then
+					{
+						echo "$1=\$( cat <<EOF"
+						echo "$2"
+						echo 'EOF'
+						echo ')'
+					} >>"$GITLAB_ENV"
+				fi
+			else
+				die "[CI] does not support current ci."
+			fi
 			;;
 		error)
-			echo "$*" >&2
+			if [[ "${GITHUB_ACTIONS:-}" ]]; then
+				echo "::error ::$*" >&2
+			else
+				echo "[CI] Error $*" >&2
+			fi
 			;;
 		*)
 			die "[CI] not support action: $ACTION"
