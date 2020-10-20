@@ -31,6 +31,9 @@ PROJECT_NAME="$(basename "${CURRENT_DIR}")"
 if [[ "${SYSTEM_COMMON_CACHE+found}" != "found" ]]; then
 	SYSTEM_COMMON_CACHE='/var/cache'
 fi
+if [[ "${SYSTEM_FAST_CACHE+found}" != "found" ]]; then
+	SYSTEM_FAST_CACHE="$SYSTEM_COMMON_CACHE"
+fi
 
 declare -xr ANNOID_CACHE_PREV_STAGE="me.gongt.cache.prevstage"
 declare -xr ANNOID_CACHE_HASH="me.gongt.cache.hash"

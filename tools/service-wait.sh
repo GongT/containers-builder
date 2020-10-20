@@ -52,7 +52,7 @@ function load_sdnotify() {
 		unset NOTIFY_SOCKET
 
 		function sdnotify() {
-			if [[ "$*" != "--status="* ]] || [[ "$*" != "EXTEND_TIMEOUT_USEC="* ]]; then
+			if [[ "$*" != "--status="* ]] && [[ "$*" != "EXTEND_TIMEOUT_USEC="* ]]; then
 				echo "[SDNOTIFY] ($__NOTIFYSOCKET) ===== $*" >&2
 			fi
 			NOTIFY_SOCKET="$__NOTIFYSOCKET" systemd-notify "$@"

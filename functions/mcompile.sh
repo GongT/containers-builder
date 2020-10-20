@@ -8,7 +8,7 @@ function run_compile() {
 		SOURCE_DIRECTORY="$(pwd)/source/$PROJECT_ID"
 	fi
 
-	mkdir -p "$SYSTEM_COMMON_CACHE/ccache"
+	mkdir -p "$SYSTEM_FAST_CACHE/CCACHE"
 
 	info "compile project in '$WORKER' by '$SCRIPT'"
 	{
@@ -18,7 +18,7 @@ function run_compile() {
 		SHELL_USE_PROXY
 		cat "$SCRIPT"
 	} | buildah run \
-		"--volume=$SYSTEM_COMMON_CACHE/ccache:/opt/cache" \
+		"--volume=$SYSTEM_FAST_CACHE/CCACHE:/opt/ccache" \
 		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" "$BUILDER" bash
 }
 function run_install() {
