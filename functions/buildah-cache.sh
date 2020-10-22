@@ -1,11 +1,50 @@
 declare -A _CURRENT_STAGE_STORE=()
-declare -r BUILDAH_CACHE_BASE=cache.example.com
+declare -r BUILDAH_CACHE_BASE="${DOCKER_CACHE_CENTER:-cache.example.com}"
+
+CACHE_REGISTRY_ARGS=()
+if [[ ${DOCKER_CACHE_CENTER_AUTH:-} ]]; then
+	CACHE_REGISTRY_ARGS+=("--creds=$DOCKER_CACHE_CENTER_AUTH")
+fi
+
+function cache_try_pull() {
+	if [[ ! ${DOCKER_CACHE_CENTER:-} ]]; then
+		return
+	fi
+
+	local OUTPUT
+	local URL="$1"
+	for ((I = 0; I < 3; I++)); do
+		info_note "try pull cache image $URL"
+		if OUTPUT=$(podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
+			info_note "  - success."
+			return
+		else
+			if echo "$OUTPUT" | grep -q -- 'manifest unknown'; then
+				info_note " - failed, not exists."
+				return
+			else
+				info_note " - failed."
+			fi
+		fi
+	done
+
+	die "failed pull cache image!"
+}
+function cache_push() {
+	if [[ ! ${DOCKER_CACHE_CENTER:-} ]]; then
+		return
+	fi
+
+	local URL="$1"
+	info_note "push cache image $URL"
+	podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
+}
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
 # build_function <RESULT_CONTAINER_NAME>
 function buildah_cache() {
 	local _STITLE=""
-	if [[ "${STEP+found}" = found ]]; then
+	if [[ ${STEP+found} == found ]]; then
 		_STITLE="$STEP"
 		unset STEP
 	fi
@@ -18,7 +57,7 @@ function buildah_cache() {
 	# arg1=working container name [must create container this name]
 	local -r BUILDAH_BUILD_CALLBACK=$3
 
-	if [[ "${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]+found}" = 'found' ]]; then
+	if [[ ${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]+found} == 'found' ]]; then
 		local -ir CURRENT_STAGE="${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]}"
 		local -ir NEXT_STAGE="${CURRENT_STAGE} + 1"
 	else
@@ -30,7 +69,7 @@ function buildah_cache() {
 	info "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE: \e[0;38;5;11m$_STITLE"
 	indent
 
-	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE/$BUILDAH_NAME_BASE:stage-$CURRENT_STAGE"
+	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE/cache/$BUILDAH_NAME_BASE:stage-$CURRENT_STAGE"
 	if [[ $CURRENT_STAGE -gt 0 ]]; then
 		if ! image_exists "$BUILDAH_FROM"; then
 			die "required previous stage [$BUILDAH_FROM] did not exists"
@@ -39,18 +78,22 @@ function buildah_cache() {
 	else
 		local -r PREVIOUS_ID="none"
 	fi
-	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
+	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/cache/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
+
+	cache_try_pull "$BUILDAH_TO"
+
 	local WANTED_HASH
 	WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
 
-	if [[ "${BUILDAH_FORCE-no}" = "yes" ]]; then
+	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_note "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
 	elif image_exists "$BUILDAH_TO"; then
 		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
 		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
 		info_note "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
-		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" = "$WANTED_HASH++$PREVIOUS_ID" ]]; then
+		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" == "$WANTED_HASH++$PREVIOUS_ID" ]]; then
 			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")
+			cache_push "$BUILDAH_TO"
 			_buildah_cache_done
 			return
 		fi
@@ -71,9 +114,10 @@ function buildah_cache() {
 		"--annotation=$ANNOID_CACHE_HASH=$WANTED_HASH" \
 		"--annotation=$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
 		"--created-by=# layer <$CURRENT_STAGE> to <$NEXT_STAGE> base $BUILDAH_NAME_BASE" \
-		"$CONTAINER_ID" > /dev/null
+		"$CONTAINER_ID" >/dev/null
 	BUILDAH_LAST_IMAGE=$(xbuildah commit --omit-timestamp --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
+	cache_push "$BUILDAH_TO"
 	_buildah_cache_done
 }
 
@@ -88,7 +132,7 @@ _buildah_cache_done() {
 
 function buildah_cache_start() {
 	local NAME=$1 BASE_IMG=$2
-	if [[ "$BASE_IMG" != scratch ]]; then
+	if [[ $BASE_IMG != scratch ]]; then
 		if ! image_exists "$BASE_IMG"; then
 			podman pull --quiet "$BASE_IMG"
 		fi
@@ -194,19 +238,19 @@ function buildah_cache_run() {
 	if [[ $# -gt 0 ]]; then
 		local SPFOUND=no
 		for I; do
-			if [[ "$SPFOUND" == yes ]]; then
+			if [[ $SPFOUND == yes ]]; then
 				BASH_ARGS+=("$I")
-			elif [[ "$I" == '--' ]]; then
+			elif [[ $I == '--' ]]; then
 				SPFOUND=yes
 			else
 				RUN_ARGS+=("$I")
-				if [[ "$I" == "--volume="* ]]; then
+				if [[ $I == "--volume="* ]]; then
 					local X="${I//:*/}"
 					HASH_FOLDERS+=("${X#--volume=}")
 				fi
 			fi
 		done
-		if [[ "$SPFOUND" == no ]]; then
+		if [[ $SPFOUND == no ]]; then
 			die "argument list require a '--'"
 		fi
 	fi
@@ -225,7 +269,7 @@ function buildah_cache_run() {
 		CONTAINER=$(new_container "$1" "$BUILDAH_LAST_IMAGE")
 
 		buildah run "--cap-add=CAP_SYS_ADMIN" "${RUN_ARGS[@]}" "$CONTAINER" \
-			bash -s - "${BASH_ARGS[@]}" < "$BUILD_SCRIPT"
+			bash -s - "${BASH_ARGS[@]}" <"$BUILD_SCRIPT"
 	}
 
 	buildah_cache "$NAME" _hash_cb _build_cb
