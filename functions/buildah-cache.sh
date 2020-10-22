@@ -15,7 +15,7 @@ function cache_try_pull() {
 	local URL="$1"
 	for ((I = 0; I < 3; I++)); do
 		info_note "try pull cache image $URL"
-		if OUTPUT=$(podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
+		if OUTPUT=$(run_without_proxy podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
 			info_note "  - success."
 			return
 		else
@@ -28,6 +28,7 @@ function cache_try_pull() {
 		fi
 	done
 
+	echo "$OUTPUT" >&2
 	die "failed pull cache image!"
 }
 function cache_push() {
@@ -37,7 +38,7 @@ function cache_push() {
 
 	local URL="$1"
 	info_note "push cache image $URL"
-	podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
+	run_without_proxy podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
 }
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
