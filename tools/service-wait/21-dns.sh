@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+declare -a NSS=()
+function dns_resolve() {
+	local -r METHOD="$1" HOSTN="$2"
+	local RESOLVE_ARR RESOLVE_STR
+	local -i I=5
+	debug "Resolve host for dns: $HOSTN"
+	while true; do
+		RESOLVE_STR=$(nslookup "$HOSTN" || true)
+		if [[ "$RESOLVE_STR" ]]; then
+			break
+		fi
+		if [[ $I -gt 0 ]]; then
+			debug "retry... ($I)"
+			sleep 2
+			I="$I - 1"
+			continue
+		else
+			die "Failed resolve dns: $HOSTN"
+		fi
+	done
+	mapfile -t RESOLVE_ARR < <(echo "$RESOLVE_STR" | tail -n +3 | grep Address | sed 's/Address: //g')
+
+	local ADDR
+	for ADDR in "${RESOLVE_ARR[@]}"; do
+		if nslookup z.cn "$ADDR" &>/dev/null; then
+			dns_append "$METHOD" "$ADDR"
+		fi
+	done
+}
+
+function dns_pass() {
+	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1:-}"
+	mapfile -t RESOLVE_OPTIONS < <(grep '^options ' /etc/resolv.conf | sed 's/^options //g')
+	if [[ "${RESOLVE_OPTIONS[*]}" ]]; then
+		if [[ $METHOD == 'env' ]]; then
+			ARGS+=("--env=RESOLVE_OPTIONS=${RESOLVE_OPTIONS[*]}")
+		else
+			ARGS+=("--dns-opt=${RESOLVE_OPTIONS[*]}")
+		fi
+	fi
+
+	if [[ $METHOD == 'env' ]]; then
+		mapfile -t RESOLVE_SEARCH < <(grep '^search ' /etc/resolv.conf | sed 's/^search //g')
+		ARGS+=("--env=RESOLVE_SEARCH=${RESOLVE_SEARCH[*]}")
+	fi
+
+	mapfile -t RESOLVE_NS < <(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //g' | grep -v 127.0.0.1)
+	dns_append "$METHOD" "${RESOLVE_NS[@]}"
+}
+
+function dns_append() {
+	local METHOD="${1}"
+	shift
+	if [[ $METHOD == 'env' ]]; then
+		NSS+=("${@}")
+	else
+		local NS
+		for NS in "${@}"; do
+			ARGS+=("--dns=${NS}")
+		done
+	fi
+}
+
+function dns_finalize() {
+	if [[ ${#NSS[@]} -gt 0 ]]; then
+		add_argument "--env=NSS=${NSS[*]}"
+	fi
+}

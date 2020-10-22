@@ -74,7 +74,7 @@ function __create_unit__() {
 
 	local NAME=$(basename "$_S_IMAGE")
 
-	if [[ "$NAME" == *@ ]]; then
+	if [[ $NAME == *@ ]]; then
 		NAME="${NAME:0:-1}"
 		_S_AT_='@'
 	fi
@@ -90,12 +90,12 @@ function __create_unit__() {
 }
 
 function unit_write() {
-	if [[ -z "$_S_CURRENT_UNIT_FILE" ]]; then
+	if [[ -z $_S_CURRENT_UNIT_FILE ]]; then
 		die "create_xxxx_unit first."
 	fi
 	local -r TF=$(mktemp -u)
-	_unit_assemble > $TF
-	write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" < $TF
+	_unit_assemble >$TF
+	write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" <$TF
 	unlink $TF
 }
 _get_debugger_script() {
@@ -139,7 +139,7 @@ function apply_systemd_service() {
 
 	echo -ne "\e[2m"
 	if is_installing; then
-		if [[ "${SYSTEMD_RELOAD-yes}" == "yes" ]]; then
+		if [[ ${SYSTEMD_RELOAD-yes} == "yes" ]]; then
 			systemctl daemon-reload
 			if ! systemctl is-enabled -q "$UN"; then
 				systemctl enable "$UN"
@@ -179,7 +179,7 @@ function _unit_assemble() {
 	local I
 	echo "[Unit]"
 
-	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
+	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		unit_depend wait-mount.service
 	fi
 
@@ -196,7 +196,7 @@ Type=notify
 NotifyAccess=all
 PIDFile=/run/$SCOPE_ID.conmon.pid"
 
-	if [[ "${_S_IMAGE_PULL}" = "never" ]]; then
+	if [[ ${_S_IMAGE_PULL} == "never" ]]; then
 		:   # Nothing
 	else # always
 		local _PULL_HELPER
@@ -204,14 +204,14 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo "ExecStartPre=/usr/bin/env bash '$_PULL_HELPER' '${_S_IMAGE:-"$NAME"}' '${_S_IMAGE_PULL}'"
 	fi
 
-	if [[ "${#_S_EXEC_START_PRE[@]}" -gt 0 ]]; then
+	if [[ ${#_S_EXEC_START_PRE[@]} -gt 0 ]]; then
 		for I in "${_S_EXEC_START_PRE[@]}"; do
 			echo "ExecStartPre=$I"
 		done
 		echo ''
 	fi
 
-	if [[ "${#_S_EXEC_START_POST[@]}" -gt 0 ]]; then
+	if [[ ${#_S_EXEC_START_POST[@]} -gt 0 ]]; then
 		for I in "${_S_EXEC_START_POST[@]}"; do
 			echo "ExecStartPost=$I"
 		done
@@ -222,7 +222,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "Environment=PODMAN_SYSTEMD_UNIT=%n"
 
 	local PREP_FOLDERS_INS=()
-	if [[ "${#_S_PREP_FOLDER[@]}" -gt 0 ]]; then
+	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		for I in "${_S_PREP_FOLDER[@]}"; do
 			PREP_FOLDERS_INS+=("'$I'")
 		done
@@ -230,7 +230,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 	local _SERVICE_WAITER="/usr/share/scripts/$(_unit_get_name).pod"
 	{
-		cat "$COMMON_LIB_ROOT/tools/service-wait.sh"
+		echo '#!/usr/bin/env bash'
+		echo 'set -Eeuo pipefail'
 		(
 			declare -r WAIT_TIME="$_S_START_WAIT_SLEEP"
 			declare -r WAIT_OUTPUT="$_S_START_WAIT_OUTPUT"
@@ -239,17 +240,11 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 			declare -r USING_SYSTEMD="$_S_SYSTEMD"
 			declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
 			declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
-			declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
+			declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT PREP_FOLDERS_INS
 		)
-		cat <<- ENV
-			function prestart_hooks() {
-				ensure_mounts ${PREP_FOLDERS_INS[*]}
-				podman volume prune -f &>/dev/null || true
-			}
-
-			prestart_hooks
-			main "\$@"
-		ENV
+		find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 \
+			| sort -z \
+			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"
 	} | write_file "$_SERVICE_WAITER"
 	chmod a+x "$_SERVICE_WAITER"
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
@@ -263,7 +258,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo ""
 	echo "# debug script: $(_get_debugger_script)"
 
-	if [[ -z "$_S_STOP_CMD" ]]; then
+	if [[ -z $_S_STOP_CMD ]]; then
 		echo "ExecStop=${_CONTAINER_STOP} $_S_KILL_TIMEOUT $SCOPE_ID"
 		echo "TimeoutStopSec=$((_S_KILL_TIMEOUT + 10))"
 	else
@@ -273,7 +268,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo "ExecStopPost=$I"
 	done
 
-	if [[ -n "$_S_EXEC_RELOAD" ]]; then
+	if [[ -n $_S_EXEC_RELOAD ]]; then
 		echo "ExecReload=$_S_EXEC_RELOAD"
 	fi
 
@@ -290,13 +285,13 @@ function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
 	#  --sdnotify=ignore    '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
-	if [[ "$_S_SYSTEMD" = "true" ]]; then
+	if [[ $_S_SYSTEMD == "true" ]]; then
 		STARTUP_ARGS+=(--systemd=always --tty)
 	else
 		STARTUP_ARGS+=(--systemd=false)
 	fi
 	local PODMANV=$(podman info -f '{{.Version.Version}}')
-	if [[ "$PODMANV" == "<no value>" ]]; then
+	if [[ $PODMANV == "<no value>" ]]; then
 		info_note "Using $PODMAN version 1."
 		STARTUP_ARGS+=("--log-opt=path=/dev/null")
 	else
@@ -305,14 +300,14 @@ function _create_startup_arguments() {
 
 	STARTUP_ARGS+=("--restart=no")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
-	if [[ "${#_S_LINUX_CAP[@]}" -gt 0 ]]; then
+	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
 		local CAP_ITEM CAP_LIST=""
 		for CAP_ITEM in "${_S_LINUX_CAP[@]}"; do
 			CAP_LIST+=",$CAP_ITEM"
 		done
 		STARTUP_ARGS+=("--cap-add=${CAP_LIST:1}")
 	fi
-	if [[ -n "$_S_START_ACTIVE_FILE" ]]; then
+	if [[ -n $_S_START_ACTIVE_FILE ]]; then
 		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
 	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
@@ -320,10 +315,10 @@ function _create_startup_arguments() {
 }
 
 function unit_data() {
-	if [[ "$1" == "safe" ]]; then
+	if [[ $1 == "safe" ]]; then
 		_S_KILL_TIMEOUT=5
 		_S_KILL_FORCE=yes
-	elif [[ "$1" == "danger" ]]; then
+	elif [[ $1 == "danger" ]]; then
 		_S_KILL_TIMEOUT=120
 		_S_KILL_FORCE=no
 	else
@@ -334,7 +329,7 @@ function unit_using_systemd() {
 	_S_SYSTEMD=true
 }
 function unit_depend() {
-	if [[ -n "$*" ]]; then
+	if [[ -n $* ]]; then
 		unit_unit After "$*"
 		unit_unit Requires "$*"
 		unit_unit PartOf "$*"
@@ -357,7 +352,7 @@ function unit_body() {
 	shift
 	local V="$*"
 	if echo "$K" | grep -qE '^(RestartPreventExitStatus|Environment)$'; then
-		if [[ "${_S_BODY_CONFIG[$K]+found}" = "found" ]]; then
+		if [[ ${_S_BODY_CONFIG[$K]+found} == "found" ]]; then
 			_S_BODY_CONFIG[$K]+=" "
 		fi
 		_S_BODY_CONFIG[$K]+="$V"
@@ -413,7 +408,7 @@ function unit_start_notify() {
 		_S_START_WAIT_OUTPUT="$ARG"
 		;;
 	touch)
-		if [[ -z "$ARG" ]]; then
+		if [[ -z $ARG ]]; then
 			ARG="$_S_CURRENT_UNIT_FILE.$RANDOM.ready"
 		fi
 		_S_START_ACTIVE_FILE="$ARG"
@@ -424,20 +419,20 @@ function unit_start_notify() {
 	esac
 }
 function _create_service_library() {
-	if [[ "${_CONTAINER_STOP+found}" == "found" ]]; then
+	if [[ ${_CONTAINER_STOP+found} == "found" ]]; then
 		return
 	fi
 	mkdir -p /usr/share/scripts/
 
-	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" > /usr/share/scripts/stop-container.sh
+	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" >/usr/share/scripts/stop-container.sh
 	chmod a+x /usr/share/scripts/stop-container.sh
 	_CONTAINER_STOP=/usr/share/scripts/stop-container.sh
 
-	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" > /usr/share/scripts/lowlevel-clear.sh
+	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
 	chmod a+x /usr/share/scripts/lowlevel-clear.sh
 	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
 
-	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" > /usr/share/scripts/update-hosts.sh
+	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" >/usr/share/scripts/update-hosts.sh
 	chmod a+x /usr/share/scripts/update-hosts.sh
 	_UPDATE_HOSTS=/usr/share/scripts/update-hosts.sh
 }
