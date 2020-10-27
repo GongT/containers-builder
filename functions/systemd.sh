@@ -27,7 +27,7 @@ function _unit_init() {
 	_S_CURRENT_UNIT_TYPE=
 	_S_CURRENT_UNIT_NAME=
 	_S_CURRENT_UNIT_FILE=
-	_S_IMAGE_PULL=always
+	_S_IMAGE_PULL=${IMAGE_PULL:-always}
 	_S_HOST=
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
