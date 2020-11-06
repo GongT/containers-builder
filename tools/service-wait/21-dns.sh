@@ -38,7 +38,7 @@ function dns_resolve() {
 	local ADDR
 	for ADDR in "${RESOLVE_ARR[@]}"; do
 		debug " - verify dns server: $ADDR"
-		if _nslookup z.cn "$ADDR" &>/dev/null; then
+		if _nslookup -timeout=2 -retry=1 z.cn "$ADDR" &>/dev/null; then
 			dns_append "$METHOD" "$ADDR"
 		fi
 	done

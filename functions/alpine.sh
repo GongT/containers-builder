@@ -4,11 +4,11 @@ function use_alpine_apk_cache() {
 	echo -e "--volume=$SYSTEM_COMMON_CACHE/apk:/etc/apk/cache"
 }
 
-function run_apt() {
+function apt_install() {
 	local NAME=$1
 	shift
 
-	buildah run $(use_alpine_apk_cache) "$CONTAINER" sh -s- -- "${PKGS[@]}" <<- 'APK'
+	buildah run $(use_alpine_apk_cache) "$NAME" sh -s- -- "${PKGS[@]}" <<- 'APK'
 		echo "APK: install $*"
 		echo "HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY ALL_PROXY=$ALL_PROXY http_proxy=$http_proxy https_proxy=$https_proxy all_proxy=$all_proxy"
 		I=0
@@ -38,7 +38,7 @@ function make_base_image_by_apt() {
 	_apk_build_cb() {
 		local CONTAINER
 		CONTAINER=$(new_container "$1" "$BASEIMG")
-		run_apt "$CONTAINER" "${PKGS[@]}"
+		apt_install "$CONTAINER" "${PKGS[@]}"
 	}
 
 	if [[ "${FORCE_APK+found}" != found ]]; then
