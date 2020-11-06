@@ -1,11 +1,12 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+declare -a PARENT_ARGS=("$@")
+
 echo -ne "\ec"
 
-echo -ne "\e[2m"
-printf '=%.0s' $(seq 1 ${COLUMNS-80})
-echo ""
-systemctl cat "$SERVICE_FILE" --no-pager | sed -E "s/^/\x1B[2m/mg" || true
-
-if echo "$SCOPE_ID" | grep -q '%i'; then
+if echo "$CONTAINER_ID" | grep -q '%i'; then
 	template_id=$1
 	shift
 
@@ -30,22 +31,13 @@ else
 
 fi
 
-declare -a PARENT_ARGS=("$@")
-
-function find_bridge_ip() {
-	podman network inspect podman | grep -oE '"gateway": ".+",?$' | sed 's/"gateway": "\(.*\)".*/\1/g'
-}
-
 function XX() {
 	local ARGS=("$@")
 	echo -ne "\e[2m"
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo
 	echo -n "$1"
-	for i in $(seq 2 $(($#))); do
-		if [[ "${ARGS[$i]}" == "--dns=h.o.s.t" ]]; then
-			ARGS[$i]="--dns=$(find_bridge_ip)"
-		fi
+	for i in $(seq 1 $(($# - 1))); do
 		echo -ne " \\\\\n  "
 		echo -n "'${ARGS[$i]}'"
 	done
@@ -56,4 +48,18 @@ function XX() {
 	exec "${ARGS[@]}"
 }
 
-# append
+echo -ne "\e[2m"
+printf '=%.0s' $(seq 1 ${COLUMNS-80})
+echo ""
+systemctl cat "$SERVICE_FILE" --no-pager | sed -E "s/^/\x1B[2m/mg" || true
+printf '=%.0s' $(seq 1 ${COLUMNS-80})
+echo ""
+
+load_sdnotify
+
+ensure_mounts "${_S_PREP_FOLDER[@]}"
+podman volume prune -f &>/dev/null || true
+
+make_arguments "${STARTUP_ARGS[@]}"
+ensure_container_not_running
+X podman run -it "${ARGS[@]}"

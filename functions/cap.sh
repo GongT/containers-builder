@@ -6,5 +6,5 @@ function use_full_system_privilege() {
 	unit_podman_arguments "--privileged=true"
 }
 function add_network_privilege() {
-	add_capability NET_ADMIN
+	add_capability NET_ADMIN NET_RAW
 }

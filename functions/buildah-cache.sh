@@ -1,5 +1,6 @@
 declare -A _CURRENT_STAGE_STORE=()
 declare -r BUILDAH_CACHE_BASE="${DOCKER_CACHE_CENTER:-cache.example.com}"
+declare LAST_CACHE_COMES_FROM=build # or pull
 
 CACHE_REGISTRY_ARGS=()
 if [[ ${DOCKER_CACHE_CENTER_AUTH:-} ]]; then
@@ -8,6 +9,7 @@ fi
 
 function cache_try_pull() {
 	if [[ ! ${DOCKER_CACHE_CENTER:-} ]]; then
+		LAST_CACHE_COMES_FROM=build
 		return
 	fi
 
@@ -17,10 +19,12 @@ function cache_try_pull() {
 		info_note "try pull cache image $URL"
 		if OUTPUT=$(run_without_proxy podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
 			info_note "  - success."
+			LAST_CACHE_COMES_FROM=pull
 			return
 		else
 			if echo "$OUTPUT" | grep -q -- 'manifest unknown'; then
 				info_note " - failed, not exists."
+				LAST_CACHE_COMES_FROM=build
 				return
 			else
 				info_note " - failed."
@@ -32,12 +36,12 @@ function cache_try_pull() {
 	die "failed pull cache image!"
 }
 function cache_push() {
-	if [[ ! ${DOCKER_CACHE_CENTER:-} ]]; then
+	if [[ ! ${DOCKER_CACHE_CENTER:-} ]] || [[ $LAST_CACHE_COMES_FROM == "pull" ]]; then
 		return
 	fi
 
 	local URL="$1"
-	info_note "push cache image $URL"
+	info_note "push cache image $URL ($LAST_CACHE_COMES_FROM)"
 	run_without_proxy podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
 }
 
@@ -81,7 +85,9 @@ function buildah_cache() {
 	fi
 	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/cache/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
 
-	cache_try_pull "$BUILDAH_TO"
+	if [[ ${BUILDAH_FORCE-no} != "yes" ]]; then
+		cache_try_pull "$BUILDAH_TO"
+	fi
 
 	local WANTED_HASH
 	WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
@@ -103,6 +109,7 @@ function buildah_cache() {
 		info_note "step result not cached: target=$WANTED_HASH"
 	fi
 
+	LAST_CACHE_COMES_FROM=build
 	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${CURRENT_STAGE}_to${NEXT_STAGE}"
 	"$BUILDAH_BUILD_CALLBACK" "$CONTAINER_ID"
 	info_note "build callback finish"
@@ -118,7 +125,9 @@ function buildah_cache() {
 		"$CONTAINER_ID" >/dev/null
 	BUILDAH_LAST_IMAGE=$(xbuildah commit --omit-timestamp --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
+
 	cache_push "$BUILDAH_TO"
+
 	_buildah_cache_done
 }
 

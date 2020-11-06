@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+declare -i DNS_TIMEOUT=$(cat /etc/resolv.conf | grep timeout | sed 's/.*timeout://g')
+if [[ $DNS_TIMEOUT -lt 3 ]]; then
+	DNS_TIMEOUT=3
+fi
+DNS_TIMEOUT=$((DNS_TIMEOUT + 5))
+
+function _nslookup() {
+	sdnotify --status="wait:lookup $1"
+	expand_timeout_seconds "$DNS_TIMEOUT"
+	nslookup "$@"
+}
+
 declare -a NSS=()
 function dns_resolve() {
 	local -r METHOD="$1" HOSTN="$2"
 	local RESOLVE_ARR RESOLVE_STR
 	local -i I=5
-	debug "Resolve host for dns: $HOSTN"
+	debug "Resolve host for dns: <$HOSTN>"
 	while true; do
-		RESOLVE_STR=$(nslookup "$HOSTN" || true)
+		RESOLVE_STR=$(_nslookup "$HOSTN" || :)
 		if [[ "$RESOLVE_STR" ]]; then
 			break
 		fi
@@ -25,7 +37,8 @@ function dns_resolve() {
 
 	local ADDR
 	for ADDR in "${RESOLVE_ARR[@]}"; do
-		if nslookup z.cn "$ADDR" &>/dev/null; then
+		debug " - verify dns server: $ADDR"
+		if _nslookup z.cn "$ADDR" &>/dev/null; then
 			dns_append "$METHOD" "$ADDR"
 		fi
 	done

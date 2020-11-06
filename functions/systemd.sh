@@ -103,23 +103,28 @@ _get_debugger_script() {
 }
 _debugger_file_write() {
 	local -r TF=$(mktemp -u)
-	local -r DEBUG_SCRIPT=
+	local I
 	local -a STARTUP_ARGS=()
 
 	_create_startup_arguments
 	{
 		echo "#!/usr/bin/env bash"
-		echo "declare -r SCOPE_ID='$(_unit_get_scopename)'"
+		echo "set -Eeuo pipefail"
+		echo "declare -r CONTAINER_ID='$(_unit_get_scopename)'"
 		echo "declare -r NAME='$(_unit_get_name)'"
 		echo "declare -r SERVICE_FILE='$_S_CURRENT_UNIT_FILE'"
+		export_base_envs
+		find "$COMMON_LIB_ROOT/tools/service-wait" -type f -not -name '99-*' -print0 \
+			| sort -z \
+			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"
+		declare -p _S_PREP_FOLDER
+
+		echo "declare -a STARTUP_ARGS=()"
+		for I in "${STARTUP_ARGS[@]}"; do
+			echo "STARTUP_ARGS+=($I)"
+		done
 
 		cat "$COMMON_LIB_ROOT/staff/debugger.sh"
-
-		echo -n "X podman run -it"
-		for I in "${STARTUP_ARGS[@]}"; do
-			echo -ne " \\\\\n\t${I}"
-		done
-		echo ''
 	} | write_file "$(_get_debugger_script)"
 	chmod a+x "$(_get_debugger_script)"
 }
@@ -171,6 +176,18 @@ function _unit_get_scopename() {
 	else
 		echo "$NAME"
 	fi
+}
+function export_base_envs() {
+	(
+		declare -r WAIT_TIME="$_S_START_WAIT_SLEEP"
+		declare -r WAIT_OUTPUT="$_S_START_WAIT_OUTPUT"
+		declare -r ACTIVE_FILE="$_S_START_ACTIVE_FILE"
+		declare -r NETWORK_TYPE="$_N_TYPE"
+		declare -r USING_SYSTEMD="$_S_SYSTEMD"
+		declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
+		declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
+		declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
+	)
 }
 function _unit_assemble() {
 	_network_use_not_define
@@ -224,7 +241,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	local PREP_FOLDERS_INS=()
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		for I in "${_S_PREP_FOLDER[@]}"; do
-			PREP_FOLDERS_INS+=("'$I'")
+			PREP_FOLDERS_INS+=("$I")
 		done
 	fi
 
@@ -232,16 +249,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	{
 		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
-		(
-			declare -r WAIT_TIME="$_S_START_WAIT_SLEEP"
-			declare -r WAIT_OUTPUT="$_S_START_WAIT_OUTPUT"
-			declare -r ACTIVE_FILE="$_S_START_ACTIVE_FILE"
-			declare -r NETWORK_TYPE="$_N_TYPE"
-			declare -r USING_SYSTEMD="$_S_SYSTEMD"
-			declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
-			declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
-			declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT PREP_FOLDERS_INS
-		)
+		export_base_envs
+		declare -p PREP_FOLDERS_INS
 		find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 \
 			| sort -z \
 			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"

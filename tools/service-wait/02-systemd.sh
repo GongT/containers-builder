@@ -29,6 +29,12 @@ function load_sdnotify() {
 		}
 	fi
 }
+function expand_timeout() {
+	sdnotify "EXTEND_TIMEOUT_USEC=$1"
+}
+function expand_timeout_seconds() {
+	sdnotify "EXTEND_TIMEOUT_USEC=$(($1 * 1000000))"
+}
 
 function startup_done() {
 	sdnotify --ready --status="ok"
