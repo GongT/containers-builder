@@ -50,10 +50,10 @@ function run_dnf() {
 	{
 		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
 		cat <<-BUSYBOX
-			if command -v busybox &>/dev/null ; do
+			if command -v busybox &>/dev/null ; then
 				echo "installing busybox..." &>/dev/null
 				busybox --install /bin
-			done
+			fi
 		BUSYBOX
 	} | buildah run \
 		"--cap-add=CAP_SYS_ADMIN" \
