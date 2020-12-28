@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 declare -a _S_PREP_FOLDER
 declare -a _S_LINUX_CAP
 declare -a _S_VOLUME_ARG
@@ -57,6 +59,9 @@ function _unit_init() {
 
 	## network.sh
 	_N_TYPE=
+
+	## healthcheck.sh
+	_healthcheck_reset
 }
 
 function auto_create_pod_service_unit() {
@@ -308,6 +313,10 @@ function _create_startup_arguments() {
 	fi
 
 	STARTUP_ARGS+=("--restart=no")
+
+	local _PODMAN_RUN_ARGS=()
+	_healthcheck_arguments_podman
+	STARTUP_ARGS+=("${_PODMAN_RUN_ARGS[@]}")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
 		local CAP_ITEM CAP_LIST=""

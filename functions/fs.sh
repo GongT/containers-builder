@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 declare -a _REG_FILES=()
 
 function write_file() {

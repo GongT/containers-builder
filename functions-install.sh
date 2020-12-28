@@ -25,3 +25,5 @@ source "$COMMON_LIB_ROOT/functions/install.sh"
 source "$COMMON_LIB_ROOT/functions/uninstall.sh"
 # shellcheck source=./functions/cap.sh
 source "$COMMON_LIB_ROOT/functions/cap.sh"
+# shellcheck source=./functions/healthcheck.sh
+source "$COMMON_LIB_ROOT/functions/healthcheck.sh"

@@ -27,6 +27,8 @@ source "$COMMON_LIB_ROOT/functions/buildah.hooks.sh"
 source "$COMMON_LIB_ROOT/functions/alpine.sh"
 # shellcheck source=./functions/build-folder-hash.sh
 source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
+# shellcheck source=./functions/healthcheck.sh
+source "$COMMON_LIB_ROOT/functions/healthcheck.sh"
 
 function create_if_not() {
 	local NAME=$1 BASE=$2

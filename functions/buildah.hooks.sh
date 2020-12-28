@@ -83,6 +83,7 @@ function buildah() {
 				xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
 			fi
 			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
+			_healthcheck_config_buildah "$CID"
 		fi
 		;;
 	esac
