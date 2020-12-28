@@ -17,9 +17,9 @@ function get_service_timeout() {
 		SPAN=$(echo "$SRV_DATA" | grep "^TimeoutStartSec=" | sed 's/TimeoutStartSec=//g')
 		SERVICE_START_TIMEOUT=$(timespan_to_us "$SPAN")
 	fi
-	if [[ $SERVICE_START_TIMEOUT -eq 0 ]] && [[ -e /etc/systemd/system.conf ]]; then
-		SPAN=$(grep '^DefaultTimeoutStartSec=' /etc/systemd/system.conf | sed 's/DefaultTimeoutStartSec=//g')
-		SERVICE_START_TIMEOUT=$(timespan_to_us "$SPAN")
+	if [[ $SERVICE_START_TIMEOUT -eq 0 ]] && grep -q 'DefaultTimeoutStartSec=' /etc/systemd/system.conf; then
+		SPAN=$(grep 'DefaultTimeoutStartSec=' /etc/systemd/system.conf | sed 's/^.*DefaultTimeoutStartSec=//g')
+		SERVICE_START_TIMEOUT=$(timespan_to_us "$SPAN" || echo '0')
 	fi
 	if [[ $SERVICE_START_TIMEOUT -eq 0 ]]; then
 		SERVICE_START_TIMEOUT=90
