@@ -3,7 +3,9 @@ set -Eeuo pipefail
 
 declare -i SERVICE_START_TIMEOUT=0
 function timespan_to_us() {
-	systemd-analyze timespan "$1" | grep 'μs' | sed 's/.*://g'
+	if ! systemd-analyze timespan "$1" | grep 'μs' | sed 's/.*://g'; then
+		echo ''
+	fi
 }
 function get_service_timeout() {
 	if [[ $SERVICE_START_TIMEOUT -ne 0 ]]; then
@@ -22,7 +24,7 @@ function get_service_timeout() {
 		SERVICE_START_TIMEOUT=$(timespan_to_us "$SPAN" || echo '0')
 	fi
 	if [[ $SERVICE_START_TIMEOUT -eq 0 ]]; then
-		SERVICE_START_TIMEOUT=90
+		SERVICE_START_TIMEOUT=90000000
 	fi
 }
 
