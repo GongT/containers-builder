@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ "${__PRAGMA_ONCE_FUNCTIONS_SH+found}" = found ]]; then
+if [[ ${__PRAGMA_ONCE_FUNCTIONS_SH+found} == found ]]; then
 	return
 fi
 declare -r __PRAGMA_ONCE_FUNCTIONS_SH=yes
@@ -8,7 +8,7 @@ declare -r __PRAGMA_ONCE_FUNCTIONS_SH=yes
 set -Eeuo pipefail
 shopt -s lastpipe
 
-if [[ "${CONTAINERS_DATA_PATH+found}" != "found" ]]; then
+if [[ ${CONTAINERS_DATA_PATH+found} != "found" ]]; then
 	export CONTAINERS_DATA_PATH="/data/AppData"
 fi
 declare -xr CONTAINERS_DATA_PATH="${CONTAINERS_DATA_PATH}"
@@ -16,22 +16,28 @@ declare -xr COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 declare -xr MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
 declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
 
-if [[ "${CURRENT_DIR+found}" != "found" ]]; then
-	CURRENT_DIR="$(dirname "$(realpath -m "${BASH_SOURCE[-1]}")")"
-	if [[ "$CURRENT_DIR" == "." ]]; then
+CURRENT_FILE="${BASH_SOURCE[-1]}"
+if [[ $CURRENT_FILE == ./* ]]; then
+	CURRENT_FILE=$(realpath "$(pwd)/$CURRENT_FILE")
+else
+	CURRENT_FILE=$(realpath "$CURRENT_FILE")
+fi
+if [[ ${CURRENT_DIR+found} != "found" ]]; then
+	CURRENT_DIR="$(dirname "$CURRENT_FILE")"
+	if [[ $CURRENT_DIR == "." ]]; then
 		echo "Error: can't get current script location." >&2
 		exit 1
 	fi
-	if [[ "$(basename "${CURRENT_DIR}")" = "scripts" ]]; then
+	if [[ "$(basename "${CURRENT_DIR}")" == "scripts" ]]; then
 		CURRENT_DIR="$(dirname "${CURRENT_DIR}")"
 	fi
 fi
 PROJECT_NAME="$(basename "${CURRENT_DIR}")"
 
-if [[ "${SYSTEM_COMMON_CACHE+found}" != "found" ]]; then
+if [[ ${SYSTEM_COMMON_CACHE+found} != "found" ]]; then
 	SYSTEM_COMMON_CACHE='/var/cache'
 fi
-if [[ "${SYSTEM_FAST_CACHE+found}" != "found" ]]; then
+if [[ ${SYSTEM_FAST_CACHE+found} != "found" ]]; then
 	SYSTEM_FAST_CACHE="$SYSTEM_COMMON_CACHE"
 fi
 

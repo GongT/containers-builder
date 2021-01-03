@@ -37,6 +37,17 @@ function ensure_container_not_running() {
 		debug "good, old container removed."
 		return
 	fi
+
 	debug "-- old container still exists --" >&2
+
+	podman ps -a | tail -n +2 | (grep -v Up || [[ $? == 1 ]]) | awk '{print $1}' | xargs --no-run-if-empty --verbose --no-run-if-empty podman rm || true
+
+	get_container
+	if [[ ! $LCID ]]; then
+		debug "good, old containers cleaned."
+		return
+	fi
+	debug "-- failed run podman clean --" >&2
+
 	exit 233
 }

@@ -53,7 +53,8 @@ function _unit_init() {
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
-	_S_BODY_CONFIG[Restart]="no"
+	_S_BODY_CONFIG[Restart]="on-failure"
+	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="machine.slice"
 
@@ -204,6 +205,9 @@ function _unit_assemble() {
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		unit_depend wait-mount.service
 	fi
+	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
+		unit_depend wait-dns-provider.service
+	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
 		echo "$VAR_NAME=${_S_UNIT_CONFIG[$VAR_NAME]}"
@@ -293,6 +297,17 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo ""
 	echo "[Install]"
 	echo "WantedBy=$_S_INSTALL"
+
+	echo ""
+	echo "[X-Containers]"
+	echo "CONTAINERS_DATA_PATH=$CONTAINERS_DATA_PATH"
+	echo "COMMON_LIB_ROOT=$COMMON_LIB_ROOT"
+	echo "MONO_ROOT_DIR=$MONO_ROOT_DIR"
+	echo "CURRENT_DIR=$CURRENT_DIR"
+	echo "INSTALLER_SCRIPT=$CURRENT_FILE"
+	echo "PROJECT_NAME=$PROJECT_NAME"
+	echo "SYSTEM_COMMON_CACHE=$SYSTEM_COMMON_CACHE"
+	echo "SYSTEM_FAST_CACHE=$SYSTEM_FAST_CACHE"
 }
 
 function _create_startup_arguments() {
