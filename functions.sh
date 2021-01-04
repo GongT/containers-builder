@@ -16,9 +16,30 @@ declare -xr COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 declare -xr MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
 declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
 
+function find_current_file_absolute_path() {
+	local D=$(pwd)
+	while [[ $D != '/' ]]; do
+		if [[ -e "$D/$CURRENT_FILE" ]]; then
+			CURRENT_FILE=$(realpath "$D/$CURRENT_FILE")
+			return
+		fi
+		D=$(dirname "$D")
+	done
+	D="$COMMON_LIB_ROOT"
+	while [[ $D != '/' ]]; do
+		if [[ -e "$D/$CURRENT_FILE" ]]; then
+			CURRENT_FILE=$(realpath "$D/$CURRENT_FILE")
+			return
+		fi
+		D=$(dirname "$D")
+	done
+
+	die "can not find absolute path of \$0($CURRENT_FILE), in:\n - $COMMON_LIB_ROOT\n - $(pwd)"
+}
+
 CURRENT_FILE="${BASH_SOURCE[-1]}"
 if [[ $CURRENT_FILE == ./* ]]; then
-	CURRENT_FILE=$(realpath "$(pwd)/$CURRENT_FILE")
+	find_current_file_absolute_path
 else
 	CURRENT_FILE=$(realpath "$CURRENT_FILE")
 fi
