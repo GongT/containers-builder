@@ -89,8 +89,11 @@ function buildah_cache() {
 		cache_try_pull "$BUILDAH_TO"
 	fi
 
-	local WANTED_HASH
-	WANTED_HASH=$("$BUILDAH_HASH_CALLBACK" | awk '{print $1}')
+	local WANTED_HASH HASH_TMP
+	HASH_TMP=$(mktemp)
+	"$BUILDAH_HASH_CALLBACK" >"$HASH_TMP"
+	WANTED_HASH=$(awk '{print $1}' "$HASH_TMP")
+	unlink "$HASH_TMP"
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_note "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"

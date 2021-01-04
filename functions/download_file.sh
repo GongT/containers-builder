@@ -16,7 +16,7 @@ function download_file() {
 	else
 		ARGS+=(--quiet --show-progress --progress=bar:force:noscroll)
 	fi
-	if [[ "${FORCE_DOWNLOAD+found}" == found ]] || ! [[ -e "$OUTFILE" ]]; then
+	if [[ ${FORCE_DOWNLOAD+found} == found ]] || ! [[ -e $OUTFILE ]]; then
 		wget "${URL}" \
 			-O "${OUTFILE}.downloading" \
 			"${ARGS[@]}" --continue >&2 \
@@ -60,12 +60,12 @@ function extract_zip() {
 	local -I STRIP="${2}"
 	local TDIR="$TARGET/.extract"
 	mkdir -p "$TDIR"
-	pushd "$TDIR" &> /dev/null
+	pushd "$TDIR" &>/dev/null
 
 	unzip -q -o -d . "$FILE"
 
 	local STRIPSTR=""
-	while [[ "$STRIP" -gt 0 ]]; do
+	while [[ $STRIP -gt 0 ]]; do
 		STRIP="$STRIP - 1"
 		STRIPSTR+="*/"
 	done
@@ -73,14 +73,23 @@ function extract_zip() {
 
 	mv -f $STRIPSTR -t "$TARGET"
 
-	popd &> /dev/null
+	popd &>/dev/null
 }
 
+LAST_GITHUB_RELEASE_JSON=""
 function http_get_github_release_id() {
 	local REPO="$1" ID
 	local URL="https://api.github.com/repos/$REPO/releases/latest"
 	info_log " * fetching release id (+commit hash) from $URL ... "
-	ID=$(curl -s "$URL" | jq -r '(.id|tostring) + "-" + .target_commitish')
+
+	local TOKEN_PARAM=()
+	if [[ "$GITHUB_TOKEN" ]]; then
+		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
+	fi
+
+	LAST_GITHUB_RELEASE_JSON=$(curl "${TOKEN_PARAM[@]}" -s "$URL")
+	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq -r '(.id|tostring) + "-" + .target_commitish')
+
 	info_log "       = $ID"
 	if [[ "$ID" ]]; then
 		echo "$ID"

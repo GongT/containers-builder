@@ -13,7 +13,14 @@ if [[ ${CONTAINERS_DATA_PATH+found} != "found" ]]; then
 fi
 declare -xr CONTAINERS_DATA_PATH="${CONTAINERS_DATA_PATH}"
 declare -xr COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
 declare -xr MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
+if [[ -e "$MONO_ROOT_DIR/.env" ]]; then
+	set -a
+	source "$MONO_ROOT_DIR/.env"
+	set +a
+fi
+
 declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
 
 function find_current_file_absolute_path() {

@@ -1,7 +1,7 @@
 function run_compile() {
 	local PROJECT_ID="$1" WORKER="$2" SCRIPT="$3"
 
-	if [[ "${SOURCE_DIRECTORY+found}" = found ]]; then
+	if [[ ${SOURCE_DIRECTORY+found} == found ]]; then
 		SOURCE_DIRECTORY="$(realpath "$SOURCE_DIRECTORY")"
 	else
 		local SOURCE_DIRECTORY
@@ -19,7 +19,7 @@ function run_compile() {
 		cat "$SCRIPT"
 	} | buildah run \
 		"--volume=$SYSTEM_FAST_CACHE/CCACHE:/opt/ccache" \
-		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" "$BUILDER" bash
+		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" "$WORKER" bash
 }
 function run_install() {
 	local PROJECT_ID="$1" SOURCE_IMAGE="$2" TARGET_DIR="$3"
@@ -29,17 +29,18 @@ function run_install() {
 
 	local PREPARE_SCRIPT=""
 	if [[ $# -eq 4 ]]; then
-		PREPARE_SCRIPT=$(< "$4")
+		PREPARE_SCRIPT=$(<"$4")
 	fi
 
 	local SRC="$(mktemp)"
 	{
+		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
 		SHELL_ERROR_HANDLER
 		echo "export PROJECT_ID='$PROJECT_ID'"
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
-	} > "$SRC"
+	} >"$SRC"
 	buildah run -t \
 		"--volume=$SRC:/mnt/script.sh:ro" \
 		"--volume=$TARGET_DIR:/mnt/install" \
