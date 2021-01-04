@@ -83,7 +83,7 @@ function http_get_github_release_id() {
 	info_log " * fetching release id (+commit hash) from $URL ... "
 
 	local TOKEN_PARAM=()
-	if [[ "$GITHUB_TOKEN" ]]; then
+	if [[ ${GITHUB_TOKEN+found} == found ]]; then
 		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
 	fi
 
