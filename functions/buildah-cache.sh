@@ -291,13 +291,18 @@ function buildah_cache_run() {
 }
 
 function buildah_config() {
-	local NAME=$1 FILE=$2
+	local NAME=$1 ARGS
+	if [[ -f $2 ]]; then
+		mapfile -t ARGS <"$2"
+	else
+		shift
+		ARGS=("$@")
+	fi
 
 	__buildah_config_hash() {
-		fast_hash_path "$FILE"
+		echo "${ARGS[*]}"
 	}
 	__buildah_config_do() {
-		mapfile -t ARGS <"$FILE"
 		xbuildah config "${ARGS[@]}" "$1"
 	}
 	buildah_cache2 "$NAME" __buildah_config_hash __buildah_config_do
