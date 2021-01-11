@@ -289,3 +289,16 @@ function buildah_cache_run() {
 
 	unset -f _hash_cb _build_cb
 }
+
+function buildah_config() {
+	local NAME=$1 FILE=$2
+
+	__buildah_config_hash() {
+		fast_hash_path "$FILE"
+	}
+	__buildah_config_do() {
+		mapfile -t ARGS <"$FILE"
+		xbuildah config "${ARGS[@]}" "$1"
+	}
+	buildah_cache2 "$NAME" __buildah_config_hash __buildah_config_do
+}

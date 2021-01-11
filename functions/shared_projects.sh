@@ -16,7 +16,7 @@ function install_shared_project() {
 			echo -e "\e[2m + install $*\e[0m" >&2
 			local I
 			for I; do
-				if [[ "$I" = "$INSTALL_TO"* ]]; then
+				if [[ $I == "$INSTALL_TO"* ]]; then
 					"$SYS_INSTALL" "$@"
 					return
 				fi
@@ -28,19 +28,22 @@ function install_shared_project() {
 		declare -r BUILD_SCRIPT="$SHARED_PROJECTS_ROOT/build-script/$PROJECT_NAME.sh"
 		info "build ${PROJECT_NAME}..."
 
-		if ! [[ -f "$BUILD_SCRIPT" ]]; then
+		if ! [[ -f $BUILD_SCRIPT ]]; then
 			die "Fatal: missing shared project builder file: $BUILD_SCRIPT"
 		fi
-		if ! [[ -d "$PROJECT_ROOT" ]]; then
+		if ! [[ -d $PROJECT_ROOT ]]; then
 			die "Fatal: missing shared project folder: $PROJECT_ROOT"
 		fi
 
-		if ! [[ -d "$INSTALL_TO" ]]; then
+		if ! [[ -d $INSTALL_TO ]]; then
 			mkdir "$INSTALL_TO"
 		fi
 
-		declare -xr MOUNT_INSTALL_TARGET="--volume=$INSTALL_TO:/install"
+		declare -xr COMPILE_SOURCE_DIRECTORY="$PROJECT_ROOT"
+		declare -xr COMPILE_TARGET_DIRECTORY="$INSTALL_TO"
+
 		declare -xr MOUNT_BUILD_SOURCE="--volume=$PROJECT_ROOT:/build"
+		declare -xr MOUNT_INSTALL_TARGET="--volume=$INSTALL_TO:/install"
 
 		source "$BUILD_SCRIPT"
 	)

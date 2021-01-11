@@ -8,22 +8,34 @@ function apt_install() {
 	local NAME=$1
 	shift
 
-	buildah run $(use_alpine_apk_cache) "$NAME" sh -s- -- "${PKGS[@]}" <<- 'APK'
-		echo "APK: install $*"
-		echo "HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY ALL_PROXY=$ALL_PROXY http_proxy=$http_proxy https_proxy=$https_proxy all_proxy=$all_proxy"
-		I=0
-		while [ "$I" -lt 10 ] ; do
-			if apk add "$@" ; then
-				exit 0
-			fi
-			apk update || true
+	{
+		cat <<-'APK'
+			die() {
+				echo "$*">&2
+				exit 1
+			}
+			echo "APK: install $*"
+			echo "HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY ALL_PROXY=$ALL_PROXY http_proxy=$http_proxy https_proxy=$https_proxy all_proxy=$all_proxy"
+			I=0
+			while true ; do
+				if apk add "$@" ; then
+					break
+				fi
+				apk update || true
 
-			I=$(($I + 1))
-			echo "failed... retry: $I"
-		done
-		echo "can not install package."
-		exit 1
-	APK
+				if [ "$I" -ge 10 ]; then
+					die "can not install packages by apk."
+				fi
+
+				I=$(($I + 1))
+				echo "failed... retry: $I"
+			done
+		APK
+		if [[ ! -t 0 ]]; then
+			echo "### post scripts:"
+			cat
+		fi
+	} | buildah run $(use_alpine_apk_cache) "$NAME" sh -s- -- "$@"
 }
 
 function make_base_image_by_apt() {
@@ -32,16 +44,21 @@ function make_base_image_by_apt() {
 	shift
 	local PKGS=("$@")
 
+	local POSTSCRIPT=""
+	if [[ ! -t 0 ]]; then
+		POSTSCRIPT=$(cat)
+	fi
+
 	_apk_hash_cb() {
-		echo "${PKGS[*]}" | md5sum
+		echo "${PKGS[*]} $POSTSCRIPT" | md5sum
 	}
 	_apk_build_cb() {
 		local CONTAINER
 		CONTAINER=$(new_container "$1" "$BASEIMG")
-		apt_install "$CONTAINER" "${PKGS[@]}"
+		echo "$POSTSCRIPT" | apt_install "$CONTAINER" "${PKGS[@]}"
 	}
 
-	if [[ "${FORCE_APK+found}" != found ]]; then
+	if [[ ${FORCE_APK+found} != found ]]; then
 		local FORCE_APK=""
 	fi
 

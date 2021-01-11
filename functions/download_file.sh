@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 declare -r LOCAL_TMP="$SYSTEM_COMMON_CACHE/Download"
 
 function download_file_force() {
@@ -30,6 +32,20 @@ function download_file() {
 	echo "$OUTFILE"
 }
 
+function decompression_file_source() {
+	local SRC_PROJECT_NAME=$1 COMPRESS_FILE=$2 STRIP=${3:-0}
+	local RELPATH="$CURRENT_DIR/source/$SRC_PROJECT_NAME"
+	if [[ "${CI:-}" ]] && [[ -e $RELPATH ]]; then
+		rm -rf "$RELPATH"
+	fi
+	if ! [[ -f "$CURRENT_DIR/source/.gitignore" ]] || ! grep -q "^$SRC_PROJECT_NAME$" "$CURRENT_DIR/source/.gitignore"; then
+		mkdir -p "$CURRENT_DIR/source"
+		echo "$SRC_PROJECT_NAME" >>"$CURRENT_DIR/source/.gitignore"
+	fi
+	decompression_file "$COMPRESS_FILE" "$STRIP" "$RELPATH"
+	echo "$RELPATH"
+}
+
 function decompression_file() {
 	local FILE="$1" STRIP="$2" TARGET="$3"
 	info " * extracting $FILE ..."
@@ -51,8 +67,8 @@ function extract_tar() {
 	local FILE="$1" STRIP="${2}" TARGET="$3"
 
 	mkdir -p "$TARGET"
-	info_log tar --strip-components="${STRIP-0}" -xf "$FILE" -C "$TARGET"
-	tar --strip-components="${STRIP-0}" -xf "$FILE" -C "$TARGET"
+	info_log tar --strip-components="${STRIP}" -xf "$FILE" -C "$TARGET"
+	tar --strip-components="${STRIP}" -xf "$FILE" -C "$TARGET"
 }
 
 function extract_zip() {
@@ -60,7 +76,7 @@ function extract_zip() {
 	local -I STRIP="${2}"
 	local TDIR="$TARGET/.extract"
 	mkdir -p "$TDIR"
-	pushd "$TDIR" &>/dev/null
+	pushd "$TDIR" &>/dev/null || die "error syscall chdir"
 
 	unzip -q -o -d . "$FILE"
 
@@ -73,21 +89,25 @@ function extract_zip() {
 
 	mv -f $STRIPSTR -t "$TARGET"
 
-	popd &>/dev/null
+	popd &>/dev/null || die "error syscall chdir"
+}
+
+function __github_api() {
+	local URL="https://api.github.com/$*"
+	local TOKEN_PARAM=()
+	if [[ ${GITHUB_TOKEN+found} == found ]]; then
+		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
+	fi
+	curl "${TOKEN_PARAM[@]}" -s "$URL"
 }
 
 LAST_GITHUB_RELEASE_JSON=""
 function http_get_github_release_id() {
 	local REPO="$1" ID
-	local URL="https://api.github.com/repos/$REPO/releases/latest"
+	local URL="repos/$REPO/releases/latest"
 	info_log " * fetching release id (+commit hash) from $URL ... "
 
-	local TOKEN_PARAM=()
-	if [[ ${GITHUB_TOKEN+found} == found ]]; then
-		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
-	fi
-
-	LAST_GITHUB_RELEASE_JSON=$(curl "${TOKEN_PARAM[@]}" -s "$URL")
+	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
 	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq -r '(.id|tostring) + "-" + .target_commitish')
 
 	info_log "       = $ID"
@@ -96,6 +116,10 @@ function http_get_github_release_id() {
 	else
 		die "failed get ETag"
 	fi
+}
+
+function http_get_github_last_commit_id() {
+	__github_api "/repos/$1/commits?per_page=1" | jq -r '.id'
 }
 
 function http_get_etag() {

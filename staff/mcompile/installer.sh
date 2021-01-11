@@ -2,6 +2,7 @@
 
 export INSTALL_TARGET="/mnt/install"
 export INSTALL_SOURCE="/opt/dist"
+cd "$INSTALL_SOURCE"
 
 declare -rx LIST_FILE=$(mktemp -u)
 

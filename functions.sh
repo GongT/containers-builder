@@ -85,3 +85,5 @@ source "$COMMON_LIB_ROOT/functions/download_file.sh"
 source "$COMMON_LIB_ROOT/functions/ci.sh"
 # shellcheck source=./functions/proxy.sh
 source "$COMMON_LIB_ROOT/functions/proxy.sh"
+# shellcheck source=./functions/temp.sh
+source "$COMMON_LIB_ROOT/functions/temp.sh"
