@@ -27,11 +27,7 @@ function run_compile() {
 		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" "$WORKER" bash
 }
 function run_install() {
-	local PROJECT_ID="$1" SOURCE_IMAGE="$2"
-
-	if [[ ${COMPILE_TARGET_DIRECTORY+found} != found ]]; then
-		local COMPILE_TARGET_DIRECTORY="$3"
-	fi
+	local PROJECT_ID="$1" SOURCE_IMAGE="$2" COMPILE_TARGET_DIRECTORY=$3
 
 	local WORKER
 	WORKER=$(new_container "${PROJECT_ID}-result-copyout" "$SOURCE_IMAGE")
