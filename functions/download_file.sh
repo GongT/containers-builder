@@ -126,7 +126,7 @@ function http_get_etag() {
 	local URL="$1" ETAG
 	info_log " * fetching ETag from $URL ... "
 	echo -ne "\e[2m" >&2
-	ETAG=$(curl -I --http1.1 --retry 3 --location "$URL" | grep -E '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/g' | sed 's/\r//g')
+	ETAG=$(curl -I --retry 3 --location "$URL" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2
 	info_log "       = $ETAG"
 	if [[ "$ETAG" ]]; then
