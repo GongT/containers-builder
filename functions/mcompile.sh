@@ -57,3 +57,15 @@ function run_install() {
 
 	buildah rm "$WORKER"
 }
+
+function clean_submodule() {
+	pushd "$1" &>/dev/null || die "no such submodule $1"
+
+	if [[ -e .git ]]; then
+		info_note "reset git repo ($(pwd))..."
+		git clean -ffdx
+		git reset --hard
+	fi
+
+	popd &>/dev/null || die "popd failed from $1"
+}
