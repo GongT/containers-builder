@@ -131,8 +131,7 @@ _debugger_file_write() {
 		done
 
 		cat "$COMMON_LIB_ROOT/staff/debugger.sh"
-	} | write_file "$(_get_debugger_script)"
-	chmod a+x "$(_get_debugger_script)"
+	} | write_executable_file "$(_get_debugger_script)"
 }
 
 function unit_finish() {
@@ -203,10 +202,10 @@ function _unit_assemble() {
 	echo "[Unit]"
 
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
-		unit_depend wait-mount.service
+		use_common_service wait-all-fstab
 	fi
 	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
-		unit_depend wait-dns-provider.service
+		use_common_service wait-dns-working "docker.io"
 	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
@@ -263,8 +262,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 \
 			| sort -z \
 			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"
-	} | write_file "$_SERVICE_WAITER"
-	chmod a+x "$_SERVICE_WAITER"
+	} | write_executable_file "$_SERVICE_WAITER"
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
@@ -313,7 +311,6 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
-	#  --sdnotify=ignore    '--log-opt=tag=$SCOPE_ID' --systemd=$_S_SYSTEMD
 	if [[ $_S_SYSTEMD == "true" ]]; then
 		STARTUP_ARGS+=(--systemd=always --tty)
 	else
@@ -327,7 +324,7 @@ function _create_startup_arguments() {
 		STARTUP_ARGS+=("--log-driver=none")
 	fi
 
-	STARTUP_ARGS+=("--restart=no")
+	STARTUP_ARGS+=("--restart=no" "--replace=true")
 
 	local _PODMAN_RUN_ARGS=()
 	_healthcheck_arguments_podman
@@ -457,15 +454,12 @@ function _create_service_library() {
 	fi
 	mkdir -p /usr/share/scripts/
 
-	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" >/usr/share/scripts/stop-container.sh
-	chmod a+x /usr/share/scripts/stop-container.sh
+	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" | write_executable_file_share /usr/share/scripts/stop-container.sh
 	_CONTAINER_STOP=/usr/share/scripts/stop-container.sh
 
-	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" >/usr/share/scripts/lowlevel-clear.sh
-	chmod a+x /usr/share/scripts/lowlevel-clear.sh
+	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" | write_executable_file_share /usr/share/scripts/lowlevel-clear.sh
 	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
 
-	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" >/usr/share/scripts/update-hosts.sh
-	chmod a+x /usr/share/scripts/update-hosts.sh
+	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" | write_executable_file_share /usr/share/scripts/update-hosts.sh
 	_UPDATE_HOSTS=/usr/share/scripts/update-hosts.sh
 }

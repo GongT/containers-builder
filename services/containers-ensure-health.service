@@ -1,0 +1,13 @@
+[Unit]
+Description=finally ensure all containers status is healthy
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash "$SCRIPT"
+Restart=on-failure
+NotifyAccess=all
+RemainAfterExit=no
+RestartSec=10
+StartLimitInterval=90
+StartLimitBurst=10

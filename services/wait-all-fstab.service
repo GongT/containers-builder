@@ -1,0 +1,13 @@
+[Unit]
+Description=wait all mountpoints ready
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash "$SCRIPT"
+Restart=on-failure
+NotifyAccess=all
+RemainAfterExit=yes
+RestartSec=10
+StartLimitInterval=90
+StartLimitBurst=10
