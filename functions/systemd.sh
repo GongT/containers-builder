@@ -22,6 +22,14 @@ else
 	declare -r PODMAN_USE_IGNORE=
 fi
 
+if podman run --help 2>&1 | grep -q -- '--replace'; then
+	info_note "podman support --replace flag"
+	declare -r PODMAN_USE_REPLACE=yes
+else
+	echo "podman version is old. can't use --replace flag" >&2
+	declare -r PODMAN_USE_REPLACE=
+fi
+
 function _unit_init() {
 	_S_IMAGE=
 	_S_CURRENT_UNIT_SERVICE_TYPE=
@@ -205,7 +213,16 @@ function _unit_assemble() {
 		use_common_service wait-all-fstab
 	fi
 	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
-		use_common_service wait-dns-working "docker.io"
+		local PULL_FROM="${_S_IMAGE:-$NAME}"
+		if [[ $PULL_FROM == */*/* ]]; then
+			PULL_FROM=${PULL_FROM%%/*}
+			if [[ $PULL_FROM == *:* ]]; then
+				PULL_FROM=${PULL_FROM%%:*}
+			fi
+		else
+			PULL_FROM="docker.io"
+		fi
+		use_common_service wait-dns-working "$PULL_FROM"
 	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
@@ -324,7 +341,10 @@ function _create_startup_arguments() {
 		STARTUP_ARGS+=("--log-driver=none")
 	fi
 
-	STARTUP_ARGS+=("--restart=no" "--replace=true")
+	STARTUP_ARGS+=("--restart=no")
+	if [[ $PODMAN_USE_REPLACE == yes ]]; then
+		STARTUP_ARGS+=("--replace=true")
+	fi
 
 	local _PODMAN_RUN_ARGS=()
 	_healthcheck_arguments_podman

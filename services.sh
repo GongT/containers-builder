@@ -17,7 +17,25 @@ function _use_common_copy() {
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#$SCRIPT#g" \
+		| fix_old_systemd \
 		| write_file_share "/usr/lib/systemd/system/$SRV_FILE"
+}
+
+function fix_old_systemd() {
+	local V CatchData
+	CatchData=$(cat)
+
+	if ! echo "$CatchData" | grep -qi 'Type=oneshot'; then
+		echo "$CatchData"
+		return
+	fi
+
+	V=$(systemctl --version | grep -oE 'systemd [0-9]+' | sed 's#systemd ##')
+	if [[ $V -gt 244 ]]; then
+		echo "$CatchData"
+	else
+		echo "$CatchData" | sed -E "s/^Restart=/### systemd $V not support Restart=/g"
+	fi
 }
 
 function use_common_timer() {
