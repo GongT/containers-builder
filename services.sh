@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 declare -r SERVICES_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/services"
+_COMMON_FILE_INSTALL=
 
 function _use_common_copy() {
 	local SRV="$1" ARG="${2:-}" SCRIPT
@@ -12,7 +13,10 @@ function _use_common_copy() {
 		SRV_FILE="$SRV.service"
 	fi
 
-	install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
+	if [[ ! $_COMMON_FILE_INSTALL ]]; then
+		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
+		_COMMON_FILE_INSTALL=yes
+	fi
 	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
@@ -43,10 +47,8 @@ function use_common_timer() {
 	_use_common_copy "$NAME"
 
 	TIMER_FILE="$NAME.timer"
-	SCRIPT=$(install_script "${SERVICES_DIR}/${NAME}.sh")
 
 	cat "${SERVICES_DIR}/${TIMER_FILE}" \
-		| sed "s#__SCRIPT__#$SCRIPT#g" \
 		| write_file_share "/usr/lib/systemd/system/$TIMER_FILE"
 	unit_unit Requires "$NAME.timer"
 
