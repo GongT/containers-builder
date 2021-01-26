@@ -19,10 +19,15 @@ function download_file() {
 		ARGS+=(--quiet --show-progress --progress=bar:force:noscroll)
 	fi
 	if [[ ${FORCE_DOWNLOAD+found} == found ]] || ! [[ -e $OUTFILE ]]; then
-		wget "${URL}" \
-			-O "${OUTFILE}.downloading" \
-			"${ARGS[@]}" --continue >&2 \
-			|| die "Cannot download from $URL"
+		local -i TRY=0
+		while ! wget "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
+			TRY=$((TRY + 1))
+			if [[ $TRY -gt 5 ]]; then
+				rm -f "${OUTFILE}.downloading"
+				die "Cannot download from $URL (after 5 try)"
+			fi
+			info_warn "Download failed, retry ($TRY)..."
+		done
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 		info_log "    downloaded."
 	else
