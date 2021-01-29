@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function is_ci() {
-	[[ "${CI+found}" = "found" ]] && [[ "$CI" ]]
+	[[ ${CI+found} == "found" ]] && [[ "$CI" ]]
 }
 
 if is_ci; then

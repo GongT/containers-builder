@@ -20,7 +20,13 @@ function download_file() {
 	fi
 	if [[ ${FORCE_DOWNLOAD+found} == found ]] || ! [[ -e $OUTFILE ]]; then
 		local -i TRY=0
-		while ! wget "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
+		local EXARGS=()
+
+		if [[ ! ${HTTP_PROXY:-} ]]; then
+			EXARGS+=(--no-proxy)
+		fi
+
+		while ! wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
 			TRY=$((TRY + 1))
 			if [[ $TRY -gt 5 ]]; then
 				rm -f "${OUTFILE}.downloading"

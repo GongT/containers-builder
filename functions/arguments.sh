@@ -8,10 +8,10 @@ declare -A _ARG_REQUIRE
 declare -g _ARG_HAS_FINISH=no
 function arg_string() {
 	_ARG_USING=yes
-	if [[ "$1" == '+' ]]; then
+	if [[ $1 == '+' ]]; then
 		shift
 		_ARG_REQUIRE[$1]=yes
-	elif [[ "$1" == '-' ]]; then
+	elif [[ $1 == '-' ]]; then
 		shift
 	fi
 	local VAR_NAME=$1 SHORT LONG IN=''
@@ -19,17 +19,17 @@ function arg_string() {
 	_arg_parse_name $1
 	shift
 	_ARG_COMMENT[$VAR_NAME]="$*"
-	[[ -n "$LONG" ]] && {
+	[[ -n $LONG ]] && {
 		IN+="/--$LONG"
 		_ARG_GETOPT_LONG+=("$LONG:")
 		_ARG_OUTPUT["--$LONG"]=$VAR_NAME
 	}
-	[[ -n "$SHORT" ]] && {
+	[[ -n $SHORT ]] && {
 		IN+="/-$SHORT"
 		_ARG_GETOPT_SHORT+=("$SHORT:")
 		_ARG_OUTPUT["-$SHORT"]=$VAR_NAME
 	}
-	if [[ "${!VAR_NAME+found}" != found ]]; then
+	if [[ ${!VAR_NAME+found} != found ]]; then
 		declare $VAR_NAME=""
 	fi
 	_ARG_RESULT[$VAR_NAME]="${!VAR_NAME}"
@@ -43,12 +43,12 @@ function arg_flag() {
 	shift
 	_ARG_COMMENT[$VAR_NAME]="$*"
 	declare $VAR_NAME=""
-	[[ -n "$LONG" ]] && {
+	[[ -n $LONG ]] && {
 		IN+="/--$LONG"
 		_ARG_GETOPT_LONG+=("$LONG")
 		_ARG_OUTPUT["--$LONG"]=$VAR_NAME
 	}
-	[[ -n "$SHORT" ]] && {
+	[[ -n $SHORT ]] && {
 		IN+="/-$SHORT"
 		_ARG_GETOPT_SHORT+=("$SHORT")
 		_ARG_OUTPUT["-$SHORT"]=$VAR_NAME
@@ -57,22 +57,22 @@ function arg_flag() {
 	_ARG_INPUT[$VAR_NAME]="${IN:1}"
 }
 function _arg_ensure_finish() {
-	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
+	if [[ $_ARG_HAS_FINISH == "yes" ]]; then
 		return
 	fi
-	if [[ "${_ARG_USING+found}" = found ]] && [[ "$BASH_SUBSHELL" -ne 0 ]]; then
+	if [[ ${_ARG_USING+found} == found ]] && [[ $BASH_SUBSHELL -ne 0 ]]; then
 		die "invalid usage, some function has drop into a subshell, use arg_finish before it."
 	fi
 	arg_finish >&2
 }
 function arg_finish() {
-	if [[ "$_ARG_HAS_FINISH" = "yes" ]]; then
+	if [[ $_ARG_HAS_FINISH == "yes" ]]; then
 		die "Error: arg_finish called twice!"
 	fi
 	declare -gr _ARG_HAS_FINISH=yes
 
 	local ARGS=(--name "$0")
-	if [[ -n "${_ARG_GETOPT_LONG[*]}" ]]; then
+	if [[ -n ${_ARG_GETOPT_LONG[*]} ]]; then
 		local S=''
 		for I in "${_ARG_GETOPT_LONG[@]}"; do
 			S+=",$I"
@@ -80,7 +80,7 @@ function arg_finish() {
 		S=${S:1}
 		ARGS+=(--longoptions "$S")
 	fi
-	if [[ -n "${_ARG_GETOPT_SHORT[*]}" ]]; then
+	if [[ -n ${_ARG_GETOPT_SHORT[*]} ]]; then
 		local S='+'
 		for I in "${_ARG_GETOPT_SHORT[@]}"; do
 			S+="$I"
@@ -109,13 +109,13 @@ function arg_finish() {
 	# if [[ ${#_PROGRAM_ARGS[@]} -eq 0 ]]; then
 	# 	_PROGRAM_ARGS=()
 	# fi
-	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 > /dev/null || true)
+	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
 	if [[ "$E" ]]; then
 		die "$E"
 	fi
 	eval "_arg_set $(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}")"
 
-	if [[ "$_ACTION_HELP" = "yes" ]]; then
+	if [[ $_ACTION_HELP == "yes" ]]; then
 		arg_get_usage
 		exit 0
 	fi
@@ -137,7 +137,7 @@ function _arg_parse_name() {
 	local NAME=$1
 	local A=${NAME%%/*} B=${NAME##*/}
 
-	if [[ "$A" == "$B" ]]; then
+	if [[ $A == "$B" ]]; then
 		LONG=$A
 		SHORT=""
 	elif [[ ${#A} -gt ${#B} ]]; then
@@ -148,7 +148,7 @@ function _arg_parse_name() {
 		SHORT=$A
 	fi
 
-	if [[ -z "$SHORT" ]] && [[ ${#LONG} -eq 1 ]]; then
+	if [[ -z $SHORT ]] && [[ ${#LONG} -eq 1 ]]; then
 		SHORT=$LONG
 		LONG=
 	fi
@@ -163,9 +163,9 @@ function _arg_parse_name() {
 }
 function _arg_set() {
 	local VAR_NAME
-	while [[ "$1" != "--" ]]; do
+	while [[ $1 != "--" ]]; do
 		VAR_NAME=${_ARG_OUTPUT[$1]}
-		if [[ "${2:0:1}" == "-" ]]; then
+		if [[ ${2:0:1} == "-" ]]; then
 			_ARG_RESULT[$VAR_NAME]=yes
 		else
 			_ARG_RESULT[$VAR_NAME]=$2
@@ -181,7 +181,7 @@ function _arg_set() {
 	fi
 
 	for VAR_NAME in "${!_ARG_RESULT[@]}"; do
-		if [[ -z "${_ARG_RESULT[$VAR_NAME]}" ]] && [[ -n "${_ARG_REQUIRE[$VAR_NAME]-}" ]]; then
+		if [[ -z ${_ARG_RESULT[$VAR_NAME]} ]] && [[ -n ${_ARG_REQUIRE[$VAR_NAME]-} ]]; then
 			die "Argument '${_ARG_INPUT[$VAR_NAME]} - ${_ARG_COMMENT[$VAR_NAME]:-}' is required"
 		fi
 		declare -rg "$VAR_NAME=${_ARG_RESULT[$VAR_NAME]}"
