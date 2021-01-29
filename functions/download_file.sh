@@ -103,7 +103,7 @@ function __github_api() {
 	if [[ ${GITHUB_TOKEN+found} == found ]]; then
 		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
 	fi
-	curl "${TOKEN_PARAM[@]}" -s "$URL"
+	curl_proxy "${TOKEN_PARAM[@]}" -s "$URL"
 }
 
 LAST_GITHUB_RELEASE_JSON=""
@@ -129,9 +129,9 @@ function http_get_github_last_commit_id() {
 
 function http_get_etag() {
 	local URL="$1" ETAG
-	info_log " * fetching ETag from $URL ... "
+	info_log " * fetching ETag ..."
 	echo -ne "\e[2m" >&2
-	ETAG=$(curl -I --retry 5 --location "$URL" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
+	ETAG=$(curl_proxy -I --retry 5 --location "$URL" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2
 	info_log "       = $ETAG"
 	if [[ "$ETAG" ]]; then
@@ -139,4 +139,13 @@ function http_get_etag() {
 	else
 		die "failed get ETag"
 	fi
+}
+
+function curl_proxy() {
+	local PROXY_VAL=()
+	if [[ "${HTTP_PROXY:-}" ]]; then
+		PROXY_VAL=(--proxy "$HTTP_PROXY")
+	fi
+	info_note "    + curl ${PROXY_VAL[*]} $*"
+	curl "${PROXY_VAL[@]}" "$@"
 }
