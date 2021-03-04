@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/env bash "$SCRIPT"
+ExecStart=/usr/bin/env bash "__SCRIPT__"
 Restart=on-failure
 NotifyAccess=all
 RemainAfterExit=no
