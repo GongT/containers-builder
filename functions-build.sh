@@ -124,12 +124,24 @@ fi
 
 function buildah_run_perfer_proxy() {
 	if [[ ${PROXY+found} == "found" ]]; then
+		info_note "[proxy] using proxy"
 		http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
 	else
+		info_note "[proxy] perfer proxy, but not set"
 		buildah run "$@"
 	fi
 }
 
 function buildah_run_deny_proxy() {
+	info_note "[proxy] deny proxy"
 	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' buildah run "$@"
+}
+
+function buildah_run_force_proxy() {
+	if [[ ! ${PROXY:-} ]]; then
+		info_warn "[proxy] force proxy, but not exists"
+		die 1
+	fi
+	info_note "[proxy] force using proxy"
+	http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
 }
