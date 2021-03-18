@@ -61,7 +61,7 @@ function _unit_init() {
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
-	_S_BODY_CONFIG[Restart]="on-failure"
+	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="machine.slice"
