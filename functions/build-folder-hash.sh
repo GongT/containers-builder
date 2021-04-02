@@ -13,7 +13,7 @@ function hash_path() {
 }
 function fast_hash_path() {
 	{
-		git ls-tree -r master "$@"
+		git ls-tree -r HEAD "$@"
 	} | md5sum | awk '{print $1}'
 }
 function hash_current_folder_cached() {
@@ -29,7 +29,7 @@ function hash_current_folder_cached() {
 }
 function hash_current_folder() {
 	set -- $(
-		IFS=$'\n' git ls-tree --name-only -r master "$(pwd)" \
+		IFS=$'\n' git ls-tree --name-only -r HEAD "$(pwd)" \
 			| xargs -n1 grep --directories=skip --no-messages --binary-files=without-match -A1 -E "install_shared_project"
 	)
 
@@ -48,7 +48,7 @@ function hash_current_folder() {
 
 	local HASH
 	HASH=$(
-		git ls-tree -r master "${DEPS[@]}" "$COMMON_LIB_ROOT" "$(pwd)" | md5sum | awk '{print $1}'
+		git ls-tree -r HEAD "${DEPS[@]}" "$COMMON_LIB_ROOT" "$(pwd)" | md5sum | awk '{print $1}'
 	)
 
 	_HASH_CACHED="$HASH"
