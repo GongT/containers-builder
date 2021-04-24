@@ -132,6 +132,62 @@ function http_get_github_release_id() {
 function http_get_github_last_commit_id() {
 	__github_api "/repos/$1/commits?per_page=1" | jq -r '.id'
 }
+function http_get_github_default_branch_name() {
+	__github_api "/repos/$1" | jq -r '.default_branch'
+}
+function http_get_github_last_commit_id_on_branch() {
+	if [[ $# -gt 1 ]]; then
+		__github_api "/repos/$1/branches/$2" | jq -r '.commit.sha'
+	else
+		local B
+		B=$(http_get_github_default_branch_name "$1")
+		http_get_github_last_commit_id_on_branch "$1" "$B"
+	fi
+}
+
+function _download_git_result() {
+	local NAME="$1" BRANCH_TAG="${3:-default}"
+	echo "$LOCAL_TMP/$NAME-${BRANCH_TAG}"
+}
+function download_github() {
+	local REPO="$1"
+	download_git "https://github.com/$REPO.git" "$@"
+}
+function download_git() {
+	local URL="$1" NAME="$2" BRANCH="${3:-}" BRANCH_TAG="${3:-default}" GIT_DIR
+	GIT_DIR="$(_download_git_result "$NAME" "$BRANCH_TAG")"
+	mkdir -p "$GIT_DIR"
+
+	info " * git clone $URL ..."
+	info_note "      to $GIT_DIR ..."
+	if [[ -e "$GIT_DIR/config" ]]; then
+		local -i BNUM
+		BNUM=$(git "--git-dir=$GIT_DIR" branch | wc -l)
+		if [[ $BNUM != 1 ]]; then
+			info_warn "invalid git status: multiple branch"
+			rm -rf "$GIT_DIR"
+			download_git "$@"
+			return
+		fi
+		x git "--git-dir=$GIT_DIR" fetch --depth=1
+	else
+		local BARG=()
+		if [[ "$BRANCH" ]]; then
+			BARG=(--branch "$BRANCH")
+		fi
+		x git clone --bare --depth 5 "${BARG[@]}" --single-branch "$URL" "$GIT_DIR"
+	fi
+}
+function download_git_result_copy() {
+	local NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR DIST="$1"
+	GIT_DIR=$(_download_git_result "$NAME" "$BRANCH_TAG")
+	if ! [[ -f "$GIT_DIR/config" ]]; then
+		die "missing downloaded git data: $GIT_DIR (from $NAME)"
+	fi
+	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
+	x git clone --depth 1 --single-branch "file://$GIT_DIR" "$DIST"
+	rm -rf "$DIST/.git"
+}
 
 function http_get_etag() {
 	local URL="$1" ETAG

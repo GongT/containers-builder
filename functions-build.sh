@@ -30,6 +30,13 @@ source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 # shellcheck source=./functions/healthcheck.sh
 source "$COMMON_LIB_ROOT/functions/healthcheck.sh"
 
+mapfile -t FILES < <(find "$COMMON_LIB_ROOT/standard_build_steps" -type f -name '*.sh')
+for FELE in "${FILES[@]}"; do
+	# shellcheck source=/dev/null
+	source "$FELE"
+done
+unset FELE FILES
+
 function create_if_not() {
 	local NAME=$1 BASE=$2
 

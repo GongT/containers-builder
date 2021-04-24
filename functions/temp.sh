@@ -1,19 +1,28 @@
 #!/usr/bin/env bash
 
-declare -a EXIT_HANDLERS=(__exit_delete_temp_files __exit_delete_container)
 declare -a TEMP_TO_DELETE=()
 declare -a CONTAINER_TO_DELETE=()
 
 function create_temp_dir() {
+	local NAME=".unknown-usage"
+	if [[ $# -ne 0 ]]; then
+		NAME=".$1"
+	fi
 	local DIR
-	DIR=$(mktemp --directory "containers.builder${1+'.'}${1:-}.XXXX")
+	mkdir -p "$SYSTEM_FAST_CACHE/tmp"
+	DIR=$(mktemp "--tmpdir=$SYSTEM_FAST_CACHE/tmp" --directory "containers.builder${NAME}.XXXX")
 	TEMP_TO_DELETE+=("$DIR")
 	echo "$DIR"
 }
 
 function create_temp_file() {
+	local NAME=".unknown-usage"
+	if [[ $# -ne 0 ]]; then
+		NAME=".$1"
+	fi
 	local FILE
-	FILE=$(mktemp "containers.builder${1+'.'}${1:-}.XXXX")
+	mkdir -p "$SYSTEM_FAST_CACHE/tmp"
+	FILE=$(mktemp "--tmpdir=$SYSTEM_FAST_CACHE/tmp" "containers.builder${NAME}.XXXX")
 	TEMP_TO_DELETE+=("$FILE")
 	echo "$FILE"
 }
@@ -53,15 +62,4 @@ function __exit_delete_container() {
 	fi
 }
 
-function register_exit_handler() {
-	EXIT_HANDLERS+=("$@")
-}
-
-function _exit() {
-	local CB
-	for CB in "${EXIT_HANDLERS[@]}"; do
-		"$CB"
-	done
-}
-
-trap _exit EXIT
+register_exit_handler __exit_delete_temp_files __exit_delete_container

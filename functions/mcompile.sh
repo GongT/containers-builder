@@ -2,8 +2,12 @@ function run_compile() {
 	local PROJECT_ID="$1" WORKER="$2" SCRIPT="$3"
 
 	if [[ ${SOURCE_DIRECTORY+found} == found ]]; then
-		info_note "using source from: $SOURCE_DIRECTORY"
-		SOURCE_DIRECTORY="$(realpath "$SOURCE_DIRECTORY")"
+		if [[ $SOURCE_DIRECTORY == no ]]; then
+			info_note "using source inside container."
+		else
+			info_note "using source from: $SOURCE_DIRECTORY"
+			SOURCE_DIRECTORY="$(realpath "$SOURCE_DIRECTORY")"
+		fi
 	elif [[ ${COMPILE_SOURCE_DIRECTORY+found} == found ]]; then
 		info_note "using source from: $COMPILE_SOURCE_DIRECTORY"
 		SOURCE_DIRECTORY="$(realpath "$COMPILE_SOURCE_DIRECTORY")"
@@ -16,15 +20,28 @@ function run_compile() {
 	mkdir -p "$SYSTEM_FAST_CACHE/CCACHE"
 
 	info "compile project in '$WORKER' by '$SCRIPT'"
+	local SCRIPT_FILE
+	SCRIPT_FILE=$(create_temp_file "mcompile.$PROJECT_ID")
 	{
 		SHELL_ERROR_HANDLER
 		echo "export PROJECT_ID='$PROJECT_ID'"
+		echo "export SYSTEM_COMMON_CACHE='/cache/common'"
+		echo "export SYSTEM_FAST_CACHE='/cache/fast'"
 		cat "$COMMON_LIB_ROOT/staff/mcompile/prefix.sh"
 		SHELL_USE_PROXY
 		cat "$SCRIPT"
-	} | buildah run \
-		"--volume=$SYSTEM_FAST_CACHE/CCACHE:/opt/ccache" \
-		"--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID" "$WORKER" bash
+	} >"$SCRIPT_FILE"
+
+	local MOUNT_SOURCE=()
+	if [[ $SOURCE_DIRECTORY != no ]]; then
+		MOUNT_SOURCE+=("--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID")
+	fi
+
+	buildah run \
+		"--volume=$SYSTEM_COMMON_CACHE:/cache/common" \
+		"--volume=$SYSTEM_FAST_CACHE:/cache/fast" \
+		"--volume=$SCRIPT_FILE:/opt/projects/compile.sh" \
+		"${MOUNT_SOURCE[@]}" "$WORKER" bash /opt/projects/compile.sh
 }
 function run_install() {
 	local PROJECT_ID="$1" SOURCE_IMAGE="$2" COMPILE_TARGET_DIRECTORY=$3

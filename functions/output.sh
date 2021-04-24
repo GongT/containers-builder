@@ -53,35 +53,40 @@ function control_ci() {
 function callstack() {
 	local -i SKIP=${1-1}
 	local -i i
-	for i in $(seq $SKIP $((${#FUNCNAME[@]} - 1))); do
-		if [[ "${BASH_SOURCE[$((i + 1))]+found}" = "found" ]]; then
-			echo "  $i: ${BASH_SOURCE[$((i + 1))]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}()"
+	if [[ ${#FUNCNAME[@]} -le $SKIP ]]; then
+		echo "  * empty callstack *" >&2
+	fi
+	for i in $(seq "$SKIP" $((${#FUNCNAME[@]} - 1))); do
+		if [[ ${BASH_SOURCE[$((i + 1))]+found} == "found" ]]; then
+			echo "  $i: ${BASH_SOURCE[$((i + 1))]}:${BASH_LINENO[$i]} ${FUNCNAME[$i]}()" >&2
 		else
-			echo "  $i: ${FUNCNAME[$i]}()"
+			echo "  $i: ${FUNCNAME[$i]}()" >&2
 		fi
 	done
 }
 
-function _exit_handle() {
-	RET=$?
-	set +xe
+function _exit_handle_output() {
 	echo -ne "\e[0m"
-	if [[ "$RET" -ne 0 ]]; then
-		control_ci error "bash exit with error code $RET"
+	if [[ $EXIT_CODE -ne 0 ]]; then
+		control_ci error "bash exit with error code $EXIT_CODE"
 		callstack 1
 	fi
-	exit $RET
 }
-trap _exit_handle EXIT
+register_exit_handler _exit_handle_output
 
 function SHELL_ERROR_HANDLER() {
-	declare -f _exit_handle callstack
-	echo "trap _exit_handle EXIT
-control_ci() {
-	:
+	declare -f callstack
+	echo '
+_exit_handle_in_container() {
+	EXIT_CODE=$?
+	set +Eeuo pipefail
+	if [[ $EXIT_CODE -ne 0 ]]; then
+		echo "bash exit with error code $EXIT_CODE" >&2
+		callstack 1
+	fi
 }
-
-"
+	trap _exit_handle_in_container EXIT
+'
 }
 
 function info() {
@@ -103,4 +108,9 @@ function indent() {
 }
 function dedent() {
 	export _CURRENT_INDENT="${_CURRENT_INDENT:4}"
+}
+
+function x() {
+	info_note " + ${*}"
+	"$@"
 }

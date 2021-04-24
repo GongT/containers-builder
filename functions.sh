@@ -73,6 +73,23 @@ declare -xr ANNOID_CACHE_PREV_STAGE="me.gongt.cache.prevstage"
 declare -xr ANNOID_CACHE_HASH="me.gongt.cache.hash"
 declare -xr LABELID_RESULT_HASH="me.gongt.hash"
 
+declare -a EXIT_HANDLERS=()
+function register_exit_handler() {
+	EXIT_HANDLERS+=("$@")
+}
+function _exit() {
+	local EXIT_CODE=$?
+	set +Eeuo pipefail
+	local CB
+	for CB in "${EXIT_HANDLERS[@]}"; do
+		echo -e "\e[2m ! $CB\e[0m" >&2
+		"$CB"
+	done
+	exit $EXIT_CODE
+}
+
+trap _exit EXIT
+
 # shellcheck source=./functions/fs.sh
 source "$COMMON_LIB_ROOT/functions/fs.sh"
 # shellcheck source=./functions/output.sh

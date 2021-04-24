@@ -23,10 +23,10 @@ function xbuildah() {
 	local ACT=$1
 	shift
 	{
-		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m "
+		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m"
 		local I
 		for I; do
-			echo -n "[$I] "
+			printf ' "%q"' "$I"
 		done
 		echo -e "\e[0m"
 	} >&2
@@ -44,15 +44,15 @@ function buildah() {
 	copy)
 		local DEST="${PASSARGS[*]: -1}"
 		local -i I="$LEN - 1"
-		while [[ "$I" -gt 0 ]]; do
+		while [[ $I -gt 0 ]]; do
 			local CCI=$I
 			I="$I - 1"
-			if [[ "${PASSARGS[$I]}" == -* ]]; then
+			if [[ ${PASSARGS[$I]} == -* ]]; then
 				break
 			fi
 
 			local SRCF="${PASSARGS[$CCI]}"
-			if [[ "${SRCF}" != /* ]]; then
+			if [[ ${SRCF} != /* ]]; then
 				PASSARGS[$CCI]="$(pwd)/$SRCF"
 			fi
 		done
@@ -61,15 +61,15 @@ function buildah() {
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
 		;;
 	commit)
-		if [[ "${REWRITE_IMAGE_NAME+found}" = found ]]; then
+		if [[ ${REWRITE_IMAGE_NAME+found} == found ]]; then
 			info "rewrite commit image name: $REWRITE_IMAGE_NAME"
-			PASSARGS=("${PASSARGS[@]:0:$LEN}" "$REWRITE_IMAGE_NAME")
+			PASSARGS=("${PASSARGS[@]:0:LEN}" "$REWRITE_IMAGE_NAME")
 		fi
 
 		local IID="${PASSARGS[*]: -1}"
 		local CID="${PASSARGS[*]: -2:1}"
 
-		if [[ "$CID" != "$BUILDAH_CACHE_BASE/"* ]]; then
+		if [[ $CID != "$BUILDAH_CACHE_BASE/"* ]]; then
 			if is_ci; then
 				control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
 

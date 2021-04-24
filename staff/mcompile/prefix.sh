@@ -11,7 +11,7 @@ export PREFIX="$ARTIFACT_PREFIX"
 mkdir -p "$ARTIFACT_PREFIX"
 
 if command -v ccache &> /dev/null; then
-	export CCACHE_DIR='/opt/ccache'
+	export CCACHE_DIR="$SYSTEM_FAST_CACHE/CCACHE"
 	export CCACHE_BASEDIR="/opt/projects"
 	export CCACHE_COMPRESS='yes'
 	export CCACHE_PATH="$PATH"
