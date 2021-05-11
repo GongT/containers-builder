@@ -283,6 +283,10 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo -n "ExecStart=${_SERVICE_WAITER} \\
 	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
 
+	if [[ $PODMAN_USE_REPLACE == yes ]]; then
+		echo -n " --replace=true"
+	fi
+
 	local -a STARTUP_ARGS=()
 	_create_startup_arguments
 	for I in "${STARTUP_ARGS[@]}"; do
@@ -342,9 +346,6 @@ function _create_startup_arguments() {
 	fi
 
 	STARTUP_ARGS+=("--restart=no")
-	if [[ $PODMAN_USE_REPLACE == yes ]]; then
-		STARTUP_ARGS+=("--replace=true")
-	fi
 
 	local _PODMAN_RUN_ARGS=()
 	_healthcheck_arguments_podman
