@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
+INSIDE_GROUP=
+SAVED_INDENT=
+export _CURRENT_INDENT=""
+
 function die() {
+	control_ci groupEnd
 	echo -e "Error: $*\n\e[2m$(callstack)\e[0m" >&2
 	control_ci error "$*"
 	exit 1
@@ -44,6 +49,27 @@ function control_ci() {
 			echo "[CI] Error $*" >&2
 		fi
 		;;
+	group)
+		if [[ $INSIDE_GROUP ]]; then
+			die "not allow nested output group"
+		fi
+		INSIDE_GROUP=yes
+		SAVED_INDENT=$_CURRENT_INDENT
+		if [[ "${GITHUB_ACTIONS:-}" ]]; then
+			echo "::group::$*" >&2
+		fi
+		;;
+	groupEnd)
+		if [[ ! $INSIDE_GROUP ]]; then
+			return
+		fi
+		_CURRENT_INDENT=$SAVED_INDENT
+		SAVED_INDENT=
+		INSIDE_GROUP=
+		if [[ "${GITHUB_ACTIONS:-}" ]]; then
+			echo "::endgroup::" >&2
+		fi
+		;;
 	*)
 		die "[CI] not support action: $ACTION"
 		;;
@@ -68,8 +94,12 @@ function callstack() {
 function _exit_handle_output() {
 	echo -ne "\e[0m"
 	if [[ $EXIT_CODE -ne 0 ]]; then
+		control_ci groupEnd
 		control_ci error "bash exit with error code $EXIT_CODE"
 		callstack 1
+	elif [[ $INSIDE_GROUP ]]; then
+		control_ci groupEnd
+		control_ci error "last output group is not finished."
 	fi
 }
 register_exit_handler _exit_handle_output
@@ -102,7 +132,6 @@ function info_warn() {
 	echo -e "$_CURRENT_INDENT\e[38;5;11m$*\e[0m" >&2
 }
 
-export _CURRENT_INDENT=""
 function indent() {
 	export _CURRENT_INDENT+="    "
 }

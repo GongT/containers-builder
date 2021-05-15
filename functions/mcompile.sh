@@ -37,11 +37,13 @@ function run_compile() {
 		MOUNT_SOURCE+=("--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID")
 	fi
 
+	control_ci group "Compile Details"
 	buildah run \
 		"--volume=$SYSTEM_COMMON_CACHE:/cache/common" \
 		"--volume=$SYSTEM_FAST_CACHE:/cache/fast" \
 		"--volume=$SCRIPT_FILE:/opt/projects/compile.sh" \
 		"${MOUNT_SOURCE[@]}" "$WORKER" bash /opt/projects/compile.sh
+	control_ci groupEnd
 }
 function run_install() {
 	local PROJECT_ID="$1" SOURCE_IMAGE="$2" COMPILE_TARGET_DIRECTORY=$3

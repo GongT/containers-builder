@@ -21,6 +21,8 @@ function make_base_image_by_dnf() {
 	local CACHE_NAME="$1"
 	local PKG_LIST_FILE="$2"
 
+	info "make base image by fedora dnf, package list file: $PKG_LIST_FILE..."
+	
 	_dnf_hash_cb() {
 		dnf_hash_version "$PKG_LIST_FILE"
 	}
@@ -55,6 +57,7 @@ function run_dnf() {
 	local MNT=$(buildah mount "$WORKER")
 	_dnf_prep
 
+	control_ci group "DNF run"
 	{
 		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
 		cat <<-BUSYBOX
@@ -68,6 +71,7 @@ function run_dnf() {
 		"--volume=$MNT:/install-root" \
 		$(use_fedora_dnf_cache) \
 		"$DNF" bash -s - "$@"
+	control_ci groupEnd
 }
 
 function delete_rpm_files() {

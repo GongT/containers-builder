@@ -11,7 +11,7 @@ function download_file() {
 	local OUTFILE="$LOCAL_TMP/$NAME"
 	local ARGS=()
 
-	info " * downloading $NAME ..."
+	info " * downloading $NAME from $URL"
 	mkdir -p "$LOCAL_TMP"
 	if [[ "${CI:-}" ]]; then
 		ARGS+=(--verbose)
@@ -26,6 +26,7 @@ function download_file() {
 			EXARGS+=(--no-proxy)
 		fi
 
+		control_ci group "download with wget"
 		while ! wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
 			TRY=$((TRY + 1))
 			if [[ $TRY -gt 5 ]]; then
@@ -34,6 +35,8 @@ function download_file() {
 			fi
 			info_warn "Download failed, retry ($TRY)..."
 		done
+		control_ci groupEnd
+
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 		info_log "    downloaded."
 	else
@@ -59,7 +62,7 @@ function decompression_file_source() {
 
 function decompression_file() {
 	local FILE="$1" STRIP="$2" TARGET="$3"
-	info " * extracting $FILE ..."
+	info " * extracting $FILE"
 	case "$FILE" in
 	*.tar.gz | *.tar.xz | *.tar.bz2)
 		extract_tar "$@"
@@ -109,14 +112,20 @@ function __github_api() {
 	if [[ ${GITHUB_TOKEN+found} == found ]]; then
 		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
 	fi
-	curl_proxy "${TOKEN_PARAM[@]}" -s "$URL"
+
+	control_ci group "Github Api: $URL"
+	API_RESULT=$(curl_proxy "${TOKEN_PARAM[@]}" -s "$URL")
+	echo "$API_RESULT" >&2
+	control_ci groupEnd
+
+	echo "$API_RESULT"
 }
 
 LAST_GITHUB_RELEASE_JSON=""
 function http_get_github_release_id() {
 	local REPO="$1" ID
 	local URL="repos/$REPO/releases/latest"
-	info_log " * fetching release id (+commit hash) from $URL ... "
+	info_log " * fetching release id (+commit hash) from $URL"
 
 	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
 	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq -r '(.id|tostring) + "-" + .target_commitish')
@@ -130,13 +139,18 @@ function http_get_github_release_id() {
 }
 
 function http_get_github_last_commit_id() {
-	__github_api "repos/$1/commits?per_page=1" | jq -r '.id'
+	local REPO=$1 API_RESULT
+	info_log " * check last commit id of $REPO"
+	__github_api "repos/$REPO/commits?per_page=1" | jq -r '.id'
 }
 function http_get_github_default_branch_name() {
+	local REPO=$1 API_RESULT
+	info_log " * fetching default branch name $REPO"
 	__github_api "repos/$1" | jq -r '.default_branch'
 }
 function http_get_github_last_commit_id_on_branch() {
 	if [[ $# -gt 1 ]]; then
+		info_log " * check last commit id of $1 (branch: $2)"
 		__github_api "repos/$1/branches/$2" | jq -r '.commit.sha'
 	else
 		local B
@@ -158,8 +172,8 @@ function download_git() {
 	GIT_DIR="$(_download_git_result "$NAME" "$BRANCH_TAG")"
 	mkdir -p "$GIT_DIR"
 
-	info " * git clone $URL ..."
-	info_note "      to $GIT_DIR ..."
+	info " * git clone $URL"
+	info_note "      to $GIT_DIR"
 	if [[ -e "$GIT_DIR/config" ]]; then
 		local -i BNUM
 		BNUM=$(git "--git-dir=$GIT_DIR" branch | wc -l)
@@ -191,7 +205,7 @@ function download_git_result_copy() {
 
 function http_get_etag() {
 	local URL="$1" ETAG
-	info_log " * fetching ETag ..."
+	info_log " * fetching ETag: $URL"
 	echo -ne "\e[2m" >&2
 	ETAG=$(curl_proxy -I --retry 5 --location "$URL" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2

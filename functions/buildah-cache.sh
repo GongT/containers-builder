@@ -15,16 +15,19 @@ function cache_try_pull() {
 
 	local OUTPUT
 	local URL="$1"
+	control_ci group "pull cache image $URL"
 	for ((I = 0; I < 3; I++)); do
 		info_note "try pull cache image $URL"
 		if OUTPUT=$(run_without_proxy podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
 			info_note "  - success."
 			LAST_CACHE_COMES_FROM=pull
+			control_ci groupEnd
 			return
 		else
 			if echo "$OUTPUT" | grep -q -- 'manifest unknown'; then
 				info_note " - failed, not exists."
 				LAST_CACHE_COMES_FROM=build
+				control_ci groupEnd
 				return
 			else
 				info_note " - failed."
@@ -41,8 +44,9 @@ function cache_push() {
 	fi
 
 	local URL="$1"
-	info_note "push cache image $URL ($LAST_CACHE_COMES_FROM)"
+	control_ci group "push cache image $URL ($LAST_CACHE_COMES_FROM)"
 	run_without_proxy podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
+	control_ci groupEnd
 }
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
