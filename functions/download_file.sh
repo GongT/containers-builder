@@ -146,7 +146,7 @@ function http_get_github_last_commit_id_on_branch() {
 }
 
 function _download_git_result() {
-	local NAME="$1" BRANCH_TAG="${3:-default}"
+	local NAME="$1" BRANCH_TAG="${2:-default}"
 	echo "$LOCAL_TMP/$NAME-${BRANCH_TAG}"
 }
 function download_github() {
