@@ -42,20 +42,21 @@ function buildah() {
 	local EXARGS=()
 	case "$ACTION" in
 	copy)
-		local DEST="${PASSARGS[*]: -1}"
-		local -i I="$LEN - 1"
-		while [[ $I -gt 0 ]]; do
-			local CCI=$I
-			I="$I - 1"
-			if [[ ${PASSARGS[$I]} == -* ]]; then
-				break
-			fi
+		if ! [[ ${PASSARGS[*]} == *'--from'* ]]; then
+			local -i I="$LEN - 1"
+			while [[ $I -gt 0 ]]; do
+				local CCI=$I
+				I="$I - 1"
+				if [[ ${PASSARGS[$I]} == -* ]]; then
+					break
+				fi
 
-			local SRCF="${PASSARGS[$CCI]}"
-			if [[ ${SRCF} != /* ]]; then
-				PASSARGS[$CCI]="$(pwd)/$SRCF"
-			fi
-		done
+				local SRCF="${PASSARGS[$CCI]}"
+				if [[ ${SRCF} != /* ]]; then
+					PASSARGS[$CCI]="$(pwd)/$SRCF"
+				fi
+			done
+		fi
 		;;
 	from)
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
