@@ -5,7 +5,9 @@ function download_and_build_github() {
 	# PROJ_ID="libtorrent"
 	# REPO=arvidn/libtorrent
 	# BRANCH=RC_1_2
+	local -r PSTEP="${STEP:-}"
 
+	STEP="${PSTEP}（下载）"
 	hash_download() {
 		if [[ ! $BRANCH ]]; then
 			BRANCH=$(http_get_github_default_branch_name "$REPO")
@@ -20,6 +22,7 @@ function download_and_build_github() {
 	}
 	buildah_cache2 "$CACHE_BRANCH" hash_download do_download
 
+	STEP="${PSTEP}（编译）"
 	hash_compile() {
 		cat "scripts/build-$PROJ_ID.sh"
 	}
