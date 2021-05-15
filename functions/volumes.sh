@@ -18,7 +18,7 @@ function unit_fs_bind() {
 	if [[ $# -gt 2 ]]; then
 		OPTIONS+=",$3"
 	fi
-	if [[ "${FROM:0:1}" != "/" ]]; then
+	if [[ ${FROM:0:1} != "/" ]]; then
 		FROM="$CONTAINERS_DATA_PATH/$FROM"
 	fi
 

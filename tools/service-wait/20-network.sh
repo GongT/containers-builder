@@ -15,7 +15,7 @@ function detect_host_ip() {
 			critical_die "Can not get information about default podman network (podman0), podman configure failed."
 		fi
 	else
-		HOST_IP=""
+		HOST_IP=$(ip route get 1.1.1.1 | grep -oP 'src \K\S+')
 	fi
 
 	debug "Local host access address: $HOST_IP"

@@ -130,14 +130,14 @@ function http_get_github_release_id() {
 }
 
 function http_get_github_last_commit_id() {
-	__github_api "/repos/$1/commits?per_page=1" | jq -r '.id'
+	__github_api "repos/$1/commits?per_page=1" | jq -r '.id'
 }
 function http_get_github_default_branch_name() {
-	__github_api "/repos/$1" | jq -r '.default_branch'
+	__github_api "repos/$1" | jq -r '.default_branch'
 }
 function http_get_github_last_commit_id_on_branch() {
 	if [[ $# -gt 1 ]]; then
-		__github_api "/repos/$1/branches/$2" | jq -r '.commit.sha'
+		__github_api "repos/$1/branches/$2" | jq -r '.commit.sha'
 	else
 		local B
 		B=$(http_get_github_default_branch_name "$1")

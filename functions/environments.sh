@@ -18,7 +18,7 @@ function safe_environment() {
 	chmod 0700 "$D"
 	find "$D" -type f | xargs chmod 0600
 
-	echo -n "--env-file='$F'"
+	echo -n "--env-file=$F"
 }
 
 function save_environments() {
