@@ -14,7 +14,7 @@ function die() {
 function control_ci() {
 	local -r ACTION="$1"
 	shift
-	info_log "[CI] Action=$ACTION, Args=$*" >&2
+	# info_log "[CI] Action=$ACTION, Args=$*" >&2
 	case "$ACTION" in
 	set-env)
 		local -r TMPF="$(mktemp)"
@@ -55,6 +55,7 @@ function control_ci() {
 		fi
 		INSIDE_GROUP=yes
 		SAVED_INDENT=$_CURRENT_INDENT
+		_CURRENT_INDENT=
 		if [[ "${GITHUB_ACTIONS:-}" ]]; then
 			echo "::group::$*" >&2
 		fi

@@ -61,6 +61,7 @@ function buildah() {
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
 		;;
 	commit)
+		control_ci group "buildah commit"
 		if [[ ${REWRITE_IMAGE_NAME+found} == found ]]; then
 			info "rewrite commit image name: $REWRITE_IMAGE_NAME"
 			PASSARGS=("${PASSARGS[@]:0:LEN}" "$REWRITE_IMAGE_NAME")
@@ -70,12 +71,10 @@ function buildah() {
 		local CID="${PASSARGS[*]: -2:1}"
 
 		if [[ $CID != "$BUILDAH_CACHE_BASE/"* ]]; then
+			control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
 			if is_ci; then
-				control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
-
 				EXARGS+=("--rm")
 
-				export LAST_COMMITED_IMAGE="$IID"
 				local HASH
 				HASH=$(hash_current_folder)
 				xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
@@ -89,4 +88,10 @@ function buildah() {
 	esac
 
 	xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}"
+
+	case "$ACTION" in
+	commit)
+		control_ci groupEnd
+		;;
+	esac
 }

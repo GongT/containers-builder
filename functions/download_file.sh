@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 declare -r LOCAL_TMP="$SYSTEM_COMMON_CACHE/Download"
+declare -r JQ_ARGS=(--exit-status --compact-output --monochrome-output --raw-output)
 
 function download_file_force() {
 	local FILE="download_$RANDOM" URL="$1"
@@ -128,7 +129,7 @@ function http_get_github_release_id() {
 	info_log " * fetching release id (+commit hash) from $URL"
 
 	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
-	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq -r '(.id|tostring) + "-" + .target_commitish')
+	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq "${JQ_ARGS[@]}" '(.id|tostring) + "-" + .target_commitish')
 
 	info_log "       = $ID"
 	if [[ "$ID" ]]; then
@@ -141,17 +142,17 @@ function http_get_github_release_id() {
 function http_get_github_last_commit_id() {
 	local REPO=$1 API_RESULT
 	info_log " * check last commit id of $REPO"
-	__github_api "repos/$REPO/commits?per_page=1" | jq -r '.id'
+	__github_api "repos/$REPO/commits?per_page=1" | jq "${JQ_ARGS[@]}" '.[0].sha'
 }
 function http_get_github_default_branch_name() {
 	local REPO=$1 API_RESULT
 	info_log " * fetching default branch name $REPO"
-	__github_api "repos/$1" | jq -r '.default_branch'
+	__github_api "repos/$1" | jq "${JQ_ARGS[@]}" '.default_branch'
 }
 function http_get_github_last_commit_id_on_branch() {
 	if [[ $# -gt 1 ]]; then
 		info_log " * check last commit id of $1 (branch: $2)"
-		__github_api "repos/$1/branches/$2" | jq -r '.commit.sha'
+		__github_api "repos/$1/branches/$2" | jq "${JQ_ARGS[@]}" '.commit.sha'
 	else
 		local B
 		B=$(http_get_github_default_branch_name "$1")
