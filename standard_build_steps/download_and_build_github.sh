@@ -6,6 +6,8 @@ function download_and_build_github() {
 	# REPO=arvidn/libtorrent
 	# BRANCH=RC_1_2
 	local -r PSTEP="${STEP:-}"
+	local __FORCE=${BUILDAH_FORCE:-}
+	BUILDAH_FORCE=''
 
 	STEP="${PSTEP}（下载）"
 	hash_download() {
@@ -22,6 +24,7 @@ function download_and_build_github() {
 	}
 	buildah_cache2 "$CACHE_BRANCH" hash_download do_download
 
+	BUILDAH_FORCE="$__FORCE"
 	STEP="${PSTEP}（编译）"
 	hash_compile() {
 		cat "scripts/build-$PROJ_ID.sh"
