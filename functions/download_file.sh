@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 declare -r LOCAL_TMP="$SYSTEM_COMMON_CACHE/Download"
-declare -r JQ_ARGS=(--exit-status --compact-output --monochrome-output --raw-output)
 
 function download_file_force() {
 	local FILE="download_$RANDOM" URL="$1"
@@ -129,7 +128,7 @@ function http_get_github_release_id() {
 	info_log " * fetching release id (+commit hash) from $URL"
 
 	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
-	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | jq "${JQ_ARGS[@]}" '(.id|tostring) + "-" + .target_commitish')
+	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '(.id|tostring) + "-" + .target_commitish')
 
 	info_log "       = $ID"
 	if [[ "$ID" ]]; then
@@ -142,65 +141,87 @@ function http_get_github_release_id() {
 function http_get_github_last_commit_id() {
 	local REPO=$1 API_RESULT
 	info_log " * check last commit id of $REPO"
-	__github_api "repos/$REPO/commits?per_page=1" | jq "${JQ_ARGS[@]}" '.[0].sha'
+	__github_api "repos/$REPO/commits?per_page=1" | filtered_jq '.[0].sha'
 }
 function http_get_github_default_branch_name() {
+	## todo: cache 1 day
 	local REPO=$1 API_RESULT
 	info_log " * fetching default branch name $REPO"
-	__github_api "repos/$1" | jq "${JQ_ARGS[@]}" '.default_branch'
+	__github_api "repos/$1" | filtered_jq '.default_branch'
 }
 function http_get_github_last_commit_id_on_branch() {
-	if [[ $# -gt 1 ]]; then
-		info_log " * check last commit id of $1 (branch: $2)"
-		__github_api "repos/$1/branches/$2" | jq "${JQ_ARGS[@]}" '.commit.sha'
-	else
-		local B
-		B=$(http_get_github_default_branch_name "$1")
-		http_get_github_last_commit_id_on_branch "$1" "$B"
-	fi
+	local REPO=$1 BRANCH=$2 RESULT
+	info_log " * check last commit id of $REPO ($BRANCH)"
+	RESULT=$(__github_api "repos/$REPO/branches/$BRANCH" | filtered_jq '.commit.sha')
+	info_log "     = $RESULT"
+	echo "$RESULT"
 }
 
-function _download_git_result() {
-	local NAME="$1" BRANCH_TAG="${2:-default}"
-	echo "$LOCAL_TMP/$NAME-${BRANCH_TAG}"
+function _join_git_path() {
+	local NAME="$1" BRANCH="$2"
+	echo "$LOCAL_TMP/$NAME-$BRANCH"
 }
 function download_github() {
-	local REPO="$1"
-	download_git "https://github.com/$REPO.git" "$@"
+	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
+	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
+	export GIT_DIR
+
+	info " * github clone $REPO($BRANCH)"
+	indent
+	info_log "to $GIT_DIR"
+
+	LAST_COMMIT=$(http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH")
+
+	if [[ -e "$GIT_DIR/config" ]]; then
+		CURRENT_COMMIT=$(git log --format="%H" -n 1)
+		info_log "local cache last commit is $(git log --format="[%h] '%s' (%cr)" -n 1)"
+
+		if [[ $CURRENT_COMMIT == "$LAST_COMMIT" ]]; then
+			info_log "no update detected"
+			dedent
+			echo "$LAST_COMMIT"
+			return
+		fi
+	else
+		info_log "no local cache"
+	fi
+
+	MUTE=yes download_git "https://github.com/$REPO.git" "$@"
+	dedent
 }
 function download_git() {
-	local URL="$1" NAME="$2" BRANCH="${3:-}" BRANCH_TAG="${3:-default}" GIT_DIR
-	GIT_DIR="$(_download_git_result "$NAME" "$BRANCH_TAG")"
+	local URL="$1" NAME="$2" BRANCH="$3"
+	GIT_DIR="$(_join_git_path "$NAME" "$BRANCH")"
+	export GIT_DIR
 	mkdir -p "$GIT_DIR"
 
-	info " * git clone $URL"
-	info_note "      to $GIT_DIR"
+	[[ "${MUTE:-}" ]] || info " * git clone $URL"
+	[[ "${MUTE:-}" ]] || info_note "      to $GIT_DIR"
 	if [[ -e "$GIT_DIR/config" ]]; then
-		local -i BNUM
-		BNUM=$(git "--git-dir=$GIT_DIR" branch | wc -l)
-		if [[ $BNUM != 1 ]]; then
-			info_warn "invalid git status: multiple branch"
+		local REFS
+		mapfile -t REFS < <(git for-each-ref "--format=%(refname)" refs/heads/ || true)
+		if [[ ${#REFS[@]} != 1 ]] || [[ ${REFS[0]} != "refs/heads/$BRANCH" ]]; then
+			info_warn "invalid git status: multiple or invalid branch"
 			rm -rf "$GIT_DIR"
 			download_git "$@"
 			return
 		fi
-		x git "--git-dir=$GIT_DIR" fetch --depth=1
+		x git fetch --depth=5 --update-shallow --recurse-submodules
 	else
-		local BARG=()
-		if [[ "$BRANCH" ]]; then
-			BARG=(--branch "$BRANCH")
-		fi
-		x git clone --bare --depth 5 "${BARG[@]}" --single-branch "$URL" "$GIT_DIR"
+		x git clone --bare --depth 5 --recurse-submodules --shallow-submodules --branch "$BRANCH" --single-branch "$URL" "$GIT_DIR"
 	fi
+
+	git log --format="%H" -n 1
+	unset GIT_DIR
 }
 function download_git_result_copy() {
 	local NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR DIST="$1"
-	GIT_DIR=$(_download_git_result "$NAME" "$BRANCH_TAG")
+	GIT_DIR=$(_join_git_path "$NAME" "$BRANCH_TAG")
 	if ! [[ -f "$GIT_DIR/config" ]]; then
 		die "missing downloaded git data: $GIT_DIR (from $NAME)"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
-	x git clone --depth 1 --single-branch "file://$GIT_DIR" "$DIST"
+	x git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
 	rm -rf "$DIST/.git"
 }
 

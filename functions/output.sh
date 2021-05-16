@@ -132,12 +132,25 @@ function info_log() {
 function info_warn() {
 	echo -e "$_CURRENT_INDENT\e[38;5;11m$*\e[0m" >&2
 }
+function info_success() {
+	echo -e "$_CURRENT_INDENT\e[38;5;10m$*\e[0m" >&2
+}
 
 function indent() {
 	export _CURRENT_INDENT+="    "
 }
 function dedent() {
 	export _CURRENT_INDENT="${_CURRENT_INDENT:4}"
+}
+
+declare -r JQ_ARGS=(--exit-status --compact-output --monochrome-output --raw-output)
+function filtered_jq() {
+	local INPUT QUERY="$1"
+	INPUT=$(jq "${JQ_ARGS[@]}" "$QUERY")
+	if [[ $INPUT == "null" ]]; then
+		die "failed query $QUERY"
+	fi
+	echo "$INPUT"
 }
 
 function x() {

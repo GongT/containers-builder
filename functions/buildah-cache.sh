@@ -100,11 +100,11 @@ function buildah_cache() {
 	unlink "$HASH_TMP"
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
-		info_note "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
+		info_warn "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
 	elif image_exists "$BUILDAH_TO"; then
 		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
 		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
-		info_note "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
+		info_success "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
 		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" == "$WANTED_HASH++$PREVIOUS_ID" ]]; then
 			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")
 			cache_push "$BUILDAH_TO"
@@ -113,7 +113,7 @@ function buildah_cache() {
 		fi
 		info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
 	else
-		info_note "step result not cached: target=$WANTED_HASH"
+		info_warn "step result not cached: target=$WANTED_HASH"
 	fi
 
 	LAST_CACHE_COMES_FROM=build

@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 
 function download_and_build_github() {
-	# CACHE_BRANCH=qbittorrent-build
-	# PROJ_ID="libtorrent"
-	# REPO=arvidn/libtorrent
-	# BRANCH=RC_1_2
+	local -r CACHE_BRANCH=$1 PROJ_ID=$2 REPO=$3
+	local BRANCH=${4:-}
+	if [[ ! $BRANCH ]]; then
+		BRANCH=$(http_get_github_default_branch_name "$REPO")
+	fi
+
 	local -r PSTEP="${STEP:-}"
 	local __FORCE=${BUILDAH_FORCE:-}
-	BUILDAH_FORCE=''
 
+	BUILDAH_FORCE=''
 	STEP="${PSTEP}（下载）"
 	hash_download() {
-		if [[ ! $BRANCH ]]; then
-			BRANCH=$(http_get_github_default_branch_name "$REPO")
-		fi
-		http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH"
+		download_github "$REPO" "$BRANCH"
 	}
 	do_download() {
 		local MNT
-		download_github "$REPO" "$BRANCH"
 		MNT=$(buildah mount "$1")
 		download_git_result_copy "$MNT/opt/projects/$PROJ_ID" "$REPO" "$BRANCH"
 	}
@@ -35,5 +33,5 @@ function download_and_build_github() {
 	}
 	buildah_cache2 "$CACHE_BRANCH" hash_compile do_compile
 
-	unset -f hash_download do_download hash_compile do_compile
+	unset -f hash_download do_download hash_compile do_compile BUILDAH_FORCE STEP
 }
