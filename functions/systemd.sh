@@ -7,6 +7,7 @@ declare -A _S_UNIT_CONFIG
 declare -A _S_BODY_CONFIG
 declare -a _S_EXEC_START_PRE
 declare -a _S_EXEC_START_POST
+declare -a _S_EXEC_STOP_PRE
 declare -a _S_EXEC_STOP_POST
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
@@ -57,6 +58,7 @@ function _unit_init() {
 	_S_EXEC_START_PRE=()
 	_S_EXEC_START_POST=()
 	_S_EXEC_STOP_POST=()
+	_S_EXEC_STOP_PRE=()
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
@@ -296,6 +298,9 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo ""
 	echo "# debug script: $(_get_debugger_script)"
 
+	for I in "${_S_EXEC_STOP_PRE[@]}"; do
+		echo "ExecStopPre=$I"
+	done
 	if [[ -z $_S_STOP_CMD ]]; then
 		echo "ExecStop=${_CONTAINER_STOP} $_S_KILL_TIMEOUT $SCOPE_ID"
 		echo "TimeoutStopSec=$((_S_KILL_TIMEOUT + 10))"
@@ -440,6 +445,9 @@ function unit_hook_poststart() {
 }
 function unit_hook_start() {
 	_S_EXEC_START_PRE+=("$*")
+}
+function unit_hook_prestop() {
+	_S_EXEC_STOP_PRE+=("$*")
 }
 function unit_hook_stop() {
 	_S_EXEC_STOP_POST+=("$*")
