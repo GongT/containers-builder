@@ -209,6 +209,7 @@ function _unit_assemble() {
 	local I
 	echo "[Unit]"
 
+	use_common_service cleanup-stopped-containers
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		use_common_service wait-all-fstab
 	fi

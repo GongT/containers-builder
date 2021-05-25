@@ -1,0 +1,11 @@
+[Unit]
+Description=delete stopped container during startup and shutdown
+Requires=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash "__SCRIPT__"
+ExecStop=/usr/bin/env bash "__SCRIPT__"
+Restart=no
+RemainAfterExit=yes

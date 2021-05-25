@@ -11,6 +11,10 @@ function add_argument() {
 function make_arguments() {
 	detect_host_ip
 
+	if [[ "${INVOCATION_ID:-}" ]]; then
+		add_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
+	fi
+
 	for i; do
 		if [[ $i == "--dns=h.o.s.t" ]]; then
 			if ! [[ "$HOST_IP" ]]; then
