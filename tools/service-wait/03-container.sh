@@ -19,35 +19,35 @@ function ensure_container_not_running() {
 		return
 	fi
 	debug "-- old container exists --" >&2
-	debug "Conmon PID: $LPID" >&2
-	debug "Container ID: $LCID" >&2
-	debug "State: $LSTAT" >&2
-	if [[ $LSTAT == "running" ]]; then
-		if [[ $KILL_IF_TIMEOUT == yes ]]; then
-			podman stop "$CONTAINER_ID" || true
+	expand_timeout_seconds "30"
+
+	while true; do
+		debug "Conmon PID: $LPID" >&2
+		debug "Container ID: $LCID" >&2
+		debug "State: $LSTAT" >&2
+		if [[ $LSTAT == "running" ]]; then
+			if [[ $KILL_IF_TIMEOUT == yes ]]; then
+				podman stop "$CONTAINER_ID" || true
+			else
+				podman stop --time 9999 "$CONTAINER_ID" || true
+			fi
 		else
-			podman stop --time 9999 "$CONTAINER_ID" || true
+			podman ps -a | tail -n +2 \
+				| (grep -v Up || [[ $? == 1 ]]) \
+				| awk '{print $1}' \
+				| xargs --no-run-if-empty --verbose --no-run-if-empty podman rm || true
 		fi
-	else
-		podman rm -f "$CONTAINER_ID" || true
-	fi
 
-	get_container
-	if [[ ! $LCID ]]; then
-		debug "good, old container removed."
-		return
-	fi
+		get_container
+		if [[ ! $LCID ]]; then
+			debug "good, old container removed."
+			return
+		fi
 
-	debug "-- old container still exists --" >&2
+		debug "-- old container still exists --" >&2
+	done
 
-	podman ps -a | tail -n +2 | (grep -v Up || [[ $? == 1 ]]) | awk '{print $1}' | xargs --no-run-if-empty --verbose --no-run-if-empty podman rm || true
-
-	get_container
-	if [[ ! $LCID ]]; then
-		debug "good, old containers cleaned."
-		return
-	fi
-	debug "-- failed run podman clean --" >&2
+	debug "-- failed delete old container --" >&2
 
 	exit 233
 }
