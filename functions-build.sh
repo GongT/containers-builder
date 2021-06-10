@@ -135,7 +135,7 @@ function buildah_run_perfer_proxy() {
 		http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
 	else
 		info_note "[proxy] perfer proxy, but not set"
-		buildah run "$@"
+		http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' buildah run "$@"
 	fi
 }
 

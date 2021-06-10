@@ -26,7 +26,7 @@ function xbuildah() {
 		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m"
 		local I
 		for I; do
-			printf ' "%q"' "$I"
+			printf ' %q' "$I"
 		done
 		echo -e "\e[0m"
 	} >&2
