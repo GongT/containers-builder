@@ -85,7 +85,7 @@ function buildah_cache() {
 		fi
 		local -r PREVIOUS_ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_FROM")
 		if [[ ! $PREVIOUS_ID ]]; then
-			die "Failed get id from image ($BUILDAH_FROM) cache state is invalid."
+			die "failed get id from image ($BUILDAH_FROM) cache state is invalid."
 		fi
 	else
 		local -r PREVIOUS_ID="none"
@@ -107,6 +107,11 @@ function buildah_cache() {
 	elif image_exists "$BUILDAH_TO"; then
 		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
 		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
+
+		if [[ ! $EXISTS_PREVIOUS_ID ]] || [[ ! $EXISTS_HASH ]]; then
+			die "failed get annotation from image ($BUILDAH_TO) cache state is invalid."
+		fi
+
 		info_success "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
 		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" == "$WANTED_HASH++$PREVIOUS_ID" ]]; then
 			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")

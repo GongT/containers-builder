@@ -79,11 +79,21 @@ function create_if_not() {
 }
 
 function container_exists() {
-	buildah inspect --type container --format '{{.FromImageID}}' "$1" &>/dev/null
+	local ID
+	ID=$(buildah inspect --type container --format '{{.ContainerID}}' "$1")
+	if [[ $ID == "" ]]; then
+		info_warn "inspect container $1 success, but nothing return"
+		return 1
+	fi
 }
 
 function image_exists() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1" &>/dev/null
+	local ID
+	ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$1")
+	if [[ $ID == "" ]]; then
+		info_warn "inspect image $1 success, but nothing return"
+		return 1
+	fi
 }
 
 function image_get_id() {
