@@ -86,6 +86,11 @@ function buildah() {
 			_healthcheck_config_buildah "$CID"
 		fi
 		;;
+	run)
+		if [[ ${BUILDAH_EXTRA_ARGS+found} == found ]]; then
+			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
+		fi
+		;;
 	esac
 
 	xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}"

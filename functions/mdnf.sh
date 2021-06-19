@@ -1,5 +1,5 @@
 function _dnf_prep() {
-	DNF=$(CI="" create_if_not "mdnf" fedora)
+	DNF=$(CI="" new_container "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
 	if [[ "${PROXY:-}" ]] && [[ "${DNF_USE_PROXY:-}" ]]; then
 		info_warn "dnf is using proxy."
@@ -22,13 +22,13 @@ function make_base_image_by_dnf() {
 	local PKG_LIST_FILE="$2"
 
 	info "make base image by fedora dnf, package list file: $PKG_LIST_FILE..."
-	
+
 	_dnf_hash_cb() {
 		dnf_hash_version "$PKG_LIST_FILE"
+		echo "${POST_SCRIPT:-}"
 	}
 	_dnf_build_cb() {
-		local CONTAINER
-		CONTAINER=$(new_container "$1" "scratch")
+		local CONTAINER="$1"
 		run_dnf_with_list_file "$CONTAINER" "$PKG_LIST_FILE"
 		if [[ ${POST_SCRIPT+found} == found ]]; then
 			"$POST_SCRIPT" "$CONTAINER"
@@ -40,7 +40,8 @@ function make_base_image_by_dnf() {
 		local FORCE_DNF=""
 	fi
 
-	BUILDAH_FORCE="$FORCE_DNF" buildah_cache "$CACHE_NAME" _dnf_hash_cb _dnf_build_cb
+	BUILDAH_LAST_IMAGE=scratch
+	BUILDAH_FORCE="$FORCE_DNF" buildah_cache2 "$CACHE_NAME" _dnf_hash_cb _dnf_build_cb
 
 	unset -f _dnf_hash_cb _dnf_build_cb
 }

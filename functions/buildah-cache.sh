@@ -84,6 +84,9 @@ function buildah_cache() {
 			die "required previous stage [$BUILDAH_FROM] did not exists"
 		fi
 		local -r PREVIOUS_ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_FROM")
+		if [[ ! $PREVIOUS_ID ]]; then
+			die "Failed get id from image ($BUILDAH_FROM) cache state is invalid."
+		fi
 	else
 		local -r PREVIOUS_ID="none"
 	fi

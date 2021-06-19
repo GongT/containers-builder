@@ -45,7 +45,7 @@ function find_current_file_absolute_path() {
 }
 
 CURRENT_FILE="${BASH_SOURCE[-1]}"
-if [[ $CURRENT_FILE == ./* ]]; then
+if [[ $CURRENT_FILE != /* ]]; then
 	find_current_file_absolute_path
 else
 	CURRENT_FILE=$(realpath "$CURRENT_FILE")

@@ -25,6 +25,8 @@ source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
 source "$COMMON_LIB_ROOT/functions/buildah.hooks.sh"
 # shellcheck source=./functions/alpine.sh
 source "$COMMON_LIB_ROOT/functions/alpine.sh"
+# shellcheck source=./functions/python.sh
+source "$COMMON_LIB_ROOT/functions/python.sh"
 # shellcheck source=./functions/build-folder-hash.sh
 source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 # shellcheck source=./functions/healthcheck.sh
@@ -129,26 +131,69 @@ fi
 '
 }
 
-function buildah_run_perfer_proxy() {
+function remove_proxy_schema() {
+	if [[ ${PROXY+found} != "found" ]]; then
+		return
+	fi
+	if [[ $PROXY != *'://'* ]]; then
+		return
+	fi
+	export PROXY="${PROXY//*:///}"
+}
+function add_proxy_http_schema() {
+	if [[ ${PROXY+found} != "found" ]]; then
+		return
+	fi
+	if [[ $PROXY == *'://'* ]]; then
+		return
+	fi
+	export PROXY="http://${PROXY}"
+}
+
+function perfer_proxy() {
+	if [[ $1 == --schema ]]; then
+		add_proxy_http_schema
+		shift
+	elif [[ $1 == --no-schema ]]; then
+		remove_proxy_schema
+		shift
+	fi
 	if [[ ${PROXY+found} == "found" ]]; then
-		info_note "[proxy] using proxy"
-		http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
+		info_note "[proxy] using proxy $PROXY"
+		http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" "$@"
 	else
 		info_note "[proxy] perfer proxy, but not set"
-		http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' buildah run "$@"
+		http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 	fi
 }
-
-function buildah_run_deny_proxy() {
+function deny_proxy() {
 	info_note "[proxy] deny proxy"
-	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' buildah run "$@"
+	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 }
-
-function buildah_run_force_proxy() {
+function force_proxy() {
 	if [[ ! ${PROXY:-} ]]; then
 		info_warn "[proxy] force proxy, but not exists"
 		die 1
 	fi
-	info_note "[proxy] force using proxy"
-	http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" buildah run "$@"
+	if [[ $1 == --schema ]]; then
+		add_proxy_http_schema
+		shift
+	elif [[ $1 == --no-schema ]]; then
+		remove_proxy_schema
+		shift
+	fi
+	info_note "[proxy] force using proxy $PROXY"
+	http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" "$@"
+}
+
+function buildah_run_perfer_proxy() {
+	perfer_proxy buildah run "$@"
+}
+
+function buildah_run_deny_proxy() {
+	deny_proxy buildah run "$@"
+}
+
+function buildah_run_force_proxy() {
+	force_proxy buildah run "$@"
 }
