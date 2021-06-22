@@ -114,7 +114,7 @@ function __github_api() {
 	fi
 
 	control_ci group "Github Api: $URL"
-	API_RESULT=$(curl_proxy "${TOKEN_PARAM[@]}" -s "$URL")
+	API_RESULT=$(perfer_proxy curl_proxy "${TOKEN_PARAM[@]}" -s "$URL")
 	echo "$API_RESULT" >&2
 	control_ci groupEnd
 
@@ -186,7 +186,7 @@ function download_github() {
 		info_log "no local cache"
 	fi
 
-	MUTE=yes download_git "https://github.com/$REPO.git" "$@"
+	MUTE=yes perfer_proxy download_git "https://github.com/$REPO.git" "$@"
 	dedent
 }
 function download_git() {
