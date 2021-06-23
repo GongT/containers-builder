@@ -24,7 +24,8 @@ function cache_try_pull() {
 			control_ci groupEnd
 			return
 		else
-			if echo "$OUTPUT" | grep -q -- 'manifest unknown'; then
+			if echo "$OUTPUT" | grep -q -- 'manifest unknown' \
+				|| echo "$OUTPUT" | grep -q -- 'name unknown'; then
 				info_note " - failed, not exists."
 				LAST_CACHE_COMES_FROM=build
 				control_ci groupEnd
@@ -35,6 +36,7 @@ function cache_try_pull() {
 		fi
 	done
 
+	control_ci groupEnd
 	echo "$OUTPUT" >&2
 	die "failed pull cache image!"
 }
