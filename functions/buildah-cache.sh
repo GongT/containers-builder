@@ -18,7 +18,7 @@ function cache_try_pull() {
 	control_ci group "pull cache image $URL"
 	for ((I = 0; I < 3; I++)); do
 		info_note "try pull cache image $URL"
-		if OUTPUT=$(run_without_proxy podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
+		if OUTPUT=$(deny_proxy podman pull "${CACHE_REGISTRY_ARGS[@]}" "$URL" 2>&1); then
 			info_note "  - success."
 			LAST_CACHE_COMES_FROM=pull
 			control_ci groupEnd
@@ -47,7 +47,7 @@ function cache_push() {
 
 	local URL="$1"
 	control_ci group "push cache image $URL ($LAST_CACHE_COMES_FROM)"
-	run_without_proxy podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
+	deny_proxy podman push "${CACHE_REGISTRY_ARGS[@]}" "$URL"
 	control_ci groupEnd
 }
 
