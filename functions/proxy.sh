@@ -9,11 +9,11 @@ function run_without_proxy() {
 }
 
 function run_with_proxy() {
-	if [[ ! ${HTTP_PROXY:-} ]] && [[ ${PROXY:-} ]]; then
+	if [[ ${PROXY:-} ]]; then
 		info_note "[http_proxy] run command $* with force proxy"
 		HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" ALL_PROXY="$PROXY" http_proxy="$PROXY" https_proxy="$PROXY" all_proxy="$PROXY" "$@"
 	else
-		info_note "[http_proxy] run command $* with force proxy, but no server defined"
+		info_warn "[http_proxy] run command $* with force proxy, but no server defined"
 		"$@"
 	fi
 }
