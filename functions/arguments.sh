@@ -93,13 +93,19 @@ function arg_finish() {
 
 	local _PROGRAM_ARGS=()
 	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
-		local -a ENV_ARGS
+		local -a ENV_ARGS CMDLINE_TO_PARSE
+		CMDLINE_TO_PARSE=$(
+			(grep -E "^$PROJECT_NAME:" "$MONO_ROOT_DIR/environment" || [[ $? == 1 ]]) \
+				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
+				| sed -E 's/^[^:]+:\s*\S+\s*//g'
+		)
 		mapfile -t ENV_ARGS < <(
 			(grep -E "^$PROJECT_NAME:" "$MONO_ROOT_DIR/environment" || [[ $? == 1 ]]) \
 				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
 				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
 				| sed -E 's/\s+/\n/g'
 		)
+		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs -n1)
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 	fi
 	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
