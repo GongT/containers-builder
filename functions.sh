@@ -93,6 +93,10 @@ function _exit() {
 
 trap _exit EXIT
 
+if [[ ${REGISTRY_AUTH_FILE+found} != "found" ]]; then
+	export REGISTRY_AUTH_FILE="/etc/containers/auth.json"
+fi
+
 # shellcheck source=./functions/fs.sh
 source "$COMMON_LIB_ROOT/functions/fs.sh"
 # shellcheck source=./functions/output.sh

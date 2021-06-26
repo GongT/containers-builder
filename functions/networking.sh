@@ -45,7 +45,7 @@ function network_use_interface() {
 
 	SCRIPT=$(install_script "$COMMON_LIB_ROOT/tools/move-interface.sh")
 	unit_hook_start "+/usr/bin/bash $SCRIPT 'INTERFACE_NAME=$IFNAME' 'INTERFACE_NAME_INSIDE=$DIST_NAME' NET_NAMESPACE='${NET_NAMESPACE}'"
-	unit_hook_stop "+!/usr/bin/bash $SCRIPT --out 'INTERFACE_NAME=$IFNAME' 'INTERFACE_NAME_INSIDE=$DIST_NAME' NET_NAMESPACE='${NET_NAMESPACE}'"
+	unit_hook_stop "+-/usr/bin/bash $SCRIPT --out 'INTERFACE_NAME=$IFNAME' 'INTERFACE_NAME_INSIDE=$DIST_NAME' NET_NAMESPACE='${NET_NAMESPACE}'"
 
 	add_network_privilege
 

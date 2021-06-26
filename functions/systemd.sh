@@ -271,6 +271,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
 	echo "Environment=PODMAN_SYSTEMD_UNIT=%n"
+	echo "Environment=REGISTRY_AUTH_FILE=/etc/containers/auth.json"
 
 	local PREP_FOLDERS_INS=()
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
