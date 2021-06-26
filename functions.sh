@@ -60,7 +60,10 @@ if [[ ${CURRENT_DIR+found} != "found" ]]; then
 		CURRENT_DIR="$(dirname "${CURRENT_DIR}")"
 	fi
 fi
-PROJECT_NAME="$(basename "${CURRENT_DIR}")"
+if [[ ${PROJECT_NAME+found} != found ]]; then
+	PROJECT_NAME="$(basename "${CURRENT_DIR}")"
+fi
+declare -r PROJECT_NAME
 
 if [[ ${SYSTEM_COMMON_CACHE+found} != "found" ]]; then
 	SYSTEM_COMMON_CACHE='/var/cache'

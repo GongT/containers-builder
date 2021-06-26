@@ -76,7 +76,7 @@ function _unit_init() {
 }
 
 function auto_create_pod_service_unit() {
-	create_pod_service_unit "$(basename "$(pwd)")"
+	create_pod_service_unit "$PROJECT_NAME"
 }
 function create_pod_service_unit() {
 	_arg_ensure_finish
