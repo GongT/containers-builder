@@ -105,17 +105,15 @@ function arg_finish() {
 				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
 				| sed -E 's/\s+/\n/g'
 		)
-		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs -n1)
+		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 	fi
 	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
 		_PROGRAM_ARGS+=("${BASH_ARGV[$i]}")
 	done
 
-	# if [[ ${#_PROGRAM_ARGS[@]} -eq 0 ]]; then
-	# 	_PROGRAM_ARGS=()
-	# fi
-	local E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
+	local E
+	E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
 	if [[ "$E" ]]; then
 		die "$E"
 	fi
