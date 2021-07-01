@@ -32,7 +32,7 @@ function xbuildah() {
 	)
 
 	local SGROUP=
-	if [[ $INSIDE_GROUP ]] || [[ $ACT == run ]] || [[ $ACT == inspect ]] || [[ $ACT == config ]]; then
+	if (! is_ci) || [[ $INSIDE_GROUP ]] || [[ $ACT == run ]] || [[ $ACT == inspect ]] || [[ $ACT == config ]]; then
 		echo "$OUT" >&2
 	else
 		SGROUP=yes
@@ -74,6 +74,7 @@ function buildah() {
 		fi
 		;;
 	from)
+		# TODO: all image ids
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
 		;;
 	commit)
@@ -117,10 +118,13 @@ function buildah() {
 	esac
 
 	xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}"
+	local R=$?
 
 	case "$ACTION" in
 	commit)
 		control_ci groupEnd
 		;;
 	esac
+
+	return $R
 }

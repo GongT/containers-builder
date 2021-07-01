@@ -46,35 +46,32 @@ function run_compile() {
 	control_ci groupEnd
 }
 function run_install() {
-	local PROJECT_ID="$1" SOURCE_IMAGE="$2" COMPILE_TARGET_DIRECTORY=$3
+	local -r SOURCE_IMAGE="$1" TARGET_CONTAINER="$2" PROJECT_ID=$3
 
-	local WORKER
-	WORKER=$(new_container "${PROJECT_ID}-result-copyout" "$SOURCE_IMAGE")
-
-	local PREPARE_SCRIPT=""
-	if [[ $# -eq 4 ]]; then
+	local PREPARE_SCRIPT INSTALLER_SCRIPT
+	if [[ $# -gt 3 ]]; then
 		PREPARE_SCRIPT=$(<"$4")
 	elif [[ ! -t 0 ]]; then
 		PREPARE_SCRIPT=$(cat)
 	else
-		die "No install script set"
+		PREPARE_SCRIPT="make install"
 	fi
 
-	local SRC="$(mktemp)"
+	WORKER=$(new_container "install.$PROJECT_ID" "$SOURCE_IMAGE")
+	collect_temp_container "$WORKER"
+
 	{
 		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
 		SHELL_ERROR_HANDLER
-		echo "export PROJECT_ID='$PROJECT_ID'"
+		declare -p PROJECT_ID
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
-	} >"$SRC"
-	buildah run -t \
-		"--volume=$SRC:/mnt/script.sh:ro" \
-		"--volume=$COMPILE_TARGET_DIRECTORY:/mnt/install" \
+	} | buildah run -t \
+		"--volume=$INSTALLER_SCRIPT:/mnt/script.sh:ro" \
 		"$WORKER" bash "/mnt/script.sh"
 
-	buildah rm "$WORKER"
+	buildah copy "--from=$WORKER" "$TARGET_CONTAINER" /mnt/install /
 }
 
 function clean_submodule() {
