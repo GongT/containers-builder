@@ -22,15 +22,30 @@ function builah_get_label() {
 function xbuildah() {
 	local ACT=$1
 	shift
-	{
+	OUT=$(
 		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m"
 		local I
 		for I; do
 			printf ' %q' "$I"
 		done
 		echo -e "\e[0m"
-	} >&2
+	)
+
+	local SGROUP=
+	if [[ $INSIDE_GROUP ]] || [[ $ACT == run ]]; then
+		echo "$OUT" >&2
+	else
+		SGROUP=yes
+		control_ci group "$OUT"
+	fi
+
 	"$BUILDAH" "$ACT" "$@"
+	local X=$?
+
+	if [[ "$SGROUP" ]]; then
+		control_ci groupEnd
+	fi
+	return $X
 }
 
 function buildah() {

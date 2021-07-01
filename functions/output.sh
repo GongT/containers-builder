@@ -56,6 +56,8 @@ function control_ci() {
 		_CURRENT_INDENT=
 		if [[ "${GITHUB_ACTIONS:-}" ]]; then
 			echo "::group::$*" >&2
+		else
+			echo "[Start Group] $*" >&2
 		fi
 		;;
 	groupEnd)
@@ -67,6 +69,8 @@ function control_ci() {
 		INSIDE_GROUP=
 		if [[ "${GITHUB_ACTIONS:-}" ]]; then
 			echo "::endgroup::" >&2
+		else
+			echo "[End Group] $*" >&2
 		fi
 		;;
 	*)

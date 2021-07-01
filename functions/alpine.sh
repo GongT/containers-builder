@@ -8,7 +8,7 @@ function apk_install() {
 	local NAME=$1
 	shift
 
-	control_ci group "apk add $*"
+	control_ci group "apk install packages"
 
 	{
 		cat <<-'APK'
