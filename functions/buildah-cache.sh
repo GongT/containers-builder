@@ -1,5 +1,5 @@
 declare -A _CURRENT_STAGE_STORE=()
-declare -r BUILDAH_CACHE_BASE="${DOCKER_CACHE_CENTER:-cache.example.com}"
+declare -r BUILDAH_CACHE_BASE="${DOCKER_CACHE_CENTER:-cache.example.com/gongt/cache}"
 declare LAST_CACHE_COMES_FROM=build # or pull
 
 CACHE_REGISTRY_ARGS=()
@@ -80,7 +80,7 @@ function buildah_cache() {
 	info "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE: \e[0;38;5;11m$_STITLE"
 	indent
 
-	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE/cache/$BUILDAH_NAME_BASE:stage-$CURRENT_STAGE"
+	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE:${BUILDAH_NAME_BASE}-stage-$CURRENT_STAGE"
 	if [[ $CURRENT_STAGE -gt 0 ]]; then
 		if ! image_exists "$BUILDAH_FROM"; then
 			die "required previous stage [$BUILDAH_FROM] did not exists"
@@ -92,7 +92,7 @@ function buildah_cache() {
 	else
 		local -r PREVIOUS_ID="none"
 	fi
-	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE/cache/$BUILDAH_NAME_BASE:stage-$NEXT_STAGE"
+	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE:${BUILDAH_NAME_BASE}-stage-$NEXT_STAGE"
 
 	if [[ ${BUILDAH_FORCE-no} != "yes" ]]; then
 		cache_try_pull "$BUILDAH_TO"
