@@ -28,6 +28,7 @@ function hash_current_folder_cached() {
 	hash_current_folder
 }
 function hash_current_folder() {
+	## TODO: update
 	set -- $(
 		IFS=$'\n' git ls-tree --name-only -r HEAD "$(pwd)" \
 			| xargs -n1 grep --directories=skip --no-messages --binary-files=without-match -A1 -E "install_shared_project"

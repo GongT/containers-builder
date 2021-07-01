@@ -20,7 +20,7 @@ function control_ci() {
 		local -r TMPF="$(mktemp)"
 		echo "$2" >"$TMPF"
 		eval "$1=\"\$(< '$TMPF')\""
-		export "$1"
+		export "${1?}"
 		if ! is_ci; then
 			return
 		elif [[ "${GITHUB_ENV:-}" ]]; then
@@ -29,15 +29,13 @@ function control_ci() {
 				echo "$2"
 				echo 'EOF'
 			} >>"$GITHUB_ENV"
-		elif [[ "${GITLAB_CI:-}" ]]; then
-			if [[ "${GITLAB_ENV:-}" ]]; then
-				{
-					echo "$1=\$( cat <<EOF"
-					echo "$2"
-					echo 'EOF'
-					echo ')'
-				} >>"$GITLAB_ENV"
-			fi
+		elif [[ "${GITLAB_ENV:-}" ]]; then
+			{
+				echo "$1=\$( cat <<EOF"
+				echo "$2"
+				echo 'EOF'
+				echo ')'
+			} >>"$GITLAB_ENV"
 		else
 			die "[CI] does not support current ci."
 		fi
