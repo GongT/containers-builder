@@ -71,7 +71,7 @@ function buildah() {
 		local IID="${PASSARGS[*]: -1}"
 		local CID="${PASSARGS[*]: -2:1}"
 
-		if [[ $CID != "$BUILDAH_CACHE_BASE/"* ]]; then
+		if [[ $CID != "$BUILDAH_CACHE_BASE"* ]]; then
 			control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
 			if is_ci; then
 				EXARGS+=("--rm")
