@@ -13,8 +13,6 @@ declare -rx BUILDAH
 
 declare -r FEDORA_SYSTEMD_COMMAND='/lib/systemd/systemd --system --log-target=console --show-status=yes --log-color=no systemd.journald.forward_to_console=yes'
 
-# shellcheck source=./functions/shared_projects.sh
-source "$COMMON_LIB_ROOT/functions/shared_projects.sh"
 # shellcheck source=./functions/mdnf.sh
 source "$COMMON_LIB_ROOT/functions/mdnf.sh"
 # shellcheck source=./functions/mcompile.sh
