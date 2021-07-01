@@ -82,6 +82,14 @@ function buildah() {
 			else
 				xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
 			fi
+
+			if [[ ${GITHUB_SERVER_URL:-} ]] && [[ ${GITHUB_REPOSITORY:-} ]]; then
+				xbuildah config --annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+			fi
+			if [[ ${GITHUB_SHA:-} ]]; then
+				xbuildah config --annotation "org.opencontainers.image.version=$GITHUB_SHA"
+			fi
+
 			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
 			_healthcheck_config_buildah "$CID"
 		fi
