@@ -99,10 +99,10 @@ function buildah() {
 			fi
 
 			if [[ ${GITHUB_SERVER_URL:-} ]] && [[ ${GITHUB_REPOSITORY:-} ]]; then
-				xbuildah config --annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+				xbuildah config --annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$CID"
 			fi
 			if [[ ${GITHUB_SHA:-} ]]; then
-				xbuildah config --annotation "org.opencontainers.image.version=$GITHUB_SHA"
+				xbuildah config --annotation "org.opencontainers.image.version=$GITHUB_SHA" "$CID"
 			fi
 
 			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
