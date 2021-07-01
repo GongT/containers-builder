@@ -32,7 +32,7 @@ function xbuildah() {
 	)
 
 	local SGROUP=
-	if [[ $INSIDE_GROUP ]] || [[ $ACT == run ]]; then
+	if [[ $INSIDE_GROUP ]] || [[ $ACT == run ]] || [[ $ACT == inspect ]] || [[ $ACT == config ]]; then
 		echo "$OUT" >&2
 	else
 		SGROUP=yes
