@@ -58,21 +58,6 @@ function deny_proxy() {
 	info_note "[proxy] deny proxy"
 	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 }
-function force_proxy() {
-	if [[ ! ${PROXY:-} ]]; then
-		info_warn "[proxy] force proxy, but not exists"
-		die 1
-	fi
-	if [[ $1 == --schema ]]; then
-		add_proxy_http_schema
-		shift
-	elif [[ $1 == --no-schema ]]; then
-		remove_proxy_schema
-		shift
-	fi
-	info_note "[proxy] force using proxy $PROXY"
-	http_proxy="$PROXY" https_proxy="$PROXY" HTTP_PROXY="$PROXY" HTTPS_PROXY="$PROXY" "$@"
-}
 
 function buildah_run_perfer_proxy() {
 	perfer_proxy buildah run "$@"
@@ -80,8 +65,4 @@ function buildah_run_perfer_proxy() {
 
 function buildah_run_deny_proxy() {
 	deny_proxy buildah run "$@"
-}
-
-function buildah_run_force_proxy() {
-	force_proxy buildah run "$@"
 }
