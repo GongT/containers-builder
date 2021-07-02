@@ -216,22 +216,8 @@ function _unit_assemble() {
 		use_common_service wait-all-fstab
 	fi
 	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
-		local PULL_FROM="${_S_IMAGE:-$NAME}"
-		if [[ $PULL_FROM == */*/* ]]; then
-			PULL_FROM=${PULL_FROM%%/*}
-			if [[ $PULL_FROM == *:* ]]; then
-				PULL_FROM=${PULL_FROM%%:*}
-			fi
-			if [[ $PULL_FROM != *.* ]]; then
-				use_common_service wait-dns-working ghcr.io
-				use_common_service wait-dns-working docker.io
-			else
-				use_common_service wait-dns-working "$PULL_FROM"
-			fi
-		else
-			use_common_service wait-dns-working ghcr.io
-			use_common_service wait-dns-working docker.io
-		fi
+		use_common_service wait-dns-working
+		edit_system_service dnsmasq create-dnsmasq-config
 	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do

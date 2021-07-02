@@ -1,0 +1,2 @@
+[Service]
+ExecStartPre=!/usr/bin/env bash "__SCRIPT__"

@@ -13,23 +13,10 @@ function JQ() {
 	echo "$JSON" | query "$@"
 }
 
-function try() {
-	if [[ ! ${NOTIFY_SOCKET:-} ]]; then
-		echo -ne "\e[2m"
-	fi
-	while true; do
-		expand_timeout 32
-		if nslookup -timeout=30 "$1" "$2" | grep -A 2 'answer:'; then
-			echo "  - success"
-			break
-		fi
-		echo "  - failed"
-		sleep 1
-	done
-	if [[ ! ${NOTIFY_SOCKET:-} ]]; then
-		echo -ne "\e[0m"
-	fi
-}
+mapfile -t SERVER_LIST < <(resolvectl dns | sed -E 's/^.+://g' | xargs -n1)
+if [[ ${#SERVER_LIST[@]} -eq 0 ]]; then
+	SERVER_LIST=(223.5.5.5 1.1.1.1 114.114.114.114)
+fi
 
 TO_RESOLVE=()
 JSON=$(podman info -f json | query '.registries')
@@ -51,7 +38,9 @@ for TARGET in "${TO_RESOLVE[@]}"; do
 done
 
 for TARGET in "${!DOMAINS[@]}"; do
-	sdnotify " -> try resolve ${TARGET}"
-	try "$TARGET" 127.0.0.1
-done
-startup_done
+	for SERVER in "${SERVER_LIST[@]}"; do
+		echo "server=/$TARGET/$SERVER"
+	done
+done >/etc/dnsmasq.d/99-create-dnsmasq-config.conf
+
+dnsmasq -C /etc/dnsmasq.conf --test

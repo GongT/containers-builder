@@ -3,6 +3,12 @@
 declare -r SERVICES_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/services"
 _COMMON_FILE_INSTALL=
 
+function _install_common_system_support() {
+	if [[ ! $_COMMON_FILE_INSTALL ]]; then
+		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
+		_COMMON_FILE_INSTALL=yes
+	fi
+}
 function _use_common_copy() {
 	local SRV="$1" ARG="${2:-}" SCRIPT
 	local SRV_FILE
@@ -13,10 +19,7 @@ function _use_common_copy() {
 		SRV_FILE="$SRV.service"
 	fi
 
-	if [[ ! $_COMMON_FILE_INSTALL ]]; then
-		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
-		_COMMON_FILE_INSTALL=yes
-	fi
+	_install_common_system_support
 	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
@@ -66,4 +69,22 @@ function use_common_service() {
 	fi
 	unit_unit After "$SRV_NAME"
 	unit_unit Requires "$SRV_NAME"
+}
+
+function edit_system_service() {
+	local SRV="$1" OVERWRITE="${2}" SCRIPT
+
+	_install_common_system_support
+	SCRIPT=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
+
+	if [[ $SRV != *".service" ]]; then
+		SRV="$SRV.service"
+	fi
+	local FOLDER="/etc/systemd/system/$SRV.d"
+	mkdir -p "$FOLDER"
+
+	cat "${SERVICES_DIR}/${OVERWRITE}.service" \
+		| sed "s#__SCRIPT__#$SCRIPT#g" \
+		| fix_old_systemd \
+		| write_file_share "$FOLDER/$OVERWRITE.conf"
 }
