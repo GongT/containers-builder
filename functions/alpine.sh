@@ -54,6 +54,7 @@ function make_base_image_by_apk() {
 	fi
 
 	_apk_hash_cb() {
+		image_get_id "$BASEIMG"
 		echo "${PKGS[*]} $POSTSCRIPT" | md5sum
 	}
 	_apk_build_cb() {

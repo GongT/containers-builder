@@ -166,33 +166,25 @@ function _join_git_path() {
 	local NAME="$1" BRANCH="$2"
 	echo "$LOCAL_TMP/$NAME-$BRANCH"
 }
+function check_downloaded_github() {
+	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
+	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
+	export GIT_DIR
+
+	LAST_COMMIT=$(http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH")
+	if [[ -e "$GIT_DIR/config" ]]; then
+		CURRENT_COMMIT=$(git log --format="%H" -n 1)
+		[[ $CURRENT_COMMIT == "$LAST_COMMIT" ]]
+	else
+		return 1
+	fi
+}
 function download_github() {
 	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
 	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
 	export GIT_DIR
 
-	info " * github clone $REPO($BRANCH)"
-	indent
-	info_log "to $GIT_DIR"
-
-	LAST_COMMIT=$(http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH")
-
-	if [[ -e "$GIT_DIR/config" ]]; then
-		CURRENT_COMMIT=$(git log --format="%H" -n 1)
-		info_log "local cache last commit is $(git log --format="[%h] '%s' (%cr)" -n 1)"
-
-		if [[ $CURRENT_COMMIT == "$LAST_COMMIT" ]]; then
-			info_log "no update detected"
-			dedent
-			echo "$LAST_COMMIT"
-			return
-		fi
-	else
-		info_log "no local cache"
-	fi
-
-	MUTE=yes perfer_proxy download_git "https://github.com/$REPO.git" "$@"
-	dedent
+	perfer_proxy download_git "https://github.com/$REPO.git" "$@"
 }
 function download_git() {
 	local URL="$1" NAME="$2" BRANCH="$3"
@@ -200,14 +192,17 @@ function download_git() {
 	export GIT_DIR
 	mkdir -p "$GIT_DIR"
 
-	[[ "${MUTE:-}" ]] || info " * git clone $URL"
-	[[ "${MUTE:-}" ]] || info_note "      to $GIT_DIR"
+	control_ci group " * github clone $URL($BRANCH)"
+	info_log "  to $GIT_DIR"
+
 	if [[ -e "$GIT_DIR/config" ]]; then
 		local REFS
 		mapfile -t REFS < <(git for-each-ref "--format=%(refname)" refs/heads/ || true)
 		if [[ ${#REFS[@]} != 1 ]] || [[ ${REFS[0]} != "refs/heads/$BRANCH" ]]; then
 			info_warn "invalid git status: multiple or invalid branch"
 			rm -rf "$GIT_DIR"
+			control_ci groupEnd
+
 			download_git "$@"
 			return
 		fi
@@ -218,6 +213,7 @@ function download_git() {
 
 	git log --format="%H" -n 1
 	unset GIT_DIR
+	control_ci groupEnd
 }
 function download_git_result_copy() {
 	local NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR DIST="$1"
