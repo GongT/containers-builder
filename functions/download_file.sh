@@ -166,17 +166,6 @@ function _join_git_path() {
 	local NAME="$1" BRANCH="$2"
 	echo "$LOCAL_TMP/git_download/$NAME-$BRANCH/.git"
 }
-function check_downloaded_github() {
-	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
-	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
-	LAST_COMMIT=$(http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH")
-	if [[ -e "$GIT_DIR/config" ]]; then
-		CURRENT_COMMIT=$(git log --format="%H" -n 1)
-		[[ $CURRENT_COMMIT == "$LAST_COMMIT" ]]
-	else
-		return 1
-	fi
-}
 function download_github() {
 	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
 	perfer_proxy download_git "https://github.com/$REPO.git" "$@"

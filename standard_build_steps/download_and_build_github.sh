@@ -13,7 +13,7 @@ function download_and_build_github() {
 	BUILDAH_FORCE=''
 	STEP="${PSTEP}（下载）"
 	hash_download() {
-		check_downloaded_github "$REPO" "$BRANCH"
+		http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH"
 	}
 	do_download() {
 		local MNT
