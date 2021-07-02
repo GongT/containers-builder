@@ -222,7 +222,6 @@ function download_git_result_copy() {
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
 	x git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
-	rm -rf "$DIST/.git"
 }
 
 function http_get_etag() {
