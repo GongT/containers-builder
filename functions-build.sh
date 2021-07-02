@@ -46,7 +46,7 @@ function create_if_not() {
 	elif [[ $BASE == "scratch" ]]; then
 		if container_exists "$NAME"; then
 			info_log "Using exists container '$NAME'."
-			buildah inspect --type container --format '{{.Container}}' "$NAME"
+			container_get_id "$NAME"
 		else
 			info_log "Create container '$NAME' from image $BASE."
 			new_container "$NAME" "$BASE"
@@ -58,11 +58,11 @@ function create_if_not() {
 		fi
 
 		local EXPECT GOT
-		GOT=$(buildah inspect --type container --format '{{.FromImageID}}' "$NAME" 2>/dev/null)
-		EXPECT=$(buildah inspect --type image --format '{{.FromImageID}}' "$BASE")
+		GOT=$(container_get_from_image_id "$NAME")
+		EXPECT=$(image_get_id "$BASE")
 		if [[ $EXPECT == "$GOT" ]]; then
 			info_log "Using exists container '$NAME'."
-			buildah inspect --type container --format '{{.Container}}' "$NAME"
+			container_get_id "$NAME"
 		elif [[ "$GOT" ]]; then
 			info_log "Not using exists container: $BASE is updated"
 			info_log "    current image:          $EXPECT"
@@ -78,7 +78,7 @@ function create_if_not() {
 
 function container_exists() {
 	local ID X
-	ID=$(buildah inspect --type container --format '{{.ContainerID}}' "$1")
+	ID=$(container_get_id "$1")
 	X=$?
 	if [[ $X -eq 0 ]] && [[ $ID == "" ]]; then
 		info_warn "inspect container $1 success, but nothing return"
@@ -89,7 +89,7 @@ function container_exists() {
 
 function image_exists() {
 	local ID X
-	ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$1")
+	ID=$(image_get_id "$1")
 	X=$?
 	if [[ $X -eq 0 ]] && [[ $ID == "" ]]; then
 		info_warn "inspect image $1 success, but nothing return"
@@ -99,7 +99,14 @@ function image_exists() {
 }
 
 function image_get_id() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1"
+	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
+}
+
+function container_get_id() {
+	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null
+}
+function container_get_from_image_id() {
+	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
 }
 
 function is_id_digist() {
@@ -109,7 +116,7 @@ function is_id_digist() {
 function new_container() {
 	local NAME=$1
 	local EXISTS
-	EXISTS=$(buildah inspect --type container --format '{{.Container}}' "$NAME" 2>/dev/null || true)
+	EXISTS=$(container_get_id "$NAME" || true)
 	if [[ -n $EXISTS ]]; then
 		info_log "Remove exists container '$EXISTS'"
 		buildah rm "$EXISTS" >/dev/null
