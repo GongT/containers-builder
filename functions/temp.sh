@@ -3,7 +3,7 @@
 declare -a TEMP_TO_DELETE=()
 declare -a CONTAINER_TO_DELETE=()
 
-if [[ ! ${TMPDIR} ]] || [[ $TMPDIR == '/tmp' ]]; then
+if [[ ! ${TMPDIR:-} ]] || [[ $TMPDIR == '/tmp' ]]; then
 	TMPDIR="$SYSTEM_FAST_CACHE/tmp"
 	mkdir -p "$TMPDIR"
 fi
