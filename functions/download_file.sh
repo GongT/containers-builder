@@ -164,13 +164,11 @@ function http_get_github_last_commit_id_on_branch() {
 
 function _join_git_path() {
 	local NAME="$1" BRANCH="$2"
-	echo "$LOCAL_TMP/$NAME-$BRANCH"
+	echo "$LOCAL_TMP/git_download/$NAME-$BRANCH/.git"
 }
 function check_downloaded_github() {
 	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
 	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
-	export GIT_DIR
-
 	LAST_COMMIT=$(http_get_github_last_commit_id_on_branch "$REPO" "$BRANCH")
 	if [[ -e "$GIT_DIR/config" ]]; then
 		CURRENT_COMMIT=$(git log --format="%H" -n 1)
@@ -181,16 +179,13 @@ function check_downloaded_github() {
 }
 function download_github() {
 	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
-	GIT_DIR="$(_join_git_path "$REPO" "$BRANCH")"
-	export GIT_DIR
-
 	perfer_proxy download_git "https://github.com/$REPO.git" "$@"
 }
 function download_git() {
 	local URL="$1" NAME="$2" BRANCH="$3"
 	GIT_DIR="$(_join_git_path "$NAME" "$BRANCH")"
 	export GIT_DIR
-	mkdir -p "$GIT_DIR"
+	local TIMESTAMP="$GIT_DIR/timestamp"
 
 	control_ci group " * github clone $URL($BRANCH)"
 	info_log "  to $GIT_DIR"
@@ -206,23 +201,42 @@ function download_git() {
 			download_git "$@"
 			return
 		fi
-		x git fetch --depth=5 --update-shallow --recurse-submodules
+
+		local CTIME
+		CTIME=$(date +%s)
+		if [[ -e $TIMESTAMP ]] && [[ $(<"$TIMESTAMP") -gt $((CTIME - 3600)) ]]; then
+			CTIME=$(<"$TIMESTAMP")
+			CTIME=$((CTIME + 3600))
+			info_note "skip download, cache expire at $(date "--date=@$CTIME" +"%F %T")"
+		else
+			x git submodule sync --recursive
+			x git submodule update --init --recursive
+			x git fetch --depth=3 --no-tags --update-shallow --recurse-submodules 1>&2
+			date +%s >"$TIMESTAMP"
+		fi
 	else
-		x git clone --bare --depth 5 --recurse-submodules --shallow-submodules --branch "$BRANCH" --single-branch "$URL" "$GIT_DIR"
+		x git clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "$BRANCH" --single-branch "$URL" "$(dirname "$GIT_DIR")" 1>&2
+		date +%s >"$TIMESTAMP"
 	fi
 
 	git log --format="%H" -n 1
+	echo "last commit id is: $(git log --format="%H" -n 1)" >&2
 	unset GIT_DIR
 	control_ci groupEnd
 }
 function download_git_result_copy() {
-	local NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR DIST="$1"
+	local DIST="$1" NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR
 	GIT_DIR=$(_join_git_path "$NAME" "$BRANCH_TAG")
+	export GIT_DIR
 	if ! [[ -f "$GIT_DIR/config" ]]; then
 		die "missing downloaded git data: $GIT_DIR (from $NAME)"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
-	x git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
+	mkdir -p "$DIST"
+	x git "--work-tree=$DIST/" checkout --recurse-submodules HEAD -- .
+	# git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
+
+	unset GIT_DIR
 }
 
 function http_get_etag() {

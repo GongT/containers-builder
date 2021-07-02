@@ -70,7 +70,8 @@ function control_ci() {
 		if [[ "${GITHUB_ACTIONS:-}" ]]; then
 			echo "::endgroup::" >&2
 		else
-			echo "[End Group] $*" >&2
+			# echo "[End Group] $*" >&2
+			:
 		fi
 		;;
 	*)

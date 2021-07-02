@@ -2,15 +2,14 @@
 
 set -Eeuo pipefail
 
-export SOURCE="/opt/projects/$PROJECT_ID"
+declare -xr SOURCE="/opt/projects/$PROJECT_ID"
+declare -xr ARTIFACT_PREFIX="/opt/dist"
+declare -xr PREFIX="$ARTIFACT_PREFIX"
+
 cd "$SOURCE"
-
-export ARTIFACT_PREFIX="/opt/dist"
-export PREFIX="$ARTIFACT_PREFIX"
-
 mkdir -p "$ARTIFACT_PREFIX"
 
-if command -v ccache &> /dev/null; then
+if command -v ccache &>/dev/null; then
 	export CCACHE_DIR="$SYSTEM_FAST_CACHE/CCACHE"
 	export CCACHE_BASEDIR="/opt/projects"
 	export CCACHE_COMPRESS='yes'
@@ -26,5 +25,5 @@ if command -v ccache &> /dev/null; then
 	ln -s "$ccache_bin" /opt/ccache_bin/cc
 	ln -s "$ccache_bin" /opt/ccache_bin/c++
 
-	echo "Using CCACHE. ($(command -v gcc))"
+	echo "Using CCACHE. ($(command -v gcc)) @ $CCACHE_DIR"
 fi
