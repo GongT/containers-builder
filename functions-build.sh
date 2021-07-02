@@ -113,9 +113,15 @@ function image_exists() {
 function image_get_id() {
 	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
 }
+function image_find_id() {
+	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null || true
+}
 
 function container_get_id() {
 	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null
+}
+function container_find_id() {
+	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null || true
 }
 function container_get_from_image_id() {
 	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
