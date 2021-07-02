@@ -68,8 +68,7 @@ function run_install() {
 		declare -p PROJECT_ID
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
-	} | buildah run -t \
-		"$WORKER" bash
+	} | buildah run "$WORKER" bash
 
 	buildah copy "--from=$WORKER" "$TARGET_CONTAINER" /mnt/install /
 	control_ci groupEnd
