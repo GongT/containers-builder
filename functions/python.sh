@@ -18,7 +18,7 @@ function make_base_image_by_alpine_pip() {
 
 	STEP="安装python和系统依赖"
 	echo "python3 -m ${PIP_CMD[*]} --upgrade pip ; python3 -m pip --version" \
-		| deny_proxy make_base_image_by_apk "gongt/alpine-cn" "${NAME}-build" python3 py3-pip "${EX_PKGS_BU[@]}"
+		| deny_proxy make_base_image_by_apk "alpine" "${NAME}-build" python3 py3-pip "${EX_PKGS_BU[@]}"
 
 	STEP="安装pip依赖"
 	function _hash_() {
