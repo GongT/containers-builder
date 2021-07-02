@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -Eeuo pipefail
+
 export INSTALL_TARGET="/mnt/install"
 export INSTALL_SOURCE="/opt/dist"
 cd "$INSTALL_SOURCE"
