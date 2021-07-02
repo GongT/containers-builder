@@ -70,7 +70,7 @@ function run_dnf() {
 		$(declare -p PACKAGES)
 		$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
 		XXX
-		buildah rm "$WORKER"
+		buildah unmount "$WORKER"
 	_EOF
 	buildah unshare bash "$DNF_CMD"
 	control_ci groupEnd
