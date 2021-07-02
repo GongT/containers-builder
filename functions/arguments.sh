@@ -105,7 +105,7 @@ function arg_finish() {
 				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
 				| sed -E 's/\s+/\n/g'
 		)
-		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs -n1 printf "%s\n")
+		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs --no-run-if-empty -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 	fi
 	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do

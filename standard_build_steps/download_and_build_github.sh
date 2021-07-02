@@ -17,8 +17,9 @@ function download_and_build_github() {
 	}
 	do_download() {
 		local MNT
-		MNT=$(buildah mount "$1")
-		download_git_result_copy "$MNT/opt/projects/$PROJ_ID" "$REPO" "$BRANCH"
+		MNT=$(create_temp_dir "git-$PROJ_ID-$BRANCH")
+		download_git_result_copy "$MNT" "$REPO" "$BRANCH"
+		buildah copy "$1" "$MNT" "/opt/projects/$PROJ_ID"
 	}
 	buildah_cache2 "$CACHE_BRANCH" hash_download do_download
 

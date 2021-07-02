@@ -4,9 +4,10 @@ declare -a TEMP_TO_DELETE=()
 declare -a CONTAINER_TO_DELETE=()
 
 if [[ ! ${TMPDIR} ]] || [[ $TMPDIR == '/tmp' ]]; then
-	export TMPDIR="$SYSTEM_FAST_CACHE/tmp"
+	TMPDIR="$SYSTEM_FAST_CACHE/tmp"
 	mkdir -p "$TMPDIR"
 fi
+export TMPDIR
 
 function create_temp_dir() {
 	local NAME=".unknown-usage"
@@ -14,7 +15,8 @@ function create_temp_dir() {
 		NAME=".$1"
 	fi
 	local DIR
-	DIR=$(mktemp --directory "containers.builder${NAME}.XXXX")
+	DIR=$(mktemp "--tmpdir=$TMPDIR" --directory "containers.builder${NAME}.XXXX")
+	[[ -d $DIR ]] || die "failed create temp dir"
 	TEMP_TO_DELETE+=("$DIR")
 	echo "$DIR"
 }
@@ -25,7 +27,8 @@ function create_temp_file() {
 		NAME=".$1"
 	fi
 	local FILE
-	FILE=$(mktemp "containers.builder${NAME}.XXXX")
+	FILE=$(mktemp "--tmpdir=$TMPDIR" "containers.builder${NAME}.XXXX")
+	[[ -f $FILE ]] || die "failed create temp file"
 	TEMP_TO_DELETE+=("$FILE")
 	echo "$FILE"
 }

@@ -1,20 +1,20 @@
 function _dnf_prep() {
-	DNF=$(CI="" new_container "mdnf" fedora)
+	DNF=$(new_container "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
-	if [[ "${PROXY:-}" ]] && [[ "${DNF_USE_PROXY:-}" ]]; then
-		info_warn "dnf is using proxy."
-		buildah run "$DNF" sh -c "echo 'proxy=$PROXY' >> /etc/dnf/dnf.conf"
+	if [[ "${http_proxy:-}" ]]; then
+		info_warn "dnf is using proxy $http_proxy."
+		buildah run "$DNF" sh -c "echo 'proxy=$http_proxy' >> /etc/dnf/dnf.conf"
 	else
 		buildah run "$DNF" sh -c "sed -i '/proxy=/d' /etc/dnf/dnf.conf"
 	fi
 	buildah run "$DNF" bash <"$COMMON_LIB_ROOT/staff/mdnf/prepare.sh"
-
-	mkdir -p /var/lib/dnf/repos "$SYSTEM_COMMON_CACHE/dnf"
 }
 
 function use_fedora_dnf_cache() {
-	echo "--volume=/var/lib/dnf/repos:/var/lib/dnf/repos" \
-		"--volume=$SYSTEM_COMMON_CACHE/dnf:/var/cache/dnf"
+	local -r SUFFIX=".test"
+	mkdir -p "$SYSTEM_COMMON_CACHE/dnf-repos${SUFFIX}" "$SYSTEM_COMMON_CACHE/dnf${SUFFIX}"
+	echo "--volume=$SYSTEM_COMMON_CACHE/dnf-repos${SUFFIX}:/var/lib/dnf/repos" \
+		"--volume=$SYSTEM_COMMON_CACHE/dnf${SUFFIX}:/var/cache/dnf"
 }
 
 function make_base_image_by_dnf() {
@@ -52,26 +52,25 @@ function run_dnf_with_list_file() {
 	run_dnf "$WORKER" "${PKGS[@]}"
 }
 function run_dnf() {
-	local WORKER="$1" DNF
+	local WORKER="$1" DNF DNF_CMD
 	shift
+	local PACKAGES=("$@")
 
-	local MNT=$(buildah mount "$WORKER")
 	_dnf_prep
 
 	control_ci group "DNF run"
-	{
-		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
-		cat <<-BUSYBOX
-			if command -v busybox &>/dev/null ; then
-				echo "installing busybox..." &>/dev/null
-				busybox --install /bin
-			fi
-		BUSYBOX
-	} | buildah run \
-		"--cap-add=CAP_SYS_ADMIN" \
-		"--volume=$MNT:/install-root" \
-		$(use_fedora_dnf_cache) \
-		"$DNF" bash -s - "$@"
+	DNF_CMD=$(create_temp_file dnf.cmd)
+	cat <<-_EOF >"$DNF_CMD"
+		#!/bin/bash
+		set -Eeuo pipefail
+		MNT=\$(buildah mount "$WORKER")
+		cat << 'XXX' | buildah run --cap-add=CAP_SYS_ADMIN "--volume=\$MNT:/install-root" $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
+		$(declare -p PACKAGES)
+		$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
+		XXX
+		buildah rm "$WORKER"
+	_EOF
+	buildah unshare bash "$DNF_CMD"
 	control_ci groupEnd
 }
 
@@ -126,4 +125,8 @@ function dnf_hash_version() {
 	done
 
 	echo "$SUM" | md5sum | awk '{print $1}'
+}
+
+function dnf() {
+	die "deny run dnf on host!"
 }
