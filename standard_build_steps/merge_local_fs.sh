@@ -4,7 +4,7 @@ function merge_local_fs() {
 	local -r CACHE_BRANCH=$1
 	shift
 
-	local ARGS=() EXTRA_SCRIPT
+	local ARGS=() EXTRA_SCRIPT=
 	while [[ $# -gt 0 ]]; do
 		if [[ $1 == -* ]]; then
 			ARGS+=("$1")

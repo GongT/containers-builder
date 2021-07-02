@@ -5,7 +5,7 @@ set -Eeuo pipefail
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source "./common_service_library.sh"
 
-TARGET=${1:-www.google.com}
+TARGET=${1:-}
 
 function try() {
 	if [[ ! ${NOTIFY_SOCKET:-} ]]; then
@@ -26,5 +26,9 @@ function try() {
 	startup_done
 }
 
+if [[ "$TARGET" ]]; then
 sdnotify " -> try resolve ${TARGET}"
 try "$TARGET" 127.0.0.1
+else
+
+fi
