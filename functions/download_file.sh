@@ -122,12 +122,17 @@ function __github_api() {
 }
 
 LAST_GITHUB_RELEASE_JSON=""
+function http_get_github_release() {
+	local REPO="$1"
+	local URL="repos/$REPO/releases/latest"
+	info_log " * fetching release from $URL"
+	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
+}
+
 function http_get_github_release_id() {
 	local REPO="$1" ID
-	local URL="repos/$REPO/releases/latest"
-	info_log " * fetching release id (+commit hash) from $URL"
+	http_get_github_release "$REPO"
 
-	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
 	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '(.id|tostring) + "-" + .target_commitish')
 
 	info_log "       = $ID"
