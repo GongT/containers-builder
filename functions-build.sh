@@ -19,6 +19,18 @@ source "$COMMON_LIB_ROOT/functions/mdnf.sh"
 source "$COMMON_LIB_ROOT/functions/mcompile.sh"
 # shellcheck source=./functions/buildah-cache.sh
 source "$COMMON_LIB_ROOT/functions/buildah-cache.sh"
+# shellcheck source=./functions/build-folder-hash.sh
+source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
+# shellcheck source=./functions/buildah-cache.2.sh
+source "$COMMON_LIB_ROOT/functions/buildah-cache.2.sh"
+# shellcheck source=./functions/buildah-cache.fork.sh
+source "$COMMON_LIB_ROOT/functions/buildah-cache.fork.sh"
+# shellcheck source=./functions/buildah-cache.helper.config.sh
+source "$COMMON_LIB_ROOT/functions/buildah-cache.helper.config.sh"
+# shellcheck source=./functions/buildah-cache.helper.run.sh
+source "$COMMON_LIB_ROOT/functions/buildah-cache.helper.run.sh"
+# shellcheck source=./functions/buildah-cache.remote.sh
+source "$COMMON_LIB_ROOT/functions/buildah-cache.remote.sh"
 # shellcheck source=./functions/buildah.hooks.sh
 source "$COMMON_LIB_ROOT/functions/buildah.hooks.sh"
 # shellcheck source=./functions/alpine.sh
