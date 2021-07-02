@@ -1,3 +1,7 @@
+REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf-repos"
+
+mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf"
+
 function _dnf_prep() {
 	DNF=$(new_container "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
@@ -11,10 +15,8 @@ function _dnf_prep() {
 }
 
 function use_fedora_dnf_cache() {
-	local -r SUFFIX=".test"
-	mkdir -p "$SYSTEM_COMMON_CACHE/dnf-repos${SUFFIX}" "$SYSTEM_COMMON_CACHE/dnf${SUFFIX}"
-	echo "--volume=$SYSTEM_COMMON_CACHE/dnf-repos${SUFFIX}:/var/lib/dnf/repos" \
-		"--volume=$SYSTEM_COMMON_CACHE/dnf${SUFFIX}:/var/cache/dnf"
+	echo "--volume=$REPO_CACHE_DIR:/var/lib/dnf/repos" \
+		"--volume=$SYSTEM_COMMON_CACHE/dnf:/var/cache/dnf"
 }
 
 function make_base_image_by_dnf() {
@@ -82,7 +84,7 @@ function delete_rpm_files() {
 function dnf_hash_version() {
 	local CACHE_DIR="$SYSTEM_FAST_CACHE/dnf-version-cache"
 	local PKGS=() FILE=$1 MISSING=() NAME SUM=""
-	local MASTER_HASH_FILE="$CACHE_DIR/.master" REPO_CACHE_DIR="/var/lib/dnf/repos"
+	local MASTER_HASH_FILE="$CACHE_DIR/.master"
 
 	mapfile -t PKGS <"$FILE"
 	mkdir -p "$CACHE_DIR"
