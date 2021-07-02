@@ -13,7 +13,7 @@ function JQ() {
 	echo "$JSON" | query "$@"
 }
 
-mapfile -t SERVER_LIST < <(resolvectl dns | sed -E 's/^.+://g' | xargs -n1)
+mapfile -t SERVER_LIST < <(resolvectl dns | sed -E 's/^[^:]+://g' | xargs -n1)
 if [[ ${#SERVER_LIST[@]} -eq 0 ]]; then
 	SERVER_LIST=(223.5.5.5 1.1.1.1 114.114.114.114)
 fi
