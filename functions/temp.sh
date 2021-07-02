@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-declare -a CONTAINER_TO_DELETE=()
-
 if [[ ! ${TMPDIR:-} ]] || [[ $TMPDIR == '/tmp' ]]; then
 	TMPDIR="$SYSTEM_FAST_CACHE/tmp"
 	mkdir -p "$TMPDIR"
@@ -14,7 +12,9 @@ fi
 
 export TMPDIR
 TMP_REGISTRY_FILE=$(mktemp "--tmpdir=$TMPDIR" "tempfilelist.XXXX")
-export TMP_REGISTRY_FILE
+declare -xr TMP_REGISTRY_FILE
+TMP_CONTAINER_FILE=$(mktemp "--tmpdir=$TMPDIR" "tempctrlist.XXXX")
+declare -xr TMP_REGISTRY_FILE
 
 function create_temp_dir() {
 	local NAME=".unknown-usage"
@@ -59,26 +59,23 @@ function __exit_delete_temp_files() {
 }
 
 function collect_temp_container() {
-	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
-		return
-	fi
-	info_note "deleting temp containers..."
-	if [[ ${BUILDAH+found} == found ]]; then
-		"$BUILDAH" rm "${CONTAINER_TO_DELETE[@]}" &>/dev/null || true
-	else
-		podman rm "${CONTAINER_TO_DELETE[@]}" &>/dev/null || true
-	fi
+	local F
+	for F; do
+		echo "$F" >>"$TMP_CONTAINER_FILE"
+	done
 }
 function __exit_delete_container() {
-	if [[ ${#CONTAINER_TO_DELETE[@]} -eq 0 ]]; then
-		return
-	fi
-	info_note "deleting temp containers..."
-	if [[ ${BUILDAH+found} == found ]]; then
-		"$BUILDAH" rm "${CONTAINER_TO_DELETE[@]}"
-	else
-		podman rm -f "${CONTAINER_TO_DELETE[@]}"
-	fi
+	local TEMP_TO_DELETE I
+	mapfile -t TEMP_TO_DELETE <"$TMP_CONTAINER_FILE"
+	control_ci group "deleting temp containers..."
+	for I in "${TEMP_TO_DELETE[@]}"; do
+		if [[ ${BUILDAH+found} == found ]]; then
+			"$BUILDAH" rm "$I" || true
+		else
+			buildah rm "$I" || true
+		fi
+	done
+	control_ci groupEnd
 }
 
 register_exit_handler __exit_delete_container
