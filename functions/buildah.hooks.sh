@@ -88,7 +88,6 @@ function buildah() {
 		local CID="${PASSARGS[*]: -2:1}"
 
 		if [[ $CID != "$BUILDAH_CACHE_BASE"* ]]; then
-			control_ci "set-env" "LAST_COMMITED_IMAGE" "$IID"
 			if is_ci; then
 				EXARGS+=("--rm")
 
@@ -117,14 +116,17 @@ function buildah() {
 		;;
 	esac
 
-	xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}"
+	local OUTPUT
+	OUTPUT=$(xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}")
 	local R=$?
 
 	case "$ACTION" in
 	commit)
+		control_ci "set-env" "LAST_COMMITED_IMAGE" "$OUTPUT"
 		control_ci groupEnd
 		;;
 	esac
 
+	echo "$OUTPUT"
 	return $R
 }
