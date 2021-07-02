@@ -3,7 +3,7 @@ REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf-repos"
 mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf"
 
 function _dnf_prep() {
-	DNF=$(new_container "mdnf" fedora)
+	DNF=$(create_if_not "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
 	if [[ "${http_proxy:-}" ]]; then
 		info_warn "dnf is using proxy $http_proxy."
@@ -11,7 +11,7 @@ function _dnf_prep() {
 	else
 		buildah run "$DNF" sh -c "sed -i '/proxy=/d' /etc/dnf/dnf.conf"
 	fi
-	buildah run "$DNF" bash <"$COMMON_LIB_ROOT/staff/mdnf/prepare.sh"
+	# buildah run "$DNF" bash <"$COMMON_LIB_ROOT/staff/mdnf/prepare.sh"
 }
 
 function use_fedora_dnf_cache() {
@@ -75,6 +75,19 @@ function run_dnf() {
 	buildah unshare bash "$DNF_CMD"
 	control_ci groupEnd
 }
+function run_dnf_host() {
+	local ACTION="$1" DNF DNF_CMD
+	shift
+	local PACKAGES=("$@")
+
+	_dnf_prep
+
+	{
+		declare -p ACTION
+		declare -p PACKAGES
+		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
+	} | buildah run --cap-add=CAP_SYS_ADMIN $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
+}
 
 function delete_rpm_files() {
 	local CONTAINER="$1"
@@ -109,7 +122,7 @@ function dnf_hash_version() {
 	if [[ ${#MISSING[@]} -gt 0 ]]; then
 		info_log "finding ${#MISSING[@]} packages version..."
 		local NEW_VERSIONS=() E VER
-		mapfile -t NEW_VERSIONS < <(dnf list --color never "${MISSING[@]}" | grep -v i686)
+		mapfile -t NEW_VERSIONS < <(run_dnf_host list --color never "${MISSING[@]}" | grep -v i686)
 		for E in "${NEW_VERSIONS[@]}"; do
 			NAME=$(echo "$E" | awk '{print $1}')
 			VER=$(echo "$E" | awk '{print $2}')

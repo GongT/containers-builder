@@ -35,9 +35,13 @@ _exit() {
 
 trap _exit EXIT
 
-/usr/bin/dnf install -y --releasever=/ --installroot=/install-root "${PACKAGES[@]}"
+if ! [[ ${ACTION:-} ]]; then
+	ACTION="install"
+fi
 
-if command -v busybox &>/dev/null; then
+/usr/bin/dnf "$ACTION" -y --releasever=/ --installroot=/install-root "${PACKAGES[@]}"
+
+if [[ $ACTION == install ]] && command -v busybox &>/dev/null; then
 	echo "installing busybox..." &>/dev/null
 	busybox --install /bin
 fi
