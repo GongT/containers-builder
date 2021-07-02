@@ -37,7 +37,7 @@ function run_compile() {
 		MOUNT_SOURCE+=("--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID")
 	fi
 
-	control_ci group "Compile Details"
+	control_ci group "Compile $PROJECT_ID"
 	buildah run \
 		"--volume=$SYSTEM_COMMON_CACHE:/cache/common" \
 		"--volume=$SYSTEM_FAST_CACHE:/cache/fast" \
@@ -48,7 +48,7 @@ function run_compile() {
 function run_install() {
 	local -r SOURCE_IMAGE="$1" TARGET_CONTAINER="$2" PROJECT_ID=$3
 
-	local PREPARE_SCRIPT INSTALLER_SCRIPT
+	local PREPARE_SCRIPT
 	if [[ $# -gt 3 ]]; then
 		PREPARE_SCRIPT=$(<"$4")
 	elif [[ ! -t 0 ]]; then
@@ -57,6 +57,7 @@ function run_install() {
 		PREPARE_SCRIPT="make install"
 	fi
 
+	control_ci group "Install $PROJECT_ID"
 	WORKER=$(new_container "install.$PROJECT_ID" "$SOURCE_IMAGE")
 	collect_temp_container "$WORKER"
 
@@ -68,10 +69,10 @@ function run_install() {
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
 	} | buildah run -t \
-		"--volume=$INSTALLER_SCRIPT:/mnt/script.sh:ro" \
-		"$WORKER" bash "/mnt/script.sh"
+		"$WORKER" bash
 
 	buildah copy "--from=$WORKER" "$TARGET_CONTAINER" /mnt/install /
+	control_ci groupEnd
 }
 
 function clean_submodule() {
