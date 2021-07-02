@@ -4,10 +4,6 @@ function install_build_result() {
 	shift
 	local -ar PROJECT_IDS=("$@")
 
-	if [[ $INSTALLER_SCRIPT ]]; then
-		INSTALLER_SCRIPT=("$INSTALLER_SCRIPT")
-	fi
-
 	_hash() {
 		echo "$SOURCE_IMAGE"
 	}
