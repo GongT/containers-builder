@@ -127,6 +127,10 @@ function dnf_hash_version() {
 			NAME=$(echo "$E" | awk '{print $1}')
 			VER=$(echo "$E" | awk '{print $2}')
 			NAME="${NAME%.*}"
+			if [[ ! $NAME ]]; then
+				control_ci error "invalid dnf output line: $E"
+				continue
+			fi
 			echo "$VER" >"$CACHE_DIR/$NAME"
 		done
 	fi
