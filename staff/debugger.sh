@@ -61,4 +61,4 @@ ensure_mounts "${_S_PREP_FOLDER[@]}"
 podman volume prune -f &>/dev/null || true
 
 make_arguments "${STARTUP_ARGS[@]}"
-X podman run -it --log-level=debug "${ARGS[@]}"
+X podman run -it "${ARGS[@]}"

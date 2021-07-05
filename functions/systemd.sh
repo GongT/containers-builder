@@ -92,6 +92,7 @@ function __create_unit__() {
 
 	if [[ $NAME == *@ ]]; then
 		NAME="${NAME:0:-1}"
+		_S_IMAGE="${_S_IMAGE:0:-1}"
 		_S_AT_='@'
 	fi
 
