@@ -39,12 +39,14 @@ function add_proxy_http_schema() {
 }
 
 function perfer_proxy() {
-	if [[ $1 == --schema ]]; then
-		add_proxy_http_schema
-		shift
-	elif [[ $1 == --no-schema ]]; then
+	if [[ $1 == --no-schema ]]; then
 		remove_proxy_schema
 		shift
+	else
+		add_proxy_http_schema
+		if [[ $1 == --schema ]]; then
+			shift
+		fi
 	fi
 	if [[ ${PROXY+found} == "found" ]]; then
 		info_note "[proxy] using proxy $PROXY"
