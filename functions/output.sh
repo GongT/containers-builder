@@ -148,10 +148,10 @@ function dedent() {
 
 declare -r JQ_ARGS=(--exit-status --compact-output --monochrome-output --raw-output)
 function filtered_jq() {
-	local INPUT QUERY="$1"
-	INPUT=$(jq "${JQ_ARGS[@]}" "$QUERY")
+	local INPUT
+	INPUT=$(jq "${JQ_ARGS[@]}" "$@")
 	if [[ $INPUT == "null" ]]; then
-		die "failed query $QUERY"
+		die "failed query $1"
 	fi
 	echo "$INPUT"
 }

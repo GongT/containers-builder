@@ -143,6 +143,11 @@ function http_get_github_release_id() {
 	fi
 }
 
+function github_release_asset_download_url() {
+	local -r NAME="$1"
+	echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name=$name) | .browser_download_url' --arg name "$1"
+}
+
 function http_get_github_last_commit_id() {
 	local REPO=$1 API_RESULT
 	info_log " * check last commit id of $REPO"
