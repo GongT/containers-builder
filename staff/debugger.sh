@@ -13,6 +13,11 @@ if echo "$CONTAINER_ID" | grep -q '%i'; then
 		exit 1
 	fi
 
+	for I in "${!_S_PREP_FOLDER[@]}"; do
+		V="${_S_PREP_FOLDER[$I]}"
+		_S_PREP_FOLDER[$I]="${V//%i/${template_id}}"
+	done
+
 	function X() {
 		local PODMAN_RUN=()
 		for i; do
@@ -56,11 +61,6 @@ printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
 
 load_sdnotify
-
-for I in "${!_S_PREP_FOLDER[@]}"; do
-	V="${_S_PREP_FOLDER[$I]}"
-	_S_PREP_FOLDER[$I]="${V//%i/${template_id}}"
-done
 
 ensure_mounts "${_S_PREP_FOLDER[@]}"
 podman volume prune -f &>/dev/null || true
