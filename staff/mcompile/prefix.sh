@@ -27,3 +27,17 @@ if command -v ccache &>/dev/null; then
 
 	echo "Using CCACHE. ($(command -v gcc)) @ $CCACHE_DIR"
 fi
+
+function group() {
+	if is_ci; then
+		echo "::group::$*" >&2
+	else
+		echo -e "\e[38;5;14m$*\e[0m" >&2
+	fi
+}
+
+function groupEnd() {
+	if is_ci; then
+		echo "::endgroup::" >&2
+	fi
+}

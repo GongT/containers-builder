@@ -72,7 +72,11 @@ function run_dnf() {
 		XXX
 		buildah unmount "$WORKER"
 	_EOF
-	buildah unshare bash "$DNF_CMD"
+	if is_root; then
+		bash "$DNF_CMD"
+	else
+		buildah unshare bash "$DNF_CMD"
+	fi
 	control_ci groupEnd
 }
 function run_dnf_host() {

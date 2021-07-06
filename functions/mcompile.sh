@@ -28,6 +28,8 @@ function run_compile() {
 		echo "export SYSTEM_COMMON_CACHE='/cache/common'"
 		echo "export SYSTEM_FAST_CACHE='/cache/fast'"
 		cat "$COMMON_LIB_ROOT/staff/mcompile/prefix.sh"
+		export_script_variable CI
+		export_script_function is_ci
 		SHELL_USE_PROXY
 		cat "$SCRIPT"
 	} >"$SCRIPT_FILE"
@@ -68,6 +70,8 @@ function run_install() {
 		echo 'set -Eeuo pipefail'
 		SHELL_ERROR_HANDLER
 		declare -p PROJECT_ID
+		export_script_variable CI
+		export_script_function is_ci
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
 	} | buildah run "--volume=$TMPD:/mnt/install" "$WORKER" bash

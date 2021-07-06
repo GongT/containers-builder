@@ -11,6 +11,13 @@ function die() {
 	exit 1
 }
 
+function export_script_variable() {
+	declare -p "$@" 2>/dev/null || true
+}
+function export_script_function() {
+	declare -fp "$@" 2>/dev/null || true
+}
+
 function control_ci() {
 	local -r ACTION="$1"
 	shift
