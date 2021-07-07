@@ -43,3 +43,8 @@ function groupEnd() {
 		echo "::endgroup::"
 	fi
 }
+
+function x() {
+	echo -e " + $*" >&2
+	"$@"
+}

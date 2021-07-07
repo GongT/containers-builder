@@ -172,7 +172,7 @@ function _join_git_path() {
 	echo "$LOCAL_TMP/git_download/$NAME-$BRANCH/.git"
 }
 function download_github() {
-	local REPO="$1" BRANCH="$2" LAST_COMMIT CURRENT_COMMIT GIT_DIR
+	local REPO="$1" BRANCH="$2" GIT_DIR
 	perfer_proxy download_git "https://github.com/$REPO.git" "$@"
 }
 function download_git() {
@@ -203,6 +203,7 @@ function download_git() {
 			CTIME=$((CTIME + 3600))
 			info_note "skip download, cache expire at $(date "--date=@$CTIME" +"%F %T")"
 		else
+			x git submodule update --recursive
 			x git submodule sync --recursive
 			x git submodule update --init --recursive
 			x git fetch --depth=3 --no-tags --update-shallow --recurse-submodules 1>&2
