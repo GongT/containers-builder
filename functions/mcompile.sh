@@ -39,13 +39,16 @@ function run_compile() {
 		MOUNT_SOURCE+=("--volume=$SOURCE_DIRECTORY:/opt/projects/$PROJECT_ID")
 	fi
 
-	control_ci group "Compile $PROJECT_ID"
+	if ! grep -q "group .*" "$SCRIPT_FILE"; then
+		control_ci group "Compile $PROJECT_ID"
+	fi
 	buildah run \
 		"--volume=$SYSTEM_COMMON_CACHE:/cache/common" \
 		"--volume=$SYSTEM_FAST_CACHE:/cache/fast" \
-		"--volume=$SCRIPT_FILE:/opt/projects/compile.sh" \
-		"${MOUNT_SOURCE[@]}" "$WORKER" bash /opt/projects/compile.sh
-	control_ci groupEnd
+		"${MOUNT_SOURCE[@]}" "$WORKER" bash <"$SCRIPT_FILE"
+	if ! grep -q "group .*" "$SCRIPT_FILE"; then
+		control_ci groupEnd
+	fi
 }
 function run_install() {
 	local -r SOURCE_IMAGE="$1" TARGET_CONTAINER="$2" PROJECT_ID=$3

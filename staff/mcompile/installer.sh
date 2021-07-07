@@ -93,7 +93,7 @@ function collect_binary_dependencies() {
 		# Name only .so files (common)
 		for FILE in $(ldd "$BIN" | grep '=>' | awk '{print $3}'); do
 			if [[ $FILE == not ]]; then
-				ldd "$BIN"
+				ldd "$BIN" >&2
 				echo "Failed to resolve some dependencies of $BIN." >&2
 				exit 1
 			fi

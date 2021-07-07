@@ -116,8 +116,7 @@ function buildah() {
 		;;
 	esac
 
-	local OUTPUT
-	OUTPUT=$(xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}")
+	xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}"
 	local R=$?
 
 	case "$ACTION" in
@@ -127,6 +126,5 @@ function buildah() {
 		;;
 	esac
 
-	echo "$OUTPUT"
 	return $R
 }

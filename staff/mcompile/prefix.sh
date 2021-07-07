@@ -26,18 +26,20 @@ if command -v ccache &>/dev/null; then
 	ln -s "$ccache_bin" /opt/ccache_bin/c++
 
 	echo "Using CCACHE. ($(command -v gcc)) @ $CCACHE_DIR"
+else
+	echo "NOT using CCACHE."
 fi
 
 function group() {
 	if is_ci; then
-		echo "::group::$*" >&2
+		echo "::group::$*"
 	else
-		echo -e "\e[38;5;14m$*\e[0m" >&2
+		echo -e "\e[38;5;14m$*\e[0m"
 	fi
 }
 
 function groupEnd() {
 	if is_ci; then
-		echo "::endgroup::" >&2
+		echo "::endgroup::"
 	fi
 }

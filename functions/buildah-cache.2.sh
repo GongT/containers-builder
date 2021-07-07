@@ -10,6 +10,9 @@ function buildah_cache2() {
 		echo "$BUILDAH_LAST_IMAGE" >>"$TMPF"
 		"$HASH_CALLBACK" >>"$TMPF"
 		md5sum "$TMPF"
+		# echo "===========================================" >&2
+		# cat "$TMPF" >&2
+		# echo "===========================================" >&2
 	}
 	_build_cb() {
 		local CONTAINER
