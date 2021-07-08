@@ -117,7 +117,7 @@ register_exit_handler _exit_handle_output
 
 function SHELL_ERROR_HANDLER() {
 	declare -f callstack
-	echo '
+	cat <<'EOF'
 _exit_handle_in_container() {
 	EXIT_CODE=$?
 	set +Eeuo pipefail
@@ -126,8 +126,8 @@ _exit_handle_in_container() {
 		callstack 1
 	fi
 }
-	trap _exit_handle_in_container EXIT
-'
+trap _exit_handle_in_container EXIT
+EOF
 }
 
 function info() {

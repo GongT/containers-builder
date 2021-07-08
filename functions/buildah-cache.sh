@@ -114,7 +114,7 @@ function buildah_cache_start() {
 	local BASE_IMG=$1
 	if [[ $BASE_IMG != scratch ]]; then
 		if ! image_exists "$BASE_IMG"; then
-			podman pull --quiet "$BASE_IMG"
+			buildah pull --quiet "$BASE_IMG"
 		fi
 		BUILDAH_LAST_IMAGE=$(image_get_id "$BASE_IMG")
 	else

@@ -25,6 +25,9 @@ function download_file() {
 		if [[ ! ${HTTP_PROXY:-} ]]; then
 			EXARGS+=(--no-proxy)
 		fi
+		if [[ ${HTTP_COOKIE:-} ]]; then
+			EXARGS+=(--header "Cookie: $HTTP_COOKIE")
+		fi
 
 		control_ci group "download with wget"
 		while ! wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
