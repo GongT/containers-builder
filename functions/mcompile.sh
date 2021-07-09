@@ -66,8 +66,7 @@ function run_install() {
 	WORKER=$(new_container "install.$PROJECT_ID" "$SOURCE_IMAGE")
 	collect_temp_container "$WORKER"
 
-	TMPD=$(create_temp_dir "install.$PROJECT_ID")
-
+	TMPF=$(create_temp_file install.script)
 	{
 		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
@@ -75,11 +74,17 @@ function run_install() {
 		declare -p PROJECT_ID
 		export_script_variable CI
 		export_script_function is_ci
+		echo "mkdir -p /mnt/install"
 		cat "$COMMON_LIB_ROOT/staff/mcompile/installer.sh"
 		echo "$PREPARE_SCRIPT"
-	} | buildah run "--volume=$TMPD:/mnt/install" "$WORKER" bash
+	} >"$TMPF"
 
-	buildah copy "$TARGET_CONTAINER" "$TMPD" /
+	buildah unshare bash <<-EOF
+		set -Eeuo pipefail
+		MNT=\$(buildah mount "$TARGET_CONTAINER")
+		buildah run "--volume=\$MNT:/mnt/install" "$WORKER" bash < "$TMPF"
+	EOF
+
 	control_ci groupEnd
 }
 

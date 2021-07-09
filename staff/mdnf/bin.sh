@@ -30,6 +30,7 @@ _exit() {
 	mkdir -p "${DIRS_SHOULD_EMPTY[@]}"
 	chmod 0777 "${DIRS_SHOULD_EMPTY[@]}"
 
+	echo "dnf script returned $R" >&2
 	exit $R
 }
 

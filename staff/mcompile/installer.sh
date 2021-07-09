@@ -4,6 +4,7 @@ set -Eeuo pipefail
 
 export INSTALL_TARGET="/mnt/install"
 export INSTALL_SOURCE="/opt/dist"
+mkdir -p "$INSTALL_SOURCE"
 cd "$INSTALL_SOURCE"
 
 declare -rx LIST_FILE=$(mktemp -u)
@@ -35,15 +36,28 @@ function collect_dist_binary_dependencies() {
 	collect_binary_dependencies "${BINS[@]}"
 }
 function copy_dist_root() {
+	# old name
+	collect_dist_root
+}
+function collect_dist_root() {
 	info_log "Copy all files from $INSTALL_SOURCE to $INSTALL_TARGET"
-	cp -af "$INSTALL_SOURCE" -T "$INSTALL_TARGET"
+	find "$INSTALL_SOURCE" -type f >>"$LIST_FILE"
 }
 
 function copy_collected_dependencies() {
+	# old name
+	copy_collected_files
+}
+function copy_collected_files() {
 	if ! [[ -e $LIST_FILE ]]; then
 		info_log "no collected dependencies..."
 		return
 	fi
+
+	local DATA
+	DATA=$(sed "#$INSTALL_TARGET/#d" "$LIST_FILE")
+	echo "$DATA" | sort | uniq >"$LIST_FILE"
+
 	info_log "====================== Copy dependencies to $INSTALL_SOURCE"
 	echo -e '\e[2m' >&2
 	tar --create "--directory=/" "--files-from=$LIST_FILE" \
@@ -75,7 +89,7 @@ function collect_system_file() {
 	if [[ $FILE != "$INSTALL_TARGET/"* ]]; then
 		echo "$FILE" >>"$LIST_FILE"
 	else
-		echo -e "\e[38;5;7mSkip cross-filesystem file: $FILE" >&2
+		echo -e "\e[2mSkip cross-filesystem file: $FILE\e[0m" >&2
 	fi
 }
 
@@ -91,7 +105,8 @@ function collect_binary_dependencies() {
 
 		collect_system_file "$BIN"
 		# Name only .so files (common)
-		for FILE in $(ldd "$BIN" | grep '=>' | awk '{print $3}'); do
+		mapfile -t FILES < <(ldd "$BIN" | grep '=>' | awk '{print $3}')
+		for FILE in "${FILES[@]}"; do
 			if [[ $FILE == not ]]; then
 				ldd "$BIN" >&2
 				echo "Failed to resolve some dependencies of $BIN." >&2

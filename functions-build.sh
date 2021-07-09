@@ -62,7 +62,7 @@ function create_if_not() {
 			info_log "Using exists container '$NAME'."
 			container_get_id "$NAME"
 		else
-			info_log "Create container '$NAME' from image $BASE."
+			info_log "Container '$NAME' not exists, create from image $BASE."
 			new_container "$NAME" "$BASE"
 		fi
 	else
@@ -72,7 +72,7 @@ function create_if_not() {
 		fi
 
 		local EXPECT GOT
-		GOT=$(container_get_from_image_id "$NAME")
+		GOT=$(container_get_base_image_id "$NAME")
 		EXPECT=$(image_get_id "$BASE")
 		if [[ $EXPECT == "$GOT" ]]; then
 			info_log "Using exists container '$NAME'."
@@ -84,7 +84,7 @@ function create_if_not() {
 			buildah rm "$NAME" >/dev/null
 			new_container "$NAME" "$BASE"
 		else
-			info_log "Create container '$NAME' from image '$BASE'."
+			info_log "Container '$NAME' not exists, create from image $BASE."
 			new_container "$NAME" "$BASE"
 		fi
 	fi
@@ -125,8 +125,8 @@ function container_get_id() {
 function container_find_id() {
 	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null || true
 }
-function container_get_from_image_id() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
+function container_get_base_image_id() {
+	buildah inspect --type container --format '{{.FromImageID}}' "$1" 2>/dev/null
 }
 
 function is_id_digist() {
