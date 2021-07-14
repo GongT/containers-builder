@@ -4,6 +4,13 @@ declare -r LOCAL_TMP="$SYSTEM_COMMON_CACHE/Download"
 
 function download_file_force() {
 	local FILE="download_$RANDOM" URL="$1"
+
+	local EXT
+	EXT=$(basename "$URL")
+	EXT="${EXT%%\?*}"
+	EXT="${EXT#*.}"
+	FILE+=".$EXT"
+
 	FORCE_DOWNLOAD=yes download_file "$URL" "$FILE"
 }
 function download_file() {
