@@ -1,2 +1,4 @@
+[Unit]
+After=systemd-resolved.service
 [Service]
 ExecStartPre=!/usr/bin/env bash "__SCRIPT__"
