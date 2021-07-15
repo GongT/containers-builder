@@ -35,10 +35,14 @@ TO_RESOLVE=()
 JSON=$(podman info -f json | query '.registries')
 for URL in $(JQ '.search[]'); do
 	if JQ ".[\"$URL\"]" &>/dev/null; then
-		TO_RESOLVE+=("$(JQ ".[\"$URL\"].Location")")
-		for U in $(JQ ".[\"$URL\"].Mirrors[].Location"); do
-			TO_RESOLVE+=("$U")
-		done
+		mapfile -t MIRRORS_URL < <(JQ ".[\"$URL\"].Mirrors[].Location")
+		if [[ ${#MIRRORS_URL[@]} -gt 0 ]]; then
+			for U in "${MIRRORS_URL[@]}"; do
+				TO_RESOLVE+=("$U")
+			done
+		else
+			TO_RESOLVE+=("$(JQ ".[\"$URL\"].Location")")
+		fi
 	else
 		TO_RESOLVE+=("$URL")
 	fi
@@ -46,6 +50,9 @@ done
 
 declare -A DOMAINS=()
 for TARGET in "${TO_RESOLVE[@]}"; do
+	if [[ ! $TARGET ]]; then
+		continue
+	fi
 	HOST_PART=${TARGET%%:*}
 	DOMAINS["$HOST_PART"]=1
 done

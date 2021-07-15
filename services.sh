@@ -67,7 +67,7 @@ function use_common_service() {
 	else
 		SRV_NAME="$SRV.service"
 	fi
-	unit_unit After "$SRV_NAME"
+	# unit_unit After "$SRV_NAME"
 	unit_unit Requires "$SRV_NAME"
 }
 
