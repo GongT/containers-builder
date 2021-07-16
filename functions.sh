@@ -111,3 +111,5 @@ source "$COMMON_LIB_ROOT/functions/platform.sh"
 source "$COMMON_LIB_ROOT/functions/proxy.sh"
 # shellcheck source=./functions/temp.sh
 source "$COMMON_LIB_ROOT/functions/temp.sh"
+# shellcheck source=./functions/strings.sh
+source "$COMMON_LIB_ROOT/functions/strings.sh"
