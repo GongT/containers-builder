@@ -163,6 +163,13 @@ function filtered_jq() {
 	echo "$INPUT"
 }
 
+function json_array() {
+	if [[ $# -eq 0 ]]; then
+		echo '[]'
+	fi
+	printf '%s\n' "${@}" | jq -R . | jq -s .
+}
+
 function x() {
 	info_note " + ${*}"
 	"$@"
