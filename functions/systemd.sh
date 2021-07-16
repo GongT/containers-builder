@@ -136,10 +136,13 @@ _debugger_file_write() {
 			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"
 		declare -p _S_PREP_FOLDER
 
-		echo "declare -a STARTUP_ARGS=()"
+		echo "STARTUP_ARGC=${#_S_COMMAND_LINE[@]}"
+		echo "declare -a STARTUP_ARGS=("
 		for I in "${STARTUP_ARGS[@]}"; do
-			echo "STARTUP_ARGS+=($I)"
+			echo -ne "\t"
+			echo "${I}"
 		done
+		echo ")"
 
 		cat "$COMMON_LIB_ROOT/staff/debugger.sh"
 	} | write_executable_file "$(_get_debugger_script)"

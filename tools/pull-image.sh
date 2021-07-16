@@ -31,7 +31,11 @@ if [[ -e $STORE_FILE ]]; then
 	LASTSTR=$(TZ=Asia/Chongqing date --date="@$LAST" "+%F %T")
 	if [[ $NOW -lt $((LAST + 3600)) ]]; then
 		echo "Skip pull image, last at: $LASTSTR"
+		if [[ "${FORCE_PULL:-}" == 'yes' ]]; then
+		echo "  * FORCE_PULL=yes | force pull even cached"
+		else
 		exit 0
+		fi
 	else
 		echo "Last pull at $LASTSTR, expired"
 	fi

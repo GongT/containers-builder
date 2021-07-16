@@ -4,6 +4,14 @@ set -Eeuo pipefail
 
 echo -ne "\ec"
 
+if [[ ${#} -gt 0 ]]; then
+	E=$((${#STARTUP_ARGS[@]} - STARTUP_ARGC))
+	STARTUP_ARGS=("${STARTUP_ARGS[@]:0:E}")
+	unset E
+
+	PARENT_ARGS=("$@")
+fi
+
 if echo "$CONTAINER_ID" | grep -q '%i'; then
 	template_id=$1
 	shift
@@ -33,8 +41,6 @@ else
 	}
 
 fi
-
-declare -a PARENT_ARGS=("$@")
 
 function XX() {
 	local ARGS=("$@")
