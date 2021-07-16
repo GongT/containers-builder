@@ -48,9 +48,8 @@ function XX() {
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo
 	echo -n "$1"
-	for i in $(seq 1 $(($# - 1))); do
-		echo -ne " \\\\\n  "
-		echo -n "'${ARGS[$i]}'"
+	for i in "${ARGS[@]:1}"; do
+		printf ' \\\n\t %q' "$i"
 	done
 	echo
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
@@ -72,4 +71,9 @@ ensure_mounts "${_S_PREP_FOLDER[@]}"
 podman volume prune -f &>/dev/null || true
 
 make_arguments "${STARTUP_ARGS[@]}"
+if [[ "${ENTRYPOINT:-}" ]]; then
+	echo "force using entrypoint: $ENTRYPOINT"
+	ARGS=("--entrypoint=$ENTRYPOINT" "${ARGS[@]}")
+fi
+
 X podman run -it "${ARGS[@]}"
