@@ -1,4 +1,4 @@
 [Unit]
-After=systemd-resolved.service
+After=systemd-resolved.service libvirt-guests.service libvirtd.service libvirtd.socket
 [Service]
 ExecStartPre=!/usr/bin/env bash "__SCRIPT__"
