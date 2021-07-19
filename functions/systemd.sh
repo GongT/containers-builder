@@ -217,10 +217,10 @@ function _unit_assemble() {
 
 	use_common_service cleanup-stopped-containers
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
-		use_common_service wait-all-fstab
+		use_common_service ! wait-all-fstab
 	fi
 	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
-		use_common_service wait-dns-working
+		use_common_service ! wait-dns-working
 		edit_system_service dnsmasq create-dnsmasq-config
 	fi
 

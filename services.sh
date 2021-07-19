@@ -59,6 +59,12 @@ function use_common_timer() {
 }
 
 function use_common_service() {
+	local DEP=
+	if [[ $1 == '+' ]] || [[ $1 == '!' ]]; then
+		DEP=$1
+		shift
+	fi
+
 	_use_common_copy "$@"
 
 	local SRV="$1" ARG="${2:-}" SRV_NAME
@@ -67,8 +73,14 @@ function use_common_service() {
 	else
 		SRV_NAME="$SRV.service"
 	fi
-	# unit_unit After "$SRV_NAME"
-	unit_unit Requires "$SRV_NAME"
+	if [[ $DEP == '+' ]]; then
+		unit_unit Requires "$SRV_NAME"
+	elif [[ $DEP == '!' ]]; then
+		unit_unit Requires "$SRV_NAME"
+		unit_unit After "$SRV_NAME"
+	else
+		unit_unit Wants "$SRV_NAME"
+	fi
 }
 
 function edit_system_service() {
