@@ -19,7 +19,7 @@ function try() {
 	fi
 	while true; do
 		expand_timeout 32
-		if nslookup -timeout=30 "$1" "$2" | grep -A 2 'answer:'; then
+		if nslookup -timeout=30 "$1" ${2:-} | grep -A 2 'answer:'; then
 			echo "  - success"
 			break
 		fi
@@ -59,6 +59,6 @@ done
 
 for TARGET in "${!DOMAINS[@]}"; do
 	sdnotify " -> try resolve ${TARGET}"
-	try "$TARGET" 127.0.0.1
+	try "$TARGET"
 done
 startup_done
