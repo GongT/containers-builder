@@ -84,7 +84,7 @@ function network_use_bridge() {
 		fi
 	done
 	_create_service_library
-	unit_hook_poststart "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS add \"$(_unit_get_scopename)\""
+	unit_hook_poststart "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS add \"$(_unit_get_scopename)\" \"$_S_HOST\""
 	unit_hook_stop "/usr/bin/flock /etc/hosts $_UPDATE_HOSTS del \"$(_unit_get_scopename)\""
 }
 function network_use_container() {

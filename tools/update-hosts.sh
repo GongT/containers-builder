@@ -70,7 +70,7 @@ function add() {
 		IP='# ip not found'
 	fi
 
-	append_text_file_line /etc/hosts '#' "$TAG" "$IP $MACHINE"
+	append_text_file_line /etc/hosts '#' "$TAG" "$IP $MACHINE ${MY_HOSTNAME:-}"
 	info 'ok.'
 	signal_dnsmasq
 }

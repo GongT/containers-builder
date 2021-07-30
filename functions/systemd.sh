@@ -427,6 +427,7 @@ function unit_podman_arguments() {
 }
 function unit_podman_hostname() {
 	_S_HOST=$1
+	unit_body "Environment" "MY_HOSTNAME=$_S_HOST"
 }
 
 function unit_podman_image_pull() {
