@@ -97,7 +97,7 @@ function extract_tar() {
 
 function extract_zip() {
 	local FILE="$1" TARGET="$3"
-	local -I STRIP="${2}"
+	local STRIP="${2}"
 	local TDIR="$TARGET/.extract"
 	mkdir -p "$TDIR"
 	pushd "$TDIR" &>/dev/null || die "error syscall chdir"
@@ -106,7 +106,7 @@ function extract_zip() {
 
 	local STRIPSTR=""
 	while [[ $STRIP -gt 0 ]]; do
-		STRIP="$STRIP - 1"
+		STRIP=$((STRIP - 1))
 		STRIPSTR+="*/"
 	done
 	STRIPSTR+="*"
