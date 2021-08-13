@@ -157,27 +157,38 @@ function unit_finish() {
 
 	_unit_init
 }
+function _systemctl_disable() {
+	local UN=$1
+	# if systemctl is-enabled -q "$UN"; then
+	systemctl disable "$UN" &>/dev/null || true
+	systemctl reset-failed "$UN" &>/dev/null || true
+	# fi
+}
 function apply_systemd_service() {
 	_arg_ensure_finish
 	local UN="$1"
 
-	echo -ne "\e[2m"
 	if is_installing; then
 		if [[ ${SYSTEMD_RELOAD-yes} == "yes" ]]; then
 			systemctl daemon-reload
-			if ! systemctl is-enabled -q "$UN"; then
-				systemctl enable "$UN"
+			if [[ ! $_S_AT_ ]]; then
+				if ! systemctl is-enabled -q "$UN"; then
+					systemctl enable "$UN"
+				fi
 			fi
-			echo -ne "\e[0m"
 			info "systemd unit $UN create and enabled."
 		fi
-		echo -ne "\e[0m"
 	else
-		if systemctl is-enabled -q "$UN"; then
-			systemctl disable "$UN"
-			systemctl reset-failed "$UN"
+		if [[ $_S_AT_ ]]; then
+			local LIST I
+			mapfile -t LIST < <(systemctl list-units --all --no-legend "${UN%.service}*.service" | sed 's/●//g' | awk '{print $1}')
+			for I in "${LIST[@]}"; do
+				info_note "  disable $I..."
+				_systemctl_disable "$I"
+			done
+		else
+			_systemctl_disable "$UN"
 		fi
-		echo -ne "\e[0m"
 		info "systemd unit $UN disabled."
 	fi
 }
