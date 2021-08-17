@@ -8,7 +8,7 @@ declare -r __PRAGMA_ONCE_FUNCTIONS_INSTALL_SH=yes
 # shellcheck source=./functions.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 
-PODMAN="$(find_command podman)"
+PODMAN=$(find_command podman || die "podman not installed")
 declare -rx PODMAN
 
 # shellcheck source=./functions/networking.sh
