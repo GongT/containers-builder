@@ -138,19 +138,34 @@ function http_get_github_release() {
 	info_log " * fetching release from $URL"
 	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL")
 }
+function __github_release_json_id() {
+	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '(.id|tostring) + " - " + .target_commitish')
 
-function http_get_github_release_id() {
-	local REPO="$1" ID
-	http_get_github_release "$REPO"
-
-	ID=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '(.id|tostring) + "-" + .target_commitish')
-
-	info_log "       = $ID"
+	info_log "       release id = $ID"
 	if [[ "$ID" ]]; then
 		echo "$ID"
 	else
 		die "failed get ETag"
 	fi
+}
+
+function http_get_github_release_id() {
+	local REPO="$1" ID
+	http_get_github_release "$REPO"
+	__github_release_json_id
+}
+
+function http_get_github_unstable_release() {
+	local REPO="$1"
+	local URL="repos/$REPO/releases?per_page=1"
+	info_log " * fetching UNSTABLE release from $URL"
+	LAST_GITHUB_RELEASE_JSON=$(__github_api "$URL" | filtered_jq '.[0]')
+}
+
+function http_get_github_unstable_release_id() {
+	local REPO="$1" ID
+	http_get_github_unstable_release "$REPO"
+	__github_release_json_id
 }
 
 function github_release_asset_download_url() {
