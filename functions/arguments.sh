@@ -103,15 +103,21 @@ function arg_finish() {
 	# echo "${ARGS[@]} -- $@"
 
 	local _PROGRAM_ARGS=()
-	if [[ -e "$MONO_ROOT_DIR/environment" ]]; then
+	local USER_PRIVATE_CONFIG_FILE="$MONO_ROOT_DIR/environment"
+	if ! [[ -e $USER_PRIVATE_CONFIG_FILE ]]; then
+		USER_PRIVATE_CONFIG_FILE="$HOME/environment"
+	fi
+
+	if [[ -e $USER_PRIVATE_CONFIG_FILE ]]; then
+		info_note "load arguments from $USER_PRIVATE_CONFIG_FILE"
 		local -a ENV_ARGS CMDLINE_TO_PARSE
 		CMDLINE_TO_PARSE=$(
-			(grep -E "^$PROJECT_NAME:" "$MONO_ROOT_DIR/environment" || [[ $? == 1 ]]) \
+			(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
 				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
 				| sed -E 's/^[^:]+:\s*\S+\s*//g'
 		)
 		mapfile -t ENV_ARGS < <(
-			(grep -E "^$PROJECT_NAME:" "$MONO_ROOT_DIR/environment" || [[ $? == 1 ]]) \
+			(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
 				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
 				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
 				| sed -E 's/\s+/\n/g'
