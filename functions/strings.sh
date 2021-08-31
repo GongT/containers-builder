@@ -11,3 +11,13 @@ function split_url_user_pass_host_port() {
 	HOST_NAME="${DOMAIN%%:*}"
 	PORT_NUMBER="${DOMAIN#*:}"
 }
+
+function split_url_domain_path() {
+	local LINE="$1"
+
+	DOMAIN="${LINE%%/*}"
+	PATHNAME="${LINE#*/}"
+	if [[ $PATHNAME ]]; then
+		PATHNAME="/$PATHNAME"
+	fi
+}
