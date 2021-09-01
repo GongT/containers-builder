@@ -64,3 +64,22 @@ function write_file() {
 function find_command() {
 	env -i "PATH=$PATH" "$SHELL" --noprofile --norc -c "command -v '$1'"
 }
+function ensure_symlink() {
+	local LINK_FILE=$1 TARGET=$2 CURR
+	if [[ -L $LINK_FILE ]]; then
+		CURR=$(readlink --canonicalize-missing --no-newline "$LINK_FILE")
+		if [[ $CURR != "$TARGET" ]]; then
+			unlink "$LINK_FILE"
+		else
+			return
+		fi
+	elif [[ -f $LINK_FILE ]]; then
+		info_warn "replacing normal file $LINK_FILE with a symlink"
+		unlink "$LINK_FILE"
+	elif [[ -d $LINK_FILE ]]; then
+		die "ensure_symlink: element exists and is a folder"
+	fi
+
+	mkdir -p "$(dirname "$LINK_FILE")"
+	ln -s "$TARGET" "$LINK_FILE"
+}
