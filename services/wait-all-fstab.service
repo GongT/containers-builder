@@ -1,6 +1,7 @@
 [Unit]
 Description=wait all mountpoints ready
-After=network-online.target
+After=local-fs.target
+Before=cleanup-stopped-containers.service
 
 [Service]
 Type=oneshot

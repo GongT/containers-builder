@@ -53,7 +53,7 @@ function do_default() {
 	table_start "Name" "Enabled" "State" "Time" "Resource"
 
 	mapfile -t SERVICES < <(do_ls)
-	for SRV in "${SERVICES[@]}"; do
+	for SRV in "${SERVICES[@]}" "${CONTROL_SERVICES[@]}"; do
 		while read -r line; do
 			local "$line"
 		done < <(systemctl show "$SRV" -p LoadState,ActiveState,SubState,UnitFileState,StateChangeTimestamp,StatusText,MemoryCurrent,CPUUsageNSec)
@@ -77,9 +77,11 @@ function do_default() {
 			T_STATE="\e[38;5;9m$LoadState\e[0m"
 		fi
 		if [[ $UnitFileState == enabled ]]; then
-			T_ENABLE=10
+			T_ENABLE='38;5;10'
+		elif [[ $UnitFileState == static ]]; then
+			T_ENABLE='1'
 		else
-			T_ENABLE=9
+			T_ENABLE='38;5;9'
 		fi
 
 		if [[ $LoadState == not-found ]]; then
@@ -113,7 +115,7 @@ function do_default() {
 			fi
 		fi
 
-		table_row "$SRV" "\e[38;5;${T_ENABLE}m${UnitFileState}\e[0m" "$T_STATE" "$T_TIME" "$T_RES"
+		table_row "$SRV" "\e[${T_ENABLE}m${UnitFileState}\e[0m" "$T_STATE" "$T_TIME" "$T_RES"
 	done
 
 	table_print

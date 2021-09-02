@@ -18,12 +18,19 @@ function expand_timeout() {
 }
 
 function startup_done() {
-	sdnotify --ready --status="ok"
-	sleep 2
+	if [[ ${NOTIFY_SOCKET:-} ]]; then
+		systemd-notify --ready --status="ok"
+		sleep 2
+	else
+		debug "<systemd-notify> done"
+	fi
 	exit 0
 }
 
 function sdnotify() {
+	if [[ $* == -* ]]; then
+		die "invalid call to sdnotify()"
+	fi
 	if [[ ${NOTIFY_SOCKET:-} ]]; then
 		debug "$*"
 		systemd-notify --status="$*"

@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-function sdnotify() {
+function _sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
 		systemd-notify "$@"
 	fi
@@ -43,7 +43,7 @@ else
 	echo "Never pull this image in current boot."
 fi
 
-sdnotify "--status=pull image"
+_sdnotify "--status=pull image"
 
 unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 
@@ -51,7 +51,7 @@ echo "Pull image $IMAGE_TO_PULL from registry..."
 
 (
 	while true; do
-		sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
+		_sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
 		sleep 2
 	done
 ) &
@@ -60,7 +60,7 @@ CPID=$!
 podman pull "$IMAGE_TO_PULL" || exit 233
 
 kill -SIGTERM "$CPID"
-sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
+_sdnotify "EXTEND_TIMEOUT_USEC=$((5 * 1000000))"
 
 NEW_ID=$(image_get_id)
 
@@ -80,4 +80,4 @@ if [[ ${SKIP_REMOVE+found} != found ]]; then
 			podman rmi || true
 fi
 
-sdnotify "EXTEND_TIMEOUT_USEC=$((10 * 1000000))"
+_sdnotify "EXTEND_TIMEOUT_USEC=$((10 * 1000000))"

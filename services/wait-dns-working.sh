@@ -58,7 +58,7 @@ for TARGET in "${TO_RESOLVE[@]}"; do
 done
 
 for TARGET in "${!DOMAINS[@]}"; do
-	sdnotify " -> try resolve ${TARGET}"
+	sdnotify "try resolve ${TARGET}"
 	try "$TARGET"
 done
 startup_done
