@@ -60,18 +60,21 @@ function do_default() {
 
 		if [[ $LoadState == loaded ]]; then
 			T_STATE=""
-			if [[ $ActiveState == active ]]; then
+			if [[ $ActiveState == active ]] || [[ $ActiveState == deactivating ]] || [[ $ActiveState == activating ]]; then
 				T_STATE+="\e[38;5;10m$ActiveState\e[0m"
-				NR_WARN=11
+				NR_WARN='38;5;11'
+			elif [[ $ActiveState == inactive ]]; then
+				T_STATE+="\e[38;5;10m$ActiveState\e[0m"
+				NR_WARN='2'
 			else
 				T_STATE+="\e[38;5;9m$ActiveState\e[0m"
-				NR_WARN=9
+				NR_WARN='38;5;9'
 			fi
 			T_STATE+='/'
 			if [[ $SubState == running ]]; then
 				T_STATE+="\e[38;5;10m$SubState\e[0m"
 			else
-				T_STATE+="\e[38;5;${NR_WARN}m${SubState}\e[0m"
+				T_STATE+="\e[${NR_WARN}m${SubState}\e[0m"
 			fi
 		else
 			T_STATE="\e[38;5;9m$LoadState\e[0m"
@@ -84,10 +87,8 @@ function do_default() {
 			T_ENABLE='38;5;9'
 		fi
 
-		if [[ $LoadState == not-found ]]; then
-			T_TIME=''
-		else
-			T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" | grep 'From now:' | sed -E 's/\s*From now: //g')
+		T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" 2>/dev/null | grep 'From now:' | sed -E 's/\s*From now: //g' || true)
+		if [[ $T_TIME ]]; then
 			T_TIME="$StatusText since $T_TIME"
 		fi
 

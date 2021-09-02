@@ -12,7 +12,7 @@ function do_ls() {
 	{
 		systemctl list-units --all --no-pager --no-legend --type=service '*.pod@*.service' '*.pod.service' | sed 's/●//g' | awk '{print $1}'
 		systemctl list-unit-files --no-legend --no-pager --state=disabled --type=service '*.pod.service' | awk '{print $1}'
-	} | sed -E 's/\.service$//g' | sort
+	} | sed -E 's/\.service$//g' | sort | uniq
 }
 
 function go_home() {
