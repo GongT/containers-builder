@@ -25,6 +25,7 @@ function install_common_system_support() {
 		edit_system_service dnsmasq create-dnsmasq-config
 
 		install_common_script_service containers-ensure-health
+		_copy_common_static_unit containers-ensure-health.timer
 	fi
 }
 function install_common_script_service() {

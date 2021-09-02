@@ -25,6 +25,8 @@ function do_upgrade() {
 
 	echo "daemon-reload..."
 	systemctl daemon-reload
+	do_ls | xargs --no-run-if-empty systemctl reenable
+	systemctl reenable 
 
 	echo "All Done!"
 }

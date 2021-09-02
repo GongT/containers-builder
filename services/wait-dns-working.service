@@ -11,3 +11,4 @@ RemainAfterExit=yes
 RestartSec=10
 StartLimitInterval=90
 StartLimitBurst=10
+Slice=services.slice

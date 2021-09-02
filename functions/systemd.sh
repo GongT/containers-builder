@@ -62,12 +62,14 @@ function _unit_init() {
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
+
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
 	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="services-normal.slice"
 
+	_S_UNIT_CONFIG[After]="services.target"
 	## network.sh
 	_N_TYPE=
 
@@ -234,7 +236,11 @@ function _unit_assemble() {
 	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
-		echo "$VAR_NAME=${_S_UNIT_CONFIG[$VAR_NAME]}"
+		local CVAL="${_S_UNIT_CONFIG[$VAR_NAME]}"
+		if [[ $CVAL == " "* ]]; then
+			CVAL=${CVAL:1}
+		fi
+		echo "$VAR_NAME=${CVAL}"
 	done
 
 	local EXT="$(_unit_get_extension)"
