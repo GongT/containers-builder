@@ -20,9 +20,28 @@ do_refresh() {
 		fi
 	done < <(podman inspect "${!CONTAINER_SERVICE_MAP[@]}" --type=container --format='{{.Name}} {{.Image}} {{.ImageName}}' || true)
 
-	echo "${UP_TO_DATE[*]} is up to date" >&2
-	echo "need update: ${NEED_RESTART[*]}"
+	if [[ -t 0 ]] && [[ -t 1 ]]; then
+		echo -e "\e[38;5;10mUp to date:\e[0m" >&2
+		if [[ ${#UP_TO_DATE[@]} -gt 0 ]]; then
+			for I in "${UP_TO_DATE[@]}"; do
+				echo -e "  * $I" >&2
+			done
+		else
+			echo "  nothing"
+		fi
+		echo -e "\e[38;5;11mNeed restart:\e[0m" >&2
+		if [[ ${#NEED_RESTART[@]} -gt 0 ]]; then
+			for I in "${NEED_RESTART[@]}"; do
+				echo -e "  * $I" >&2
+			done
+		else
+			echo "  nothing"
+		fi
+	fi
 	if [[ $* == *--run* ]]; then
+		echo "restarting ${NEED_RESTART[*]} ..."
 		systemctl restart "${NEED_RESTART[@]}"
+	else
+		echo "use $0 $* --run to execute restart command." >&2
 	fi
 }

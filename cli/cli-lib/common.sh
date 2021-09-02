@@ -18,3 +18,8 @@ function do_ls() {
 function go_home() {
 	cd "$BIN_SRC_HOME" || die "failed chdir to containers source folder ($BIN_SRC_HOME)"
 }
+
+function get_service_file() {
+	local NAME_HINT=$1
+	systemctl list-unit-files --no-legend --no-pager --type=service "$NAME_HINT*" | grep pod | awk '{print $1}'
+}

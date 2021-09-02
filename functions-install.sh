@@ -19,6 +19,8 @@ source "$COMMON_LIB_ROOT/functions/environments.sh"
 source "$COMMON_LIB_ROOT/functions/volumes.sh"
 # shellcheck source=./functions/systemd.sh
 source "$COMMON_LIB_ROOT/functions/systemd.sh"
+# shellcheck source=./functions/systemd.slices.sh
+source "$COMMON_LIB_ROOT/functions/systemd.slices.sh"
 # shellcheck source=./functions/install.sh
 source "$COMMON_LIB_ROOT/functions/install.sh"
 # shellcheck source=./functions/uninstall.sh

@@ -24,7 +24,7 @@ case "$ACTION" in
 	;;
 install)
 	go_home
-	do_install
+	exec bash ../install-cli-tool.sh
 	;;
 upgrade)
 	do_upgrade
@@ -43,44 +43,16 @@ ls)
 	do_ls
 	;;
 start | restart | stop | reload | reset-failed | status | enable | disable)
+	if [[ $# -gt 0 ]]; then
+		die "this command is to control ALL service, not some of them"
+	fi
 	do_ls | xargs --no-run-if-empty -t systemctl "$ACTION"
 	;;
 log)
-	IARGS=() NARGS=()
-	for I; do
-		if [[ $I == -f ]]; then
-			NARGS+=(-f)
-		else
-			IARGS+=("$I")
-		fi
-	done
-
-	if [[ ${#IARGS[@]} -ne 1 ]]; then
-		die "must 1 argument"
-	fi
-	V=${IARGS[0]}
-	if [[ $V != *.pod ]] && ! [[ $V != *.pod@* ]]; then
-		V+=".pod"
-	fi
-	IID=$(systemctl show -p InvocationID --value "$V.service")
-	echo "InvocationID=$IID"
-	journalctl "${NARGS[@]}" "_SYSTEMD_INVOCATION_ID=$IID"
+	do_log "$@"
 	;;
 logs)
-	LARGS=() NARGS=()
-	for I; do
-		if [[ $I == -f ]]; then
-			NARGS+=(-f)
-		else
-			LARGS+=(-u "$I")
-		fi
-	done
-	if [[ ${#LARGS[@]} -eq 0 ]]; then
-		for i in $(do_ls); do
-			LARGS+=("-u" "$i")
-		done
-	fi
-	journalctl "${LARGS[@]}" "${NARGS[@]}"
+	do_logs "$@"
 	;;
 abort)
 	systemctl list-units '*.pod@.service' '*.pod.service' --all --no-pager --no-legend | grep activating \
@@ -90,7 +62,7 @@ attach)
 	do_attach "$@"
 	;;
 pull)
-	pull_all "$@"
+	do_pull_all "$@"
 	;;
 *)
 	usage

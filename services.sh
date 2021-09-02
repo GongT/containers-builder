@@ -3,13 +3,31 @@
 declare -r SERVICES_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/services"
 _COMMON_FILE_INSTALL=
 
-function _install_common_system_support() {
+function _copy_common_static_unit() {
+	local FILE=$1
+	write_file_share "/usr/lib/systemd/system/$FILE" "$(<"${SERVICES_DIR}/${FILE}")"
+}
+function install_common_system_support() {
 	if [[ ! $_COMMON_FILE_INSTALL ]]; then
-		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
 		_COMMON_FILE_INSTALL=yes
+
+		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
+
+		_copy_common_static_unit services-entertainment.slice
+		_copy_common_static_unit services-infrastructure.slice
+		_copy_common_static_unit services-normal.slice
+		_copy_common_static_unit services.slice
+		_copy_common_static_unit services.target
+
+		install_common_script_service wait-dns-working
+		install_common_script_service cleanup-stopped-containers
+		install_common_script_service wait-all-fstab
+		edit_system_service dnsmasq create-dnsmasq-config
+
+		install_common_script_service containers-ensure-health
 	fi
 }
-function _use_common_copy() {
+function install_common_script_service() {
 	local SRV="$1" ARG="${2:-}" SCRIPT
 	local SRV_FILE
 
@@ -19,7 +37,6 @@ function _use_common_copy() {
 		SRV_FILE="$SRV.service"
 	fi
 
-	_install_common_system_support
 	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
@@ -47,7 +64,7 @@ function fix_old_systemd() {
 
 function use_common_timer() {
 	local NAME="$1" SCRIPT
-	_use_common_copy "$NAME"
+	install_common_script_service "$NAME"
 
 	TIMER_FILE="$NAME.timer"
 
@@ -65,7 +82,7 @@ function use_common_service() {
 		shift
 	fi
 
-	_use_common_copy "$@"
+	install_common_script_service "$@"
 
 	local SRV="$1" ARG="${2:-}" SRV_NAME
 	if [[ "$ARG" ]]; then
@@ -86,7 +103,7 @@ function use_common_service() {
 function edit_system_service() {
 	local SRV="$1" OVERWRITE="${2}" SCRIPT
 
-	_install_common_system_support
+	install_common_system_support
 	SCRIPT=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
 
 	if [[ $SRV != *".service" ]]; then

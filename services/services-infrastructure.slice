@@ -1,0 +1,6 @@
+[Slice]
+StartupCPUWeight=200
+CPUWeight=100
+StartupIOWeight=200
+IOWeight=200
+ManagedOOMPreference=avoid

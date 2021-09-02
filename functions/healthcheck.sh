@@ -8,9 +8,6 @@ HEALTHCHECK_TIMEOUT=''
 
 # healthcheck interval retry CMD...
 function healthcheck() {
-	if command -v use_common_timer &>/dev/null; then
-		use_common_timer containers-ensure-health
-	fi
 	HEALTHCHECK_INTERVAL="$1"
 	HEALTHCHECK_RETRY="$2"
 	shift

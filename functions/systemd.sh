@@ -43,7 +43,7 @@ function _unit_init() {
 	_S_STOP_CMD=
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
-	_S_INSTALL=multi-user.target
+	_S_INSTALL=services.target
 	_S_EXEC_RELOAD=
 	_S_START_WAIT_SLEEP=10
 	_S_START_WAIT_OUTPUT=
@@ -66,7 +66,7 @@ function _unit_init() {
 	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
-	_S_BODY_CONFIG[Slice]="machine.slice"
+	_S_BODY_CONFIG[Slice]="services-normal.slice"
 
 	## network.sh
 	_N_TYPE=
@@ -110,6 +110,9 @@ function unit_write() {
 	if [[ -z $_S_CURRENT_UNIT_FILE ]]; then
 		die "create_xxxx_unit first."
 	fi
+
+	install_common_system_support
+
 	local -r TF=$(mktemp -u)
 	_unit_assemble >$TF
 	write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" <$TF
@@ -226,13 +229,8 @@ function _unit_assemble() {
 	local I
 	echo "[Unit]"
 
-	use_common_service cleanup-stopped-containers
-	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
-		use_common_service ! wait-all-fstab
-	fi
-	if [[ ${_S_IMAGE_PULL} != "never" ]]; then
-		use_common_service ! wait-dns-working
-		edit_system_service dnsmasq create-dnsmasq-config
+	if [[ $_S_INSTALL == services.target ]]; then
+		echo "DefaultDependencies=no"
 	fi
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
@@ -333,6 +331,8 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 	echo ""
 	echo "[X-Containers]"
+	echo "IMAGE_NAME=$_S_IMAGE"
+	echo "IMAGE_NAME_PULL=$_S_IMAGE_PULL"
 	echo "CONTAINERS_DATA_PATH=$CONTAINERS_DATA_PATH"
 	echo "COMMON_LIB_ROOT=$COMMON_LIB_ROOT"
 	echo "MONO_ROOT_DIR=$MONO_ROOT_DIR"
