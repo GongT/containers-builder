@@ -124,7 +124,7 @@ function __github_api() {
 	fi
 
 	control_ci group "Github Api: $URL"
-	API_RESULT=$(perfer_proxy curl_proxy "${TOKEN_PARAM[@]}" -s "$URL")
+	API_RESULT=$(perfer_proxy curl_proxy "${TOKEN_PARAM[@]}" --location -s "$URL")
 	echo "$API_RESULT" >&2
 	control_ci groupEnd
 
