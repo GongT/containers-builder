@@ -87,8 +87,10 @@ function do_default() {
 			T_ENABLE='38;5;9'
 		fi
 
-		T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" 2>/dev/null | grep 'From now:' | sed -E 's/\s*From now: //g' || true)
-		if [[ $T_TIME ]]; then
+		if [[ $LoadState == not-found ]]; then
+			T_TIME=''
+		else
+			T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" | grep 'From now:' | sed -E 's/\s*From now: //g' || echo 'NaN')
 			T_TIME="$StatusText since $T_TIME"
 		fi
 
