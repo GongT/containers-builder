@@ -40,7 +40,7 @@ if ! [[ ${ACTION:-} ]]; then
 	ACTION="install"
 fi
 
-/usr/bin/dnf "$ACTION" -y --releasever=/ --installroot=/install-root "${PACKAGES[@]}"
+/usr/bin/dnf "$ACTION" --nodocs -y --releasever=/ --installroot=/install-root "${PACKAGES[@]}"
 
 if [[ $ACTION == install ]] && command -v busybox &>/dev/null; then
 	echo "installing busybox..." &>/dev/null
