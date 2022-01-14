@@ -236,7 +236,7 @@ function download_git() {
 			x git submodule sync --recursive
 			x git submodule update --init --recursive
 			x git fetch --depth=3 --no-tags --update-shallow --recurse-submodules 1>&2
-			x git reset --hard origin/master 1>&2
+			x git reset --hard "origin/$BRANCH" 1>&2
 			date +%s >"$TIMESTAMP"
 		fi
 	else
@@ -250,15 +250,15 @@ function download_git() {
 	control_ci groupEnd
 }
 function download_git_result_copy() {
-	local DIST="$1" NAME=$2 BRANCH_TAG="${3:-default}" GIT_DIR
-	GIT_DIR=$(_join_git_path "$NAME" "$BRANCH_TAG")
+	local DIST="$1" NAME=$2 BRANCH="${3}" GIT_DIR
+	GIT_DIR=$(_join_git_path "$NAME" "$BRANCH")
 	export GIT_DIR
 	if ! [[ -f "$GIT_DIR/config" ]]; then
 		die "missing downloaded git data: $GIT_DIR (from $NAME)"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
 	mkdir -p "$DIST"
-	x git "--work-tree=$DIST/" checkout --recurse-submodules HEAD -- .
+	x git "--work-tree=$DIST/" checkout --recurse-submodules "origin/$BRANCH" -- .
 	# git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
 
 	unset GIT_DIR
