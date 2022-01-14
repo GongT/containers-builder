@@ -236,6 +236,7 @@ function download_git() {
 			x git submodule sync --recursive
 			x git submodule update --init --recursive
 			x git fetch --depth=3 --no-tags --update-shallow --recurse-submodules 1>&2
+			x git reset --hard origin/master 1>&2
 			date +%s >"$TIMESTAMP"
 		fi
 	else
