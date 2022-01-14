@@ -198,7 +198,7 @@ function http_get_github_last_commit_id_on_branch() {
 
 function _join_git_path() {
 	local NAME="$1" BRANCH="$2"
-	echo "$LOCAL_TMP/git_download/$NAME-$BRANCH/.git"
+	echo "$LOCAL_TMP/git_download.v2/$NAME-$BRANCH/.git"
 }
 function download_github() {
 	local REPO="$1" BRANCH="$2" GIT_DIR
