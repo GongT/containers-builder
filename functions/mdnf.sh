@@ -128,11 +128,18 @@ function dnf_hash_version() {
 		local NEW_VERSIONS=() E VER
 		mapfile -t NEW_VERSIONS < <(run_dnf_host list --color never "${MISSING[@]}" | grep -v i686)
 		for E in "${NEW_VERSIONS[@]}"; do
+			if ! [[ "$E" ]]; then
+				continue
+			fi
 			NAME=$(echo "$E" | awk '{print $1}')
 			VER=$(echo "$E" | awk '{print $2}')
 			NAME="${NAME%.*}"
 			if [[ ! $NAME ]]; then
 				control_ci error "invalid dnf output line: $E"
+				continue
+			fi
+			if [[ $NAME == *'/'* ]]; then
+				echo "skip remember version: $NAME"
 				continue
 			fi
 			echo "$VER" >"$CACHE_DIR/$NAME"
