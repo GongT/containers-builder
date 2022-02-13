@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 function run_compile() {
 	local PROJECT_ID="$1" WORKER="$2" SCRIPT="$3"
 

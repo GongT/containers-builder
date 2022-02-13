@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf-repos"
 
 mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf"
