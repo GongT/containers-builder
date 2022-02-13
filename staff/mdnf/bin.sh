@@ -17,6 +17,9 @@ bind_fs() {
 	TO_UNMOUNT+=("/install-root$FS")
 }
 
+if ! command -v "mount" &>/dev/null; then
+	dnf install -y util-linux-core
+fi
 bind_fs /var/lib/dnf/repos
 bind_fs /var/cache/dnf
 
