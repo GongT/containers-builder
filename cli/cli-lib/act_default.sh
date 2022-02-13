@@ -60,11 +60,14 @@ function do_default() {
 
 		if [[ $LoadState == loaded ]]; then
 			T_STATE=""
-			if [[ $ActiveState == active ]] || [[ $ActiveState == deactivating ]] || [[ $ActiveState == activating ]]; then
+			if [[ $ActiveState == active ]]; then
 				T_STATE+="\e[38;5;10m$ActiveState\e[0m"
 				NR_WARN='38;5;11'
+			elif [[ $ActiveState == deactivating ]] || [[ $ActiveState == activating ]]; then
+				T_STATE+="\e[38;5;2m$ActiveState\e[0m"
+				NR_WARN='38;5;1'
 			elif [[ $ActiveState == inactive ]]; then
-				T_STATE+="\e[38;5;10m$ActiveState\e[0m"
+				T_STATE+="\e[38;5;9m$ActiveState\e[0m"
 				NR_WARN='2'
 			else
 				T_STATE+="\e[38;5;9m$ActiveState\e[0m"

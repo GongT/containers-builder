@@ -19,7 +19,7 @@ function try() {
 	fi
 	while true; do
 		expand_timeout 32
-		if nslookup -timeout=30 "$1" ${2:-} | grep -A 2 'answer:'; then
+		if nslookup -timeout=30 "$1" ${2:-} | grep -i -A 100 "$1" &>/dev/null; then
 			echo "  - success"
 			break
 		fi
