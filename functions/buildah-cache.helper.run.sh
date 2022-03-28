@@ -33,7 +33,8 @@ function buildah_cache_run() {
 	_hash_cb() {
 		{
 			echo "last: $BUILDAH_LAST_IMAGE"
-			cat "script: $BUILD_SCRIPT"
+			echo -n 'script: '
+			cat "$BUILD_SCRIPT"
 			echo "run: ${RUN_ARGS[*]}"
 			echo "bash: ${BASH_ARGS[*]}"
 			git ls-tree -r -t HEAD "${HASH_FOLDERS[@]}" || true
