@@ -42,7 +42,6 @@ function make_base_image_by_alpine_pip() {
 	make_base_image_by_apk "$BASEIMG" "$NAME" "${PKGS_RT[@]}"
 
 	STEP="复制pip安装结果"
-	buildah_cache2 "$NAME" _hash_ _build_
 	function _hash_() {
 		echo "$PIP_SOURCE_IMAGE"
 	}
@@ -50,6 +49,7 @@ function make_base_image_by_alpine_pip() {
 		buildah copy "--from=$PIP_SOURCE_IMAGE" "$1" "/root/.local/lib" "/root/.local/lib"
 		buildah run "$1" du -hs /root
 	}
+	buildah_cache2 "$NAME" _hash_ _build_
 	unset -f _hash_ _build_
 }
 
@@ -98,7 +98,6 @@ function make_base_image_by_fedora_pip() {
 	unset BUILDAH_EXTRA_ARGS
 
 	## make_base_image_by_apk
-	TMPF=$(create_temp_file)
 	TMPF=$(create_temp_file)
 	echo python3 >"$TMPF"
 	if [[ "$RT_SYS_DEPS_FILE" ]]; then
