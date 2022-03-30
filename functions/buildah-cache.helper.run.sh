@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-## buildah_cache_run ID ScriptFilePath [Bind:Mount ...] -- [bash args...]
+## buildah_cache_run ID ScriptFilePath [--buildah-arguments ...] -- [bash args...]
 function buildah_cache_run() {
 	local NAME=$1
 	shift
