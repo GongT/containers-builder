@@ -137,6 +137,7 @@ function dnf_hash_version() {
 			VER=$(echo "$E" | awk '{print $2}')
 			NAME="${NAME%.*}"
 			if [[ ! $NAME ]]; then
+				echo "invalid dnf output line: $E" >&2
 				control_ci error "invalid dnf output line: $E"
 				continue
 			fi

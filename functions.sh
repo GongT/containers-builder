@@ -8,6 +8,8 @@ declare -r __PRAGMA_ONCE_FUNCTIONS_SH=yes
 set -Eeuo pipefail
 shopt -s lastpipe
 
+export __BASH_ARGV=("$@")
+
 if [[ ${CONTAINERS_DATA_PATH+found} != "found" ]]; then
 	export CONTAINERS_DATA_PATH="/data/AppData"
 fi
@@ -21,7 +23,11 @@ if [[ -e "$MONO_ROOT_DIR/.env" ]]; then
 	set +a
 fi
 
-declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
+if [[ ${BASH_SOURCE[-1]} == */bashdb ]]; then
+	declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-2]}")" .sh)"
+else
+	declare -xr CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
+fi
 
 function find_current_file_absolute_path() {
 	local D=$(pwd)
@@ -45,6 +51,9 @@ function find_current_file_absolute_path() {
 }
 
 CURRENT_FILE="${BASH_SOURCE[-1]}"
+if [[ ${CURRENT_FILE} == */bashdb ]]; then
+	CURRENT_FILE="${BASH_SOURCE[-2]}"
+fi
 if [[ $CURRENT_FILE != /* ]]; then
 	find_current_file_absolute_path
 else
@@ -85,7 +94,7 @@ function _exit() {
 	set +Eeuo pipefail
 	local CB
 	for CB in "${EXIT_HANDLERS[@]}"; do
-		echo -e "\e[2m ! $CB\e[0m" >&2
+		# echo -e "\e[2m  * $CB\e[0m" >&2
 		"$CB"
 	done
 	exit $EXIT_CODE

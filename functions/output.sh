@@ -50,8 +50,6 @@ function control_ci() {
 	error)
 		if [[ "${GITHUB_ACTIONS:-}" ]]; then
 			echo "::error ::$*" >&2
-		else
-			echo "[CI] Error $*" >&2
 		fi
 		;;
 	group)

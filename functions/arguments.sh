@@ -109,24 +109,25 @@ function arg_finish() {
 	fi
 
 	if [[ -e $USER_PRIVATE_CONFIG_FILE ]]; then
-		info_note "load arguments from $USER_PRIVATE_CONFIG_FILE"
+		info_note "load arguments from $USER_PRIVATE_CONFIG_FILE - $CURRENT_ACTION"
 		local -a ENV_ARGS CMDLINE_TO_PARSE
 		CMDLINE_TO_PARSE=$(
 			(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
 				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
 				| sed -E 's/^[^:]+:\s*\S+\s*//g'
 		)
-		mapfile -t ENV_ARGS < <(
-			(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
-				| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
-				| sed -E 's/^[^:]+:\s*\S+\s*//g' \
-				| sed -E 's/\s+/\n/g'
-		)
+		# mapfile -t ENV_ARGS < <(
+		# 	(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
+		# 		| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
+		# 		| sed -E 's/^[^:]+:\s*\S+\s*//g' \
+		# 		| sed -E 's/\s+/\n/g'
+		# )
 		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs --no-run-if-empty -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 	fi
-	for i in $(seq $((${#BASH_ARGV[@]} - 1)) -1 0); do
-		_PROGRAM_ARGS+=("${BASH_ARGV[$i]}")
+
+	for i in $(seq $((${#__BASH_ARGV[@]} - 1)) -1 0); do
+		_PROGRAM_ARGS+=("${__BASH_ARGV[$i]}")
 	done
 
 	local E
