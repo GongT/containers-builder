@@ -7,12 +7,21 @@ function get_image_name_from_service_file() {
 do_pull_all() {
 	set -Eeuo pipefail
 
+	LIST=()
+	for I; do
+		if [[ $I == "-f" ]]; then
+			export FORCE_PULL=yes
+		else
+			LIST+=("$I")
+		fi
+	done
+
 	cd /usr/lib/systemd/system
 	local -a IMAGE_LIST
-	if [[ $# -eq 0 ]]; then
+	if [[ ${#LIST[@]} -eq 0 ]]; then
 		mapfile -t IMAGE_LIST < <(get_image_name_from_service_file .)
 	else
-		for I; do
+		for I in "${LIST[@]}"; do
 			SRV=$(get_service_file "$I") || die "no such service: $I"
 			IMAGE_LIST+=("$(get_image_name_from_service_file "$SRV")")
 		done
