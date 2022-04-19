@@ -13,10 +13,11 @@ function JQ() {
 	echo "$JSON" | query "$@"
 }
 
-mapfile -t SERVER_LIST < <(resolvectl dns | sed -E 's/^[^:]+://g' | xargs -n1 | grep -v --fixed-strings '127.0.0.1')
-if [[ ${#SERVER_LIST[@]} -eq 0 ]]; then
+mapfile -t SERVER_LIST < <((resolvectl dns || true) | sed -E 's/^[^:]+://g' | xargs -n1 | grep -v --fixed-strings '127.0.0.1')
+if ! [[ "${SERVER_LIST[*]}" ]]; then
 	SERVER_LIST=(223.5.5.5 1.1.1.1 114.114.114.114)
 fi
+echo "SERVER_LIST=${SERVER_LIST[*]}"
 
 TO_RESOLVE=()
 JSON=$(podman info -f json | query '.registries')
@@ -41,6 +42,6 @@ for TARGET in "${!DOMAINS[@]}"; do
 	for SERVER in "${SERVER_LIST[@]}"; do
 		echo "server=/$TARGET/$SERVER"
 	done
-done >/etc/dnsmasq.d/99-create-dnsmasq-config.conf
+done | tee /etc/dnsmasq.d/99-create-dnsmasq-config.conf
 
 dnsmasq -C /etc/dnsmasq.conf --test

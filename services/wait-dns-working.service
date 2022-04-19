@@ -1,6 +1,6 @@
 [Unit]
 Description=wait dns server ready to resolve name
-After=dnsmasq.service systemd-resolved.service unbound.service
+After=dnsmasq.service systemd-resolved.service unbound.service coredns.service
 
 [Service]
 Type=oneshot
