@@ -113,8 +113,14 @@ _buildah_cache_done() {
 function buildah_cache_start() {
 	local BASE_IMG=$1
 	if [[ $BASE_IMG != scratch ]]; then
-		if ! image_exists "$BASE_IMG"; then
+		if [[ ${NO_PULL_BASE+found} == "found" ]] && [[ "$NO_PULL_BASE" ]]; then
+			: # nothing
+		elif ! image_exists "$BASE_IMG"; then
 			buildah pull --quiet "$BASE_IMG"
+		elif is_ci; then
+			control_ci group "buildah pull $BASE_IMG"
+			buildah pull "$BASE_IMG"
+			control_ci groupEnd
 		fi
 		BUILDAH_LAST_IMAGE=$(image_get_id "$BASE_IMG")
 	else
