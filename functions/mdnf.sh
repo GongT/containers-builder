@@ -68,11 +68,16 @@ function run_dnf() {
 		#!/bin/bash
 		set -Eeuo pipefail
 		MNT=\$(buildah mount "$WORKER")
+		MNT_DNF=\$(buildah mount "$DNF")
+		mkdir -p "\$MNT/etc/yum.repos.d"
+		rsync -r "\$MNT_DNF/etc/yum.repos.d" "\$MNT/etc"
+		[[ -e "$TMPDIR/yum.repos.d" ]] && rsync -r "$TMPDIR/yum.repos.d" "\$MNT/etc"
 		cat << 'XXX' | buildah run --cap-add=CAP_SYS_ADMIN "--volume=\$MNT:/install-root" $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
 		$(declare -p PACKAGES)
 		$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
 		XXX
 		buildah unmount "$WORKER"
+		buildah unmount "$DNF"
 	_EOF
 	if is_root; then
 		bash "$DNF_CMD"
@@ -162,4 +167,10 @@ function dnf_hash_version() {
 
 function dnf() {
 	die "deny run dnf on host!"
+}
+
+function dnf_add_repo_string() {
+	local TITLE=$1 CONTENT=$2
+	mkdir -p "$TMPDIR/yum.repos.d"
+	echo "$CONTENT" >"$TMPDIR/yum.repos.d/${TITLE}.repo"
 }
