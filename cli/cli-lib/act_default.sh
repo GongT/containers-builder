@@ -90,7 +90,7 @@ function do_default() {
 			T_ENABLE='38;5;9'
 		fi
 
-		if [[ $LoadState == not-found ]]; then
+		if [[ $LoadState == not-found ]] && [[ "$StateChangeTimestamp" ]]; then
 			T_TIME=''
 		else
 			T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" | grep 'From now:' | sed -E 's/\s*From now: //g' || echo 'NaN')
@@ -113,11 +113,15 @@ function do_default() {
 			fi
 			T_RES+='/'
 
-			local MEM_MB=$((MemoryCurrent / 1024 / 1024))
-			if [[ $MEM_MB -gt 1024 ]]; then
-				T_RES+="\e[38;5;11m$((MEM_MB / 1024))G\e[0m"
+			if [[ $MemoryCurrent -gt 0 ]]; then
+				local MEM_MB=$((MemoryCurrent / 1024 / 1024))
+				if [[ $MEM_MB -gt 1024 ]]; then
+					T_RES+="\e[38;5;11m$((MEM_MB / 1024))G\e[0m"
+				else
+					T_RES+="${MEM_MB}M"
+				fi
 			else
-				T_RES+="${MEM_MB}M"
+				T_RES+='--'
 			fi
 		fi
 
