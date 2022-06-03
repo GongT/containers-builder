@@ -18,6 +18,11 @@ function install_common_system_support() {
 		_copy_common_static_unit services-normal.slice
 		_copy_common_static_unit services.slice
 		_copy_common_static_unit services.target
+		_copy_common_static_unit services.timer
+		if ! systemctl is-enabled --quiet services.timer; then
+			systemctl daemon-reload
+			systemctl enable services.timer
+		fi
 
 		install_common_script_service wait-dns-working
 		install_common_script_service cleanup-stopped-containers
