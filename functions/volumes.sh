@@ -25,14 +25,20 @@ function unit_fs_bind() {
 	_S_PREP_FOLDER+=("$FROM")
 	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
 }
+function _pass_socket_path_env() {
+	controller_environment_variable "SHARED_SOCKET_PATH=$SHARED_SOCKET_PATH"
+	environment_variable "SHARED_SOCKET_PATH=/run/sockets"
+}
 function shared_sockets_use() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
-		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
+	_pass_socket_path_env
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep "$SHARED_SOCKET_PATH"; then
+		unit_fs_bind "$SHARED_SOCKET_PATH" /run/sockets
 	fi
 }
 function shared_sockets_provide() {
-	if ! echo "${_S_VOLUME_ARG[*]}" | grep $SHARED_SOCKET_PATH; then
-		unit_fs_bind $SHARED_SOCKET_PATH /run/sockets
+	_pass_socket_path_env
+	if ! echo "${_S_VOLUME_ARG[*]}" | grep "$SHARED_SOCKET_PATH"; then
+		unit_fs_bind "$SHARED_SOCKET_PATH" /run/sockets
 	fi
 	local -a FULLPATH=()
 	for i; do

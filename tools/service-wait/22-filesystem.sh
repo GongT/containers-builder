@@ -9,4 +9,8 @@ function ensure_mounts() {
 			/usr/bin/mkdir -p "$I" || critical_die "can not ensure exists: $I"
 		fi
 	done
+
+	if [[ "$SHARED_SOCKET_PATH" ]]; then
+		chmod 0777 "$SHARED_SOCKET_PATH"
+	fi
 }

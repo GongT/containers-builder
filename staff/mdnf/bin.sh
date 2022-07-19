@@ -2,7 +2,11 @@
 
 set -Eeuo pipefail
 
-cd /install-root
+if [[ -e /install-root ]]; then
+	cd /install-root
+else
+	cd /
+fi
 
 mkdir -p /install-root/etc/dnf
 cp /etc/dnf/dnf.conf /install-root/etc/dnf/dnf.conf

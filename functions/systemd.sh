@@ -12,6 +12,8 @@ declare -a _S_EXEC_STOP_POST
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
 declare -a _S_NETWORK_ARGS
+declare -A _S_ENVIRONMENTS
+declare -A _S_CONTROL_ENVS
 
 declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
 
@@ -62,6 +64,8 @@ function _unit_init() {
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
+	_S_ENVIRONMENTS=()
+	_S_CONTROL_ENVS=()
 
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
 	_S_BODY_CONFIG[Restart]="always"
@@ -72,6 +76,9 @@ function _unit_init() {
 	_S_UNIT_CONFIG[After]="services.target"
 	## network.sh
 	_N_TYPE=
+
+	## service env
+	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
 
 	## healthcheck.sh
 	_healthcheck_reset
@@ -227,6 +234,7 @@ function export_base_envs() {
 function _unit_assemble() {
 	_network_use_not_define
 	_create_service_library
+	_commit_environment
 
 	local I
 	echo "[Unit]"
@@ -276,7 +284,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 
 	echo "Environment=CONTAINER_ID=$SCOPE_ID"
 	echo "Environment=PODMAN_SYSTEMD_UNIT=%n"
-	echo "Environment=REGISTRY_AUTH_FILE=/etc/containers/auth.json"
+	_commit_controller_environment
 
 	local PREP_FOLDERS_INS=()
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
@@ -438,6 +446,9 @@ function _unit_podman_network_arg() {
 }
 function unit_podman_arguments() {
 	local I
+	if ! [[ "$*" ]]; then
+		return
+	fi
 	for I; do
 		_S_PODMAN_ARGS+=("'$I'")
 	done

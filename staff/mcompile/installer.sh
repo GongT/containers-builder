@@ -2,12 +2,12 @@
 
 set -Eeuo pipefail
 
-export INSTALL_TARGET="/mnt/install"
-export INSTALL_SOURCE="/opt/dist"
+declare -rx INSTALL_TARGET="/mnt/install"
+declare -rx INSTALL_SOURCE="/opt/dist"
 mkdir -p "$INSTALL_SOURCE"
 cd "$INSTALL_SOURCE"
 
-declare -rx LIST_FILE=$(mktemp -u)
+export __INSTALL_LIST_FILE=$(mktemp)
 
 function info_log() {
 	{
@@ -29,10 +29,6 @@ function collect_dist_binary_dependencies() {
 	mapfile -t BINS <"$TMP"
 	rm -f "$TMP"
 
-	for I in "${BINS[@]}"; do
-		echo -e "\e[2m * $I\e[0m"
-	done
-
 	collect_binary_dependencies "${BINS[@]}"
 }
 function copy_dist_root() {
@@ -41,7 +37,14 @@ function copy_dist_root() {
 }
 function collect_dist_root() {
 	info_log "Copy all files from $INSTALL_SOURCE to $INSTALL_TARGET"
-	find "$INSTALL_SOURCE" -type f >>"$LIST_FILE"
+	local LIST FILE
+	mapfile -t LIST < <(find "$INSTALL_SOURCE" -type f)
+	for FILE in "${LIST[@]}"; do
+		if ! grep -Fxq "$FILE" "$__INSTALL_LIST_FILE"; then
+			echo -e "\e[2m      * $FILE\e[0m" >&2
+			echo "$FILE" >>"$__INSTALL_LIST_FILE"
+		fi
+	done
 }
 
 function copy_collected_dependencies() {
@@ -49,22 +52,29 @@ function copy_collected_dependencies() {
 	copy_collected_files
 }
 function copy_collected_files() {
-	if ! [[ -e $LIST_FILE ]]; then
+	if ! [[ -e $__INSTALL_LIST_FILE ]]; then
 		info_log "no collected dependencies..."
 		return
 	fi
 
-	local DATA
-	DATA=$(sed "#$INSTALL_TARGET/#d" "$LIST_FILE")
-	echo "$DATA" | sort | uniq >"$LIST_FILE"
+	local UNI_LIST_FILE=$(mktemp -u)
+	sort <"$__INSTALL_LIST_FILE" | uniq >"$UNI_LIST_FILE"
 
 	info_log "====================== Copy dependencies to $INSTALL_SOURCE"
 	echo -e '\e[2m' >&2
-	tar --create "--directory=/" "--files-from=$LIST_FILE" \
-		--transform="s,^${INSTALL_SOURCE/\//}/,,g" \
-		| tar --verbose --skip-old-files --extract \
-			--keep-directory-symlink \
-			"--directory=$INSTALL_TARGET"
+	tar --create \
+		-f /tmp/filesystem.tar \
+		--ignore-failed-read \
+		--ignore-command-error \
+		"--directory=/" \
+		"--files-from=$UNI_LIST_FILE" \
+		--transform="s,^${INSTALL_SOURCE/\//}/,,g"
+
+	tar --skip-old-files \
+		--extract \
+		-f /tmp/filesystem.tar \
+		--keep-directory-symlink \
+		"--directory=$INSTALL_TARGET"
 	echo -e '\e[0m' >&2
 	info_log "======================"
 }
@@ -85,12 +95,15 @@ function collect_with_all_links() {
 }
 
 function collect_system_file() {
-	local FILE="$1"
-	if [[ $FILE != "$INSTALL_TARGET/"* ]]; then
-		echo "$FILE" >>"$LIST_FILE"
-	else
-		echo -e "\e[2mSkip cross-filesystem file: $FILE\e[0m" >&2
-	fi
+	local FILE
+	for FILE; do
+		if [[ $FILE != "$INSTALL_TARGET/"* ]]; then
+			echo -e "\e[2m      * $FILE\e[0m" >&2
+			echo "$FILE" >>"$__INSTALL_LIST_FILE"
+		else
+			echo -e "\e[38;5;11mSkip cross-filesystem file: $FILE\e[0m" >&2
+		fi
+	done
 }
 
 function collect_binary_dependencies() {
@@ -103,6 +116,7 @@ function collect_binary_dependencies() {
 			exit 1
 		fi
 
+		echo -e "\e[2m      binary: $BIN\e[0m"
 		collect_system_file "$BIN"
 		# Name only .so files (common)
 		mapfile -t FILES < <(ldd "$BIN" | grep '=>' | awk '{print $3}')

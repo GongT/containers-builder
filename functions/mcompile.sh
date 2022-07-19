@@ -64,11 +64,11 @@ function run_install() {
 		PREPARE_SCRIPT="make install"
 	fi
 
-	control_ci group "Install $PROJECT_ID"
+	control_ci group "Install Project :: $PROJECT_ID"
 	WORKER=$(new_container "install.$PROJECT_ID" "$SOURCE_IMAGE")
 	collect_temp_container "$WORKER"
 
-	TMPF=$(create_temp_file install.script)
+	local TMPF=$(create_temp_file install.script)
 	{
 		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
@@ -81,11 +81,17 @@ function run_install() {
 		echo "$PREPARE_SCRIPT"
 	} >"$TMPF"
 
-	buildah unshare bash <<-EOF
+	local TMPF2=$(create_temp_file install.script)
+	cat <<-EOF >"$TMPF2"
 		set -Eeuo pipefail
 		MNT=\$(buildah mount "$TARGET_CONTAINER")
 		buildah run "--volume=\$MNT:/mnt/install" "$WORKER" bash < "$TMPF"
 	EOF
+	if is_root; then
+		bash "$TMPF2"
+	else
+		buildah unshare bash "$TMPF2"
+	fi
 
 	control_ci groupEnd
 }
