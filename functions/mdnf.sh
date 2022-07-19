@@ -89,6 +89,7 @@ function run_dnf() {
 	else
 		buildah unshare bash "$DNF_CMD"
 	fi
+	echo "DNF run FINISH"
 	control_ci groupEnd
 }
 function run_dnf_host() {

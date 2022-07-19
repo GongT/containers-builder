@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-cd /
+cd /install-root
 
 mkdir -p /install-root/etc/dnf
 cp /etc/dnf/dnf.conf /install-root/etc/dnf/dnf.conf
@@ -56,5 +56,3 @@ if [[ $ACTION == install ]] && command -v busybox &>/dev/null; then
 	echo "installing busybox..." &>/dev/null
 	busybox --install /bin
 fi
-
-cd /install-root
