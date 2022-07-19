@@ -34,10 +34,6 @@ function make_base_image_by_dnf() {
 	_dnf_build_cb() {
 		local CONTAINER="$1"
 		run_dnf_with_list_file "$CONTAINER" "$PKG_LIST_FILE"
-		if [[ ${POST_SCRIPT+found} == found ]]; then
-			"$POST_SCRIPT" "$CONTAINER"
-			unset POST_SCRIPT
-		fi
 	}
 
 	if [[ ${FORCE_DNF+found} != found ]]; then
@@ -72,13 +68,22 @@ function run_dnf() {
 		mkdir -p "\$MNT/etc/yum.repos.d"
 		rsync -r "\$MNT_DNF/etc/yum.repos.d" "\$MNT/etc"
 		[[ -e "$TMPDIR/yum.repos.d" ]] && rsync -r "$TMPDIR/yum.repos.d" "\$MNT/etc"
+		cd "\$MNT"
+		for D in bin sbin lib lib64 ; do
+			if [[ ! -e "\$D" ]]; then
+				mkdir -p "usr/\$D"
+				ln -s "usr/\$D" "./\$D"
+			fi
+		done
 		cat << 'XXX' | buildah run --cap-add=CAP_SYS_ADMIN "--volume=\$MNT:/install-root" $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
-		$(declare -p PACKAGES)
-		$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
+			$(declare -p PACKAGES)
+			$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
+			${POST_SCRIPT:-}
 		XXX
 		buildah unmount "$WORKER"
 		buildah unmount "$DNF"
 	_EOF
+	unset POST_SCRIPT
 	if is_root; then
 		bash "$DNF_CMD"
 	else

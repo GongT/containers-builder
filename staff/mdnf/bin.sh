@@ -43,9 +43,18 @@ if ! [[ ${ACTION:-} ]]; then
 	ACTION="install"
 fi
 
-/usr/bin/dnf "$ACTION" --nodocs -y --releasever=/ --installroot=/install-root "${PACKAGES[@]}"
+dnf() {
+	echo -e "\e[2m + /usr/bin/dnf --nodocs -y --releasever=/ --installroot=/install-root $*\e[0m" >&2
+	/usr/bin/dnf --nodocs -y --releasever=/ --installroot=/install-root "$@"
+}
+
+# dnf clean expire-cache
+# dnf makecache
+dnf "$ACTION" "${PACKAGES[@]}"
 
 if [[ $ACTION == install ]] && command -v busybox &>/dev/null; then
 	echo "installing busybox..." &>/dev/null
 	busybox --install /bin
 fi
+
+cd /install-root
