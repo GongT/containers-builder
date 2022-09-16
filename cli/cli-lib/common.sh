@@ -9,10 +9,33 @@ function die() {
 }
 
 function do_ls() {
-	{
-		systemctl list-units --all --no-pager --no-legend --type=service '*.pod@*.service' '*.pod.service' | sed 's/●//g' | awk '{print $1}'
-		systemctl list-unit-files --no-legend --no-pager --state=disabled --type=service '*.pod.service' | awk '{print $1}'
-	} | sed -E 's/\.service$//g' | sort | uniq
+	local US U
+
+	mapfile -t US < <(
+		{
+			systemctl list-units --all --no-pager --no-legend --type=service '*.pod@*.service' '*.pod.service' | sed 's/●//g' | awk '{print $1}'
+			systemctl list-unit-files --no-legend --no-pager --type=service '*.pod.service' | awk '{print $1}'
+		} | sed -E 's/\.service$//g' | sort | uniq
+	)
+	if [[ $# -eq 0 ]]; then
+		for U in "${US[@]}"; do
+			echo "$U"
+		done
+	elif [[ ${1:-} == 'enabled' ]]; then
+		for U in "${US[@]}"; do
+			if systemctl is-enabled -q "${U}.service"; then
+				echo "$U"
+			fi
+		done
+	elif [[ ${1:-} == 'disabled' ]]; then
+		for U in "${US[@]}"; do
+			if ! systemctl is-enabled -q "${U}.service"; then
+				echo "$U"
+			fi
+		done
+	else
+		die "invalid arg: $*"
+	fi
 }
 
 function go_home() {

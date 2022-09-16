@@ -107,12 +107,18 @@ function __create_unit__() {
 
 	_S_CURRENT_UNIT_NAME="$NAME"
 
-	if [[ "$_S_CURRENT_UNIT_SERVICE_TYPE" ]]; then
-		_S_CURRENT_UNIT_FILE="$NAME.$_S_CURRENT_UNIT_SERVICE_TYPE$_S_AT_.$_S_CURRENT_UNIT_TYPE"
-	else
-		_S_CURRENT_UNIT_FILE="$NAME$_S_AT_.$_S_CURRENT_UNIT_TYPE"
-	fi
+	_S_CURRENT_UNIT_FILE="$(_create_unit_name)"
 	echo "creating unit file $_S_CURRENT_UNIT_FILE"
+}
+
+function _create_unit_name() {
+	local IARG="${1:-}"
+
+	if [[ "$_S_CURRENT_UNIT_SERVICE_TYPE" ]]; then
+		echo "$_S_CURRENT_UNIT_NAME.$_S_CURRENT_UNIT_SERVICE_TYPE$_S_AT_$IARG.$_S_CURRENT_UNIT_TYPE"
+	else
+		echo "$_S_CURRENT_UNIT_NAME$_S_AT_$IARG.$_S_CURRENT_UNIT_TYPE"
+	fi
 }
 
 function unit_write() {
@@ -181,14 +187,30 @@ function apply_systemd_service() {
 	local UN="$1"
 
 	if is_installing; then
-		if [[ ${SYSTEMD_RELOAD-yes} == "yes" ]]; then
+		if [[ ${SYSTEMD_RELOAD:-yes} == yes ]]; then
+			local AND_ENABLED=''
 			systemctl daemon-reload
-			if [[ ! $_S_AT_ ]]; then
+			info "systemd unit $UN created${AND_ENABLED}."
+		fi
+
+		if [[ ${DISABLE_SYSTEMD_ENABLE:-no} != "yes" ]]; then
+			if [[ $_S_AT_ ]]; then
+				if [[ "${SYSTEM_AUTO_ENABLE:-}" ]]; then
+					local i='' N
+					for i in "${SYSTEM_AUTO_ENABLE[@]}"; do
+						N=$(_create_unit_name "$i")
+						if ! systemctl is-enabled -q "$N"; then
+							systemctl enable "$N"
+						fi
+					done
+					AND_ENABLED=" and enabled ${SYSTEM_AUTO_ENABLE[*]}"
+				fi
+			else
 				if ! systemctl is-enabled -q "$UN"; then
 					systemctl enable "$UN"
+					AND_ENABLED=' and enabled'
 				fi
 			fi
-			info "systemd unit $UN create and enabled."
 		fi
 	else
 		if [[ $_S_AT_ ]]; then

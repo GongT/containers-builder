@@ -3,16 +3,18 @@
 function do_upgrade() {
 	set -Eeuo pipefail
 
+	mapfile -t DISABLED < <(do_ls disabled)
+
 	cd /usr/lib/systemd/system
 
 	mapfile -t SCRIPT_LIST < <(grep 'INSTALLER_SCRIPT=' . -R | sed -E 's/^.+INSTALLER_SCRIPT=//g' | sort | uniq)
 
 	cd "${TMPDIR:-/tmp}"
 
-	export SYSTEMD_RELOAD=no
+	export SYSTEMD_RELOAD=no DISABLE_SYSTEMD_ENABLE=yes
 	for FILE in "${SCRIPT_LIST[@]}"; do
 		BASE=$(basename "$(dirname "$FILE")" .sh)
-		echo -ne "\e[38;5;14m$BASE...\e[0m "
+		echo -ne "\e[38;5;14m$BASE \e[0;2m($FILE) ...\e[0m "
 
 		LOG="$BASE.log"
 		if ! bash "$FILE" &>"$LOG"; then
@@ -25,8 +27,8 @@ function do_upgrade() {
 
 	echo "daemon-reload..."
 	systemctl daemon-reload
-	do_ls | xargs --no-run-if-empty systemctl reenable
-	systemctl reenable 
+	echo "enable: " $(do_ls enabled)
+	do_ls enabled | xargs --no-run-if-empty systemctl -q reenable
 
 	echo "All Done!"
 }

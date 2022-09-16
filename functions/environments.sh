@@ -2,10 +2,6 @@ function _env_passing_file_path() {
 	echo "$CONTAINERS_DATA_PATH/save_environments/$PROJECT_NAME.$1.txt"
 }
 
-function unit_podman_safe_environment() {
-	unit_podman_arguments "$(safe_environment "$@")"
-}
-
 function controller_environment_variable() {
 	local KV K V
 
@@ -36,6 +32,10 @@ function _commit_controller_environment() {
 	echo "EnvironmentFile=$F"
 }
 
+function unit_podman_safe_environment() {
+	environment_variable "$@"
+}
+
 function environment_variable() {
 	local KV K V
 
@@ -47,13 +47,7 @@ function environment_variable() {
 }
 
 function safe_environment() {
-	info_warn "depreciated function safe_environment"
-	callstack 1
-	local D="$CONTAINERS_DATA_PATH/save_environments"
-	local F="$D/$PROJECT_NAME.txt"
-
-	environment_variable "$@"
-	echo "--env=A=B"
+	die "removed function safe_environment, use environment_variable"
 }
 
 function _commit_environment() {

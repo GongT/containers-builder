@@ -10,7 +10,7 @@ function ensure_mounts() {
 		fi
 	done
 
-	if [[ "$SHARED_SOCKET_PATH" ]]; then
+	if [[ "${SHARED_SOCKET_PATH:-}" ]]; then
 		chmod 0777 "$SHARED_SOCKET_PATH"
 	fi
 }
