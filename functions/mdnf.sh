@@ -4,6 +4,8 @@ REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf-repos"
 
 mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf"
 
+TMPREPODIR=
+
 function _dnf_prep() {
 	DNF=$(create_if_not "mdnf" fedora)
 	buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
@@ -58,7 +60,7 @@ function run_dnf() {
 
 	_dnf_prep
 
-	control_ci group "DNF run"
+	control_ci group "DNF run ($DNF, worker: $WORKER)"
 	DNF_CMD=$(create_temp_file dnf.cmd)
 	cat <<-_EOF >"$DNF_CMD"
 		#!/bin/bash
@@ -66,8 +68,8 @@ function run_dnf() {
 		MNT=\$(buildah mount "$WORKER")
 		MNT_DNF=\$(buildah mount "$DNF")
 		mkdir -p "\$MNT/etc/yum.repos.d"
-		rsync -r "\$MNT_DNF/etc/yum.repos.d" "\$MNT/etc"
-		[[ -e "$TMPDIR/yum.repos.d" ]] && rsync -r "$TMPDIR/yum.repos.d" "\$MNT/etc"
+		cp -rn "\$MNT_DNF/etc/yum.repos.d/." "\$MNT/etc/yum.repos.d"
+		[[ "$TMPREPODIR" ]] && [[ -e "$TMPREPODIR" ]] && rsync -r "$TMPREPODIR/." "\$MNT/etc/yum.repos.d" || true
 		cd "\$MNT"
 		for D in bin sbin lib lib64 ; do
 			if [[ ! -e "\$D" ]]; then
@@ -177,6 +179,9 @@ function dnf() {
 
 function dnf_add_repo_string() {
 	local TITLE=$1 CONTENT=$2
-	mkdir -p "$TMPDIR/yum.repos.d"
-	echo "$CONTENT" >"$TMPDIR/yum.repos.d/${TITLE}.repo"
+	if [[ ! $TMPREPODIR ]]; then
+		TMPREPODIR=$(create_temp_dir yum.repos.d)
+		mkdir -p "$TMPREPODIR"
+	fi
+	echo "$CONTENT" >"$TMPREPODIR/${TITLE}.repo"
 }

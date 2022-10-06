@@ -14,6 +14,7 @@ function download_and_install_x64_init() {
 		DOWNLOADED=$(FORCE_DOWNLOAD=yes download_file "$RELEASE_URL" "$FILE_NAME")
 		buildah copy "$TGT" "$DOWNLOADED" "/usr/sbin/init"
 		buildah run "$TGT" chmod 0777 "/usr/sbin/init"
+		buildah config --cmd "/usr/sbin/init" --stop-signal SIGINT "$TGT"
 	}
 	buildah_cache2 "$CACHE_BRANCH" _hash_init _download_init
 
