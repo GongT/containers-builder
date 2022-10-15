@@ -56,7 +56,17 @@ dnf() {
 # dnf makecache
 dnf "$ACTION" "${PACKAGES[@]}"
 
-if [[ $ACTION == install ]] && command -v busybox &>/dev/null; then
-	echo "installing busybox..." &>/dev/null
-	busybox --install /bin
+echo "ACTION=$ACTION"
+if [[ $ACTION == install ]]; then
+	cd /install-root
+
+	find . -name busybox -or -name busybox.shared
+
+	BUSYBOX_BIN=$(find . -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
+	echo "BUSYBOX_BIN=$BUSYBOX_BIN"
+
+	if [[ "$BUSYBOX_BIN" ]]; then
+		echo "installing busybox..."
+		chroot /install-root "$BUSYBOX_BIN" --install -s /bin
+	fi
 fi

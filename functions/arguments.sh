@@ -135,6 +135,8 @@ function arg_finish() {
 	if [[ "$E" ]]; then
 		die "$E"
 	fi
+	# echo "ARGS=${ARGS[*]}"
+	# echo "_PROGRAM_ARGS=${_PROGRAM_ARGS[*]}"
 	eval "_arg_set $(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}")"
 
 	if [[ ${_ACTION_HELP} == "yes" ]]; then

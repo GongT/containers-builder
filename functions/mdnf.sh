@@ -30,7 +30,8 @@ function make_base_image_by_dnf() {
 	info "make base image by fedora dnf, package list file: $PKG_LIST_FILE..."
 
 	_dnf_hash_cb() {
-		dnf_hash_version "$PKG_LIST_FILE"
+		cat "$PKG_LIST_FILE"
+		dnf_list_version "$PKG_LIST_FILE"
 		echo "${POST_SCRIPT:-}"
 	}
 	_dnf_build_cb() {
@@ -113,64 +114,11 @@ function delete_rpm_files() {
 	buildah run "$CONTAINER" bash -c "rm -rf /var/lib/dnf /var/lib/rpm /var/cache"
 }
 
-function dnf_hash_version() {
-	local CACHE_DIR="$SYSTEM_FAST_CACHE/dnf-version-cache"
-	local PKGS=() FILE=$1 MISSING=() NAME SUM=""
-	local MASTER_HASH_FILE="$CACHE_DIR/.master"
+function dnf_list_version() {
+	local FILE=$1 PKGS=()
 
 	mapfile -t PKGS <"$FILE"
-	mkdir -p "$CACHE_DIR"
-
-	local DNF_REPO_STAT
-	DNF_REPO_STAT=$(find "$REPO_CACHE_DIR" | sort)
-
-	if [[ -f $MASTER_HASH_FILE ]] && echo "$DNF_REPO_STAT" | md5sum -c "$MASTER_HASH_FILE" --status; then
-		info_log "dnf version cache is valid."
-		for NAME in "${PKGS[@]}"; do
-			if ! [[ -f "$CACHE_DIR/$NAME" ]]; then
-				MISSING+=("${NAME}")
-			fi
-		done
-	else
-		MISSING=("${PKGS[@]}")
-		info_warn "[dnf] version cache invalid..."
-		find "$CACHE_DIR" -type f -exec rm '{}' \;
-		echo "$DNF_REPO_STAT" | md5sum >"$MASTER_HASH_FILE"
-	fi
-
-	if [[ ${#MISSING[@]} -gt 0 ]]; then
-		info_log "finding ${#MISSING[@]} packages version..."
-		local NEW_VERSIONS=() E VER
-		mapfile -t NEW_VERSIONS < <(run_dnf_host list --color never "${MISSING[@]}" | grep -v i686)
-		for E in "${NEW_VERSIONS[@]}"; do
-			if ! [[ "$E" ]]; then
-				continue
-			fi
-			NAME=$(echo "$E" | awk '{print $1}')
-			VER=$(echo "$E" | awk '{print $2}')
-			NAME="${NAME%.*}"
-			if [[ ! $NAME ]]; then
-				echo "invalid dnf output line: $E" >&2
-				control_ci error "invalid dnf output line: $E"
-				continue
-			fi
-			if [[ $NAME == *'/'* ]]; then
-				echo "skip remember version: $NAME"
-				continue
-			fi
-			echo "$VER" >"$CACHE_DIR/$NAME"
-		done
-	fi
-
-	for NAME in "${PKGS[@]}"; do
-		if [[ -f "$CACHE_DIR/$NAME" ]]; then
-			SUM+="$(<"$CACHE_DIR/$NAME")"
-		else
-			info_warn "missing version about package \"$NAME\""
-		fi
-	done
-
-	echo "$SUM" | md5sum | awk '{print $1}'
+	run_dnf_host list -q --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}'
 }
 
 function dnf() {
