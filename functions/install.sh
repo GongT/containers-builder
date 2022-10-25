@@ -17,6 +17,6 @@ function install_binary() {
 	if ! [[ -f $F ]]; then
 		die "Cannot found script file: $F ($(pwd))"
 	fi
-	write_executable_file "/usr/local/bin/$AS" "bash $F \"\$@\""
+	write_executable_file "/usr/local/bin/$AS" "bash '$(pwd)/$F' \"\$@\""
 	info "installed binary: \e[38;5;2m/usr/local/bin/$AS"
 }
