@@ -46,8 +46,8 @@ function make_base_image_by_dnf() {
 	fi
 
 	BUILDAH_LAST_IMAGE=scratch
-	BUILDAH_FORCE="$FORCE_DNF" buildah_cache2 "$CACHE_NAME" _dnf_hash_cb _dnf_build_cb
 
+	BUILDAH_FORCE="$FORCE_DNF" buildah_cache2 "$CACHE_NAME" _dnf_hash_cb _dnf_build_cb
 	unset -f _dnf_hash_cb _dnf_build_cb
 }
 

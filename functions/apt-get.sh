@@ -66,7 +66,7 @@ function make_base_image_by_apt() {
 
 	_apt_hash_cb() {
 		podman pull "$BASEIMG"
-		echo "${PKGS[*]} $POSTSCRIPT" | md5sum
+		echo "${PKGS[*]} $POSTSCRIPT"
 	}
 	_apt_build_cb() {
 		local CONTAINER

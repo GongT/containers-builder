@@ -31,14 +31,12 @@ function buildah_cache_run() {
 	fi
 
 	_hash_cb() {
-		{
-			echo "last: $BUILDAH_LAST_IMAGE"
-			echo -n 'script: '
-			cat "$BUILD_SCRIPT"
-			echo "run: ${RUN_ARGS[*]}"
-			echo "bash: ${BASH_ARGS[*]}"
-			git ls-tree -r -t HEAD "${HASH_FOLDERS[@]}" || true
-		} | md5sum
+		echo "last: $BUILDAH_LAST_IMAGE"
+		echo -n 'script: '
+		cat "$BUILD_SCRIPT"
+		echo "run: ${RUN_ARGS[*]}"
+		echo "bash: ${BASH_ARGS[*]}"
+		git ls-tree -r -t HEAD "${HASH_FOLDERS[@]}" || true
 	}
 	_build_cb() {
 		local CONTAINER

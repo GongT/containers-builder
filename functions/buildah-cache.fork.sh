@@ -14,11 +14,9 @@ function buildah_cache_fork() {
 	buildah_cache_start "$NEW_BASE"
 
 	_hash_bcf_cb() {
-		{
-			echo "base: $BUILDAH_LAST_IMAGE"
-			echo "from: $FROM_IMAGE"
-			"$HASH_CALLBACK"
-		} | md5sum
+		echo "base: $BUILDAH_LAST_IMAGE"
+		echo "from: $FROM_IMAGE"
+		"$HASH_CALLBACK"
 	}
 	_build_bcf_cb() {
 		local SOURCE TARGET MNT
@@ -45,10 +43,8 @@ function buildah_cache_fork_script() {
 	local -ar BARGS=("$@")
 
 	_hash_cfs_cb() {
-		{
-			echo "script: $BUILD_SCRIPT"
-			echo "args: ${BARGS[*]}"
-		} | md5sum
+		echo "script: $BUILD_SCRIPT"
+		echo "args: ${BARGS[*]}"
 	}
 	_build_cfs_cb() {
 		{

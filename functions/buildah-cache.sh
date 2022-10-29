@@ -54,7 +54,7 @@ function buildah_cache() {
 	local WANTED_HASH HASH_TMP
 	HASH_TMP=$(mktemp)
 	"$BUILDAH_HASH_CALLBACK" >"$HASH_TMP"
-	WANTED_HASH=$(awk '{print $1}' "$HASH_TMP")
+	WANTED_HASH=$(md5sum "$HASH_TMP" | awk '{print $1}')
 	unlink "$HASH_TMP"
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then

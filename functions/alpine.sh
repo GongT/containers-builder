@@ -55,7 +55,7 @@ function make_base_image_by_apk() {
 
 	_apk_hash_cb() {
 		podman pull "$BASEIMG"
-		echo "${PKGS[*]} $POSTSCRIPT" | md5sum
+		echo "${PKGS[*]} $POSTSCRIPT"
 	}
 	_apk_build_cb() {
 		local CONTAINER

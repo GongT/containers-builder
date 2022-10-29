@@ -6,15 +6,13 @@ _HASH_CACHED_AT=""
 function hash_path() {
 	local F=$1
 	if [[ $F == /* ]]; then
-		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name -C / ".$F" | md5sum | awk '{print $1}'
+		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name -C / ".$F"
 	else
-		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name "$F" | md5sum | awk '{print $1}'
+		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name "$F"
 	fi
 }
 function fast_hash_path() {
-	{
-		git ls-tree -r HEAD "$@"
-	} | md5sum | awk '{print $1}'
+	git ls-tree -r HEAD "$@"
 }
 function hash_current_folder_cached() {
 	if [[ "$_HASH_CACHED" ]]; then
@@ -49,7 +47,7 @@ function hash_current_folder() {
 
 	local HASH
 	HASH=$(
-		git ls-tree -r HEAD "${DEPS[@]}" "$COMMON_LIB_ROOT" "$(pwd)" | md5sum | awk '{print $1}'
+		git ls-tree -r HEAD "${DEPS[@]}" "$COMMON_LIB_ROOT" "$(pwd)"
 	)
 
 	_HASH_CACHED="$HASH"
