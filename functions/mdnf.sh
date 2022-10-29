@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf-repos"
+REPO_CACHE_DIR="$SYSTEM_COMMON_CACHE/dnf/repos"
 
-mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf"
+mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf/packges"
 
 TMPREPODIR=
 
@@ -22,7 +22,7 @@ function _dnf_prep() {
 
 function use_fedora_dnf_cache() {
 	echo "--volume=$REPO_CACHE_DIR:/var/lib/dnf/repos" \
-		"--volume=$SYSTEM_COMMON_CACHE/dnf:/var/cache/dnf"
+		"--volume=$SYSTEM_COMMON_CACHE/dnf/packges:/var/cache/dnf"
 }
 
 function make_base_image_by_dnf() {
