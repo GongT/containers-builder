@@ -93,7 +93,14 @@ function buildah_cache() {
 		"--annotation=$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
 		"--created-by=# layer <$CURRENT_STAGE> to <$NEXT_STAGE> base $BUILDAH_NAME_BASE" \
 		"$CONTAINER_ID" >/dev/null
-	BUILDAH_LAST_IMAGE=$(xbuildah commit --omit-timestamp --rm "$CONTAINER_ID" "$BUILDAH_TO")
+
+	if [[ ${CHANGE_TIMESTAMP:-no} != yes ]]; then
+		local OMIT_TS=(--omit-timestamp)
+		unset CHANGE_TIMESTAMP
+	else
+		local OMIT_TS=()
+	fi
+	BUILDAH_LAST_IMAGE=$(xbuildah commit "${OMIT_TS[@]}" --rm "$CONTAINER_ID" "$BUILDAH_TO")
 	info_note "$BUILDAH_LAST_IMAGE"
 
 	cache_push "$BUILDAH_TO"

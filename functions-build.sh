@@ -43,6 +43,8 @@ source "$COMMON_LIB_ROOT/functions/python.sh"
 source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 # shellcheck source=./functions/healthcheck.sh
 source "$COMMON_LIB_ROOT/functions/healthcheck.sh"
+# shellcheck source=./functions/container-systemd.sh
+source "$COMMON_LIB_ROOT/functions/container-systemd.sh"
 
 mapfile -t FILES < <(find "$COMMON_LIB_ROOT/standard_build_steps" -type f -name '*.sh')
 for FELE in "${FILES[@]}"; do

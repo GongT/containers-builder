@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+env
 
-rm -rf /var/lib/dnf/repos /var/cache/dnf
-mkdir -p /var/lib/dnf/repos /var/cache/dnf
+set -xEeuo pipefail
+
+dnf makecache
+
+dnf install -y yum-utils \
+	https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-36.noarch.rpm \
+	https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-36.noarch.rpm
+
+dnf config-manager --set-enabled rpmfusion-free rpmfusion-nonfree
