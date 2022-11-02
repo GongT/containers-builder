@@ -22,8 +22,10 @@ do_pull_all() {
 		mapfile -t IMAGE_LIST < <(get_image_name_from_service_file .)
 	else
 		for I in "${LIST[@]}"; do
-			SRV=$(get_service_file "$I") || die "no such service: $I"
-			IMAGE_LIST+=("$(get_image_name_from_service_file "$SRV")")
+			mapfile -t SRV < <(get_service_file "$I") || die "no such service: $I"
+			for SRVN in "${SRV[@]}"; do
+				IMAGE_LIST+=("$(get_image_name_from_service_file "$SRVN")")
+			done
 		done
 	fi
 
