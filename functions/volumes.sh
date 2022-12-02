@@ -14,7 +14,7 @@ function unit_volume() {
 	_S_VOLUME_ARG+=("'--volume=$NAME:$TO$OPTIONS'")
 }
 function unit_fs_bind() {
-	local FROM="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"
+	local FROM="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid,rslave"
 	if [[ $# -gt 2 ]]; then
 		OPTIONS+=",$3"
 	fi
