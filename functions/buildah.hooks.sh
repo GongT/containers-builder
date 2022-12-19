@@ -86,6 +86,10 @@ function buildah() {
 
 		local IID="${PASSARGS[*]: -1}"
 		local CID="${PASSARGS[*]: -2:1}"
+		if ! [[ $CID =~ ^[a-fA-F0-9]{32}$ ]]; then
+			info_warn "Step cache string is not MD5!!!"
+			CID=$(echo "$CID" | md5sum | awk '{print $1}')
+		fi
 
 		if [[ $CID != "$BUILDAH_CACHE_BASE"* ]]; then
 			if is_ci; then
