@@ -27,6 +27,7 @@ function install_common_system_support() {
 		install_common_script_service wait-dns-working
 		install_common_script_service cleanup-stopped-containers
 		install_common_script_service wait-all-fstab
+		install_common_script_service services-pull-all
 		edit_system_service dnsmasq create-dnsmasq-config
 
 		install_common_script_service containers-ensure-health

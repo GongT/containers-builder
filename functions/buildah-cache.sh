@@ -54,6 +54,10 @@ function buildah_cache() {
 	local WANTED_HASH HASH_TMP
 	HASH_TMP=$(mktemp)
 	"$BUILDAH_HASH_CALLBACK" >"$HASH_TMP"
+	# if ! [[ $CID =~ ^[a-fA-F0-9]{32}$ ]]; then
+	# 	info_warn "Step cache string is not MD5!!! <$CID>"
+	# 	CID=$(echo "$CID" | md5sum | awk '{print $1}')
+	# fi
 	WANTED_HASH=$(md5sum "$HASH_TMP" | awk '{print $1}')
 	unlink "$HASH_TMP"
 
