@@ -48,8 +48,8 @@ if ! [[ ${ACTION:-} ]]; then
 fi
 
 dnf() {
-	echo -e "\e[2m + /usr/bin/dnf --nodocs -y --releasever=/ --installroot=/install-root $*\e[0m" >&2
-	/usr/bin/dnf --nodocs -y --releasever=/ --installroot=/install-root "$@"
+	echo -e "\e[2m + /usr/bin/dnf --nodocs -y --releasever=37 --installroot=/install-root $*\e[0m" >&2
+	/usr/bin/dnf --nodocs -y --releasever=37 --installroot=/install-root "$@"
 }
 
 # dnf clean expire-cache
