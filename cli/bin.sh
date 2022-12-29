@@ -61,6 +61,12 @@ abort)
 attach)
 	do_attach "$@"
 	;;
+nsenter)
+	do_nsenter "$@"
+	;;
+pstree)
+	do_pstree "$@"
+	;;
 pull)
 	do_pull_all "$@"
 	;;

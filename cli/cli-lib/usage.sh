@@ -31,6 +31,8 @@ function usage() {
 	echo
 	echo "其他工具:"
 	l attach "在镜像里运行命令（默认运行sh）"
+	l nsenter "运行nsenter命令"
+	l pstree "显示容器进程树"
 	l rm "停止服务，并删除服务文件"
 	l pull "拉取新镜像版本（--force：无视最近记录）"
 	echo

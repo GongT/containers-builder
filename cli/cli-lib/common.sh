@@ -46,3 +46,14 @@ function get_service_file() {
 	local NAME_HINT=$1
 	systemctl list-unit-files --no-legend --no-pager --type=service "$NAME_HINT*" | grep pod | awk '{print $1}'
 }
+
+function get_container_by_service() {
+	local R
+	R=$(systemctl show "$1" --property=Environment | grep -oP 'CONTAINER_ID=\S+' || true)
+	if [[ $R ]]; then
+		echo "${R##CONTAINER_ID=}"
+	else
+		echo "missing container $1" >&2
+		return 1
+	fi
+}
