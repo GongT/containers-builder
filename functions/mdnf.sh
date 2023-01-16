@@ -10,9 +10,9 @@ function _dnf_prep() {
 	if container_exists mdnf; then
 		DNF=$(container_get_id mdnf)
 	else
-		DNF=$(new_container "mdnf" fedora)
+		DNF=$(new_container "mdnf" "fedora:$FEDORA_VERSION")
 		buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
-		buildah run $(use_fedora_dnf_cache) "--volume=$COMMON_LIB_ROOT/staff/mdnf/prepare.sh:/tmp/_script" "$DNF" bash '/tmp/_script'
+		buildah run $(use_fedora_dnf_cache) -e "FEDORA_VERSION=$FEDORA_VERSION" "--volume=$COMMON_LIB_ROOT/staff/mdnf/prepare.sh:/tmp/_script" "$DNF" bash '/tmp/_script'
 	fi
 
 	if [[ "${http_proxy:-}" ]]; then
@@ -72,7 +72,7 @@ function make_base_image_by_dnf() {
 		local FORCE_DNF=""
 	fi
 
-	BUILDAH_LAST_IMAGE=fedora:latest
+	BUILDAH_LAST_IMAGE="fedora:$FEDORA_VERSION"
 
 	BUILDAH_FORCE="$FORCE_DNF" buildah_cache2 "$CACHE_NAME" _dnf_hash_cb _dnf_build_cb
 	unset -f _dnf_hash_cb _dnf_build_cb
@@ -95,6 +95,7 @@ function run_dnf() {
 	cat <<-_EOF >"$DNF_CMD"
 		#!/bin/bash
 		set -Eeuo pipefail
+		FEDORA_VERSION="$FEDORA_VERSION"
 		MNT=\$(buildah mount "$WORKER")
 		MNT_DNF=\$(buildah mount "$DNF")
 		mkdir -p "\$MNT/etc/yum.repos.d"
@@ -111,6 +112,7 @@ function run_dnf() {
 		done
 		cat << 'XXX' | buildah run --cap-add=CAP_SYS_ADMIN "--volume=\$MNT:/install-root" $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
 			$(declare -p PACKAGES)
+			declare -xr FEDORA_VERSION="$FEDORA_VERSION"
 			$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
 		XXX
 	_EOF
@@ -118,6 +120,7 @@ function run_dnf() {
 		cat <<-_EOF >>"$DNF_CMD"
 			cat << 'XXX' | buildah run "$WORKER" bash -Eeuo pipefail
 				$(declare -p PACKAGES)
+				declare -xr FEDORA_VERSION="$FEDORA_VERSION"
 				${POST_SCRIPT:-}
 			XXX
 		_EOF
@@ -146,6 +149,7 @@ function run_dnf_host() {
 	{
 		declare -p ACTION
 		declare -p PACKAGES
+		declare -p FEDORA_VERSION
 		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
 	} | buildah run --cap-add=CAP_SYS_ADMIN $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
 }
