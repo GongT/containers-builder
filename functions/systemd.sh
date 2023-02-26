@@ -73,7 +73,6 @@ function _unit_init() {
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="services-normal.slice"
 
-	_S_UNIT_CONFIG[After]="services.target"
 	## network.sh
 	_N_TYPE=
 

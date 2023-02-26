@@ -12,6 +12,7 @@ fi
 cd /usr/share/scripts
 
 source cli-lib/common.sh
+source cli-lib/table.sh
 source cli-lib/usage.sh
 for i in cli-lib/act_*.sh; do
 	# shellcheck disable=SC1090
@@ -69,6 +70,9 @@ pstree)
 	;;
 pull)
 	do_pull_all "$@"
+	;;
+deps)
+	do_deps "$@"
 	;;
 *)
 	usage

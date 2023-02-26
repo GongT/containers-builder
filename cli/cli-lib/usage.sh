@@ -19,6 +19,7 @@ function usage() {
 	echo
 	echo "服务控制:"
 	l status "显示所有服务状态"
+	l deps "列出系统依赖服务的状态"
 	l ls "（用于脚本）列出服务名称"
 	for I in start restart stop reload reset-failed; do
 		l "$I" "对每个服务使用${I}命令"

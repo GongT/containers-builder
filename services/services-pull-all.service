@@ -1,7 +1,7 @@
 [Unit]
 Description=wait all mountpoints ready
-After=wait-dns-working.service network.target network-online.target wait-all-fstab.service
-Requires=network.target wait-dns-working.service wait-all-fstab.service
+After=wait-dns-working.service network.target network-online.target wait-all-fstab.service services-boot.service
+Requires=network.target wait-dns-working.service wait-all-fstab.service services-boot.service
 Wants=network-online.target
 
 [Service]

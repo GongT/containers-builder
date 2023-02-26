@@ -1,11 +1,6 @@
 [Unit]
 Description=System Worker Services
-Requires=containers-ensure-health.timer wait-dns-working.service cleanup-stopped-containers.service services-pull-all.service 
-Wants=wait-all-fstab.service
-After=multi-user.target wait-dns-working.service cleanup-stopped-containers.service wait-all-fstab.service services-pull-all.service dnsmasq.service systemd-resolved.service
+Requires=services-pre.target
+After=services-pre.target
 Conflicts=rescue.service rescue.target shutdown.target
 AllowIsolate=no
-Wants=multi-user.target
-
-[Install]
-WantedBy=multi-user.target

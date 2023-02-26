@@ -17,6 +17,7 @@ function install_common_system_support() {
 		_copy_common_static_unit services-infrastructure.slice
 		_copy_common_static_unit services-normal.slice
 		_copy_common_static_unit services.slice
+		_copy_common_static_unit services-pre.target
 		_copy_common_static_unit services.target
 		_copy_common_static_unit services.timer
 		if ! systemctl is-enabled --quiet services.timer; then
@@ -28,6 +29,7 @@ function install_common_system_support() {
 		install_common_script_service cleanup-stopped-containers
 		install_common_script_service wait-all-fstab
 		install_common_script_service services-pull-all
+		install_common_script_service services-boot
 		edit_system_service dnsmasq create-dnsmasq-config
 
 		install_common_script_service containers-ensure-health
