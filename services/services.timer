@@ -5,7 +5,7 @@ Requires=default.target
 
 [Timer]
 OnBootSec=30s
-Unit=services.target
+Unit=services-pre.target
 
 [Install]
 WantedBy=timers.target

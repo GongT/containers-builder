@@ -2,7 +2,7 @@ function add_capability() {
 	_S_LINUX_CAP+=("$@")
 }
 function use_full_system_privilege() {
-	_S_LINUX_CAP=()
+	_S_LINUX_CAP=() # privileged includes cap-add=__ALL__
 	unit_podman_arguments "--privileged=true"
 }
 function add_network_privilege() {
