@@ -1,7 +1,7 @@
 [Unit]
 Description=System Worker Services (Dependency)
-Requires=containers-ensure-health.timer wait-dns-working.service cleanup-stopped-containers.service services-pull-all.service services-boot.service
-Wants=wait-all-fstab.service
-After=multi-user.target wait-dns-working.service cleanup-stopped-containers.service wait-all-fstab.service services-pull-all.service dnsmasq.service systemd-resolved.service
+Requires=containers-ensure-health.timer wait-dns-working.service cleanup-stopped-containers.service wait-all-fstab.service services-pull-all.service services-boot.service
+After=multi-user.target wait-dns-working.service cleanup-stopped-containers.service wait-all-fstab.service services-pull-all.service services-boot.service dnsmasq.service systemd-resolved.service
 Conflicts=rescue.service rescue.target shutdown.target
 Before=services.target
+Wants=services.target
