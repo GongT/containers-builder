@@ -263,6 +263,9 @@ function _unit_assemble() {
 	if [[ $_S_INSTALL == services.target ]]; then
 		echo "DefaultDependencies=no"
 	fi
+	# todo: dynamic?
+	echo "After=services-pre.target"
+	echo "Requires=services-pre.target"
 
 	for VAR_NAME in "${!_S_UNIT_CONFIG[@]}"; do
 		local CVAL="${_S_UNIT_CONFIG[$VAR_NAME]}"
