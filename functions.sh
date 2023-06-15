@@ -15,7 +15,9 @@ if [[ ${CONTAINERS_DATA_PATH+found} != "found" ]]; then
 fi
 declare -xr CONTAINERS_DATA_PATH="${CONTAINERS_DATA_PATH}"
 declare -xr COMMON_LIB_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-declare -xr FEDORA_VERSION="38"
+if [[ ${FEDORA_VERSION+found} != found ]]; then
+	declare -xr FEDORA_VERSION="38"
+fi
 
 declare -xr MONO_ROOT_DIR="$(dirname "$COMMON_LIB_ROOT")"
 if [[ -e "$MONO_ROOT_DIR/.env" ]]; then
