@@ -19,8 +19,12 @@ function download_file() {
 	local ARGS=()
 
 	info " * downloading $NAME from $URL"
+	if [[ ! $URL ]]; then
+		die "missing download url."
+	fi
+
 	mkdir -p "$LOCAL_TMP"
-	if [[ "${CI:-}" ]]; then
+	if [[ "${CI-}" ]]; then
 		ARGS+=(--verbose)
 	else
 		ARGS+=(--quiet --show-progress --progress=bar:force:noscroll)
@@ -29,10 +33,10 @@ function download_file() {
 		local -i TRY=0
 		local EXARGS=()
 
-		if [[ ! ${HTTP_PROXY:-} ]]; then
+		if [[ ! ${HTTP_PROXY-} ]]; then
 			EXARGS+=(--no-proxy)
 		fi
-		if [[ ${HTTP_COOKIE:-} ]]; then
+		if [[ ${HTTP_COOKIE-} ]]; then
 			EXARGS+=(--header "Cookie: $HTTP_COOKIE")
 		fi
 
@@ -59,7 +63,7 @@ function download_file() {
 function decompression_file_source() {
 	local SRC_PROJECT_NAME=$1 COMPRESS_FILE=$2 STRIP=${3:-0}
 	local RELPATH="$CURRENT_DIR/source/$SRC_PROJECT_NAME"
-	if [[ "${CI:-}" ]] && [[ -e $RELPATH ]]; then
+	if [[ "${CI-}" ]] && [[ -e $RELPATH ]]; then
 		rm -rf "$RELPATH"
 	fi
 	if ! [[ -f "$CURRENT_DIR/source/.gitignore" ]] || ! grep -q "^$SRC_PROJECT_NAME$" "$CURRENT_DIR/source/.gitignore"; then
@@ -170,11 +174,25 @@ function http_get_github_unstable_release_id() {
 
 function github_release_asset_download_url() {
 	local -r NAME="$1"
-	echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name==$name) | .browser_download_url' --arg name "$1"
+	local RESULT=
+	RESULT=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name==$name) | .browser_download_url' --arg name "$1")
+
+	if [[ "$RESULT" ]]; then
+		echo "$RESULT"
+	else
+		die "failed get asset download url"
+	fi
 }
 function github_release_asset_download_url_regex() {
 	local -r NAME="$1"
-	echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name|test($name; "i")) | .browser_download_url' --arg name "$1"
+	local RESULT=
+	RESULT=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name|test($name; "i")) | .browser_download_url' --arg name "$1")
+
+	if [[ "$RESULT" ]]; then
+		echo "$RESULT"
+	else
+		die "failed get asset download url"
+	fi
 }
 
 function http_get_github_last_commit_id() {
@@ -280,7 +298,7 @@ function http_get_etag() {
 
 function curl_proxy() {
 	local PROXY_VAL=()
-	if [[ "${HTTP_PROXY:-}" ]]; then
+	if [[ "${HTTP_PROXY-}" ]]; then
 		PROXY_VAL=(--proxy "$HTTP_PROXY")
 	fi
 	info_note "    + curl ${PROXY_VAL[*]} $*"
