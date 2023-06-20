@@ -1,4 +1,4 @@
-function _use_apt_cache() {
+function use_apt_cache() {
 	local -r SYSTEM="$1"
 	info_note "using $SYSTEM apt cache: $SYSTEM_COMMON_CACHE/apt/${SYSTEM}/packages"
 	mkdir -p "$SYSTEM_COMMON_CACHE/apt/${SYSTEM}/packages" "$SYSTEM_COMMON_CACHE/apt/${SYSTEM}/lists"
@@ -8,7 +8,7 @@ function _use_apt_cache() {
 }
 
 function use_debian_apt_cache() {
-	_use_apt_cache debian
+	use_apt_cache debian
 }
 
 function apt_get_install() {
