@@ -6,7 +6,7 @@ set -xEeuo pipefail
 
 dnf makecache
 
-dnf install -y yum-utils \
+dnf install -y dnf-plugins-core \
 	"https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$FEDORA_VERSION.noarch.rpm" \
 	"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$FEDORA_VERSION.noarch.rpm"
 
