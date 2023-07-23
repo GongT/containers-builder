@@ -43,7 +43,7 @@ else
 	echo "Never pull this image in current boot."
 fi
 
-_sdnotify "--status=pull image"
+_sdnotify "--status=pull $IMAGE_TO_PULL"
 
 unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 
