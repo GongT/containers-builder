@@ -111,7 +111,7 @@ function __create_unit__() {
 }
 
 function _create_unit_name() {
-	local IARG="${1:-}"
+	local IARG="${1-}"
 
 	if [[ "$_S_CURRENT_UNIT_SERVICE_TYPE" ]]; then
 		echo "$_S_CURRENT_UNIT_NAME.$_S_CURRENT_UNIT_SERVICE_TYPE$_S_AT_$IARG.$_S_CURRENT_UNIT_TYPE"
@@ -194,7 +194,7 @@ function apply_systemd_service() {
 
 		if [[ ${DISABLE_SYSTEMD_ENABLE:-no} != "yes" ]]; then
 			if [[ $_S_AT_ ]]; then
-				if [[ "${SYSTEM_AUTO_ENABLE:-}" ]]; then
+				if [[ "${SYSTEM_AUTO_ENABLE-}" ]]; then
 					local i='' N
 					for i in "${SYSTEM_AUTO_ENABLE[@]}"; do
 						N=$(_create_unit_name "$i")
@@ -385,7 +385,7 @@ function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=("'--hostname=${_S_HOST:-$SCOPE_ID}'")
 	if [[ $_S_SYSTEMD == "true" ]]; then
-		STARTUP_ARGS+=(--systemd=always --tty)
+		STARTUP_ARGS+=(--systemd=always --tty --tmpfs=/run)
 	else
 		STARTUP_ARGS+=(--systemd=false)
 	fi

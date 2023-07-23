@@ -37,6 +37,8 @@ source "$COMMON_LIB_ROOT/functions/buildah.hooks.sh"
 source "$COMMON_LIB_ROOT/functions/alpine.sh"
 # shellcheck source=./functions/apt-get.sh
 source "$COMMON_LIB_ROOT/functions/apt-get.sh"
+# shellcheck source=./functions/archlinux.sh
+source "$COMMON_LIB_ROOT/functions/archlinux.sh"
 # shellcheck source=./functions/python.sh
 source "$COMMON_LIB_ROOT/functions/python.sh"
 # shellcheck source=./functions/build-folder-hash.sh
