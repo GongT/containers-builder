@@ -83,3 +83,23 @@ function ensure_symlink() {
 	mkdir -p "$(dirname "$LINK_FILE")"
 	ln -s "$TARGET" "$LINK_FILE"
 }
+
+function read_list_file() {
+	local FILE=$1 VARNAME=$2 ARR
+	mapfile -t ARR <"$FILE"
+
+	local ARR2=()
+	for I in "${ARR[@]}"; do
+		if ! [[ $I ]]; then
+			continue
+		fi
+
+		if [[ $I == "#"* ]]; then
+			continue
+		fi
+
+		ARR2+=("$(printf '%q' "$I")")
+	done
+
+	eval "$VARNAME=(${ARR2[*]})"
+}
