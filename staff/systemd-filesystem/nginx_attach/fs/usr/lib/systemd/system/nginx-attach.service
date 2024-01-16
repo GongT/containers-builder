@@ -1,0 +1,14 @@
+[Unit]
+Description=Inject nginx service to main nginx container
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5s
+ExecStart=/bin/bash /opt/scripts/nginx-attach.sh 1
+ExecStop=/bin/bash /opt/scripts/nginx-attach.sh 0
+RestartPreventExitStatus=66
+
+[Install]
+WantedBy=multi-user.target

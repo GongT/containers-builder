@@ -44,13 +44,14 @@ function setup_systemd() {
 				for I in "${TARGS[@]}"; do
 					ENVS+=("--env=$I")
 				done
+				TARGS=()
 				info "	  -> execute setup:"
-				buildah run "$C" "${ENVS[@]}" bash <"$SETUP_SRC"
+				buildah run "--env=PROJECT=$CACHE_BRANCH" "${ENVS[@]}" "$C" bash <"$SETUP_SRC"
 			fi
 		done
 
-		if [[ ${#TARG[@]} -gt 0 ]]; then
-			die "extra arguments: ${TARG[*]}"
+		if [[ ${#TARGS[@]} -gt 0 ]]; then
+			die "extra arguments: ${TARGS[*]}"
 		fi
 
 	}

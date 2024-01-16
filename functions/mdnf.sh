@@ -99,7 +99,7 @@ function run_dnf() {
 		MNT=\$(buildah mount "$WORKER")
 		MNT_DNF=\$(buildah mount "$DNF")
 		mkdir -p "\$MNT/etc/yum.repos.d"
-		cp -rn "\$MNT_DNF/etc/yum.repos.d/." "\$MNT/etc/yum.repos.d"
+		rsync -rv "\$MNT_DNF/etc/yum.repos.d/." "\$MNT/etc/yum.repos.d"
 		rsync -rv "$COMMON_LIB_ROOT/staff/extra-repos/." "\$MNT/etc/yum.repos.d"
 		[[ "$TMPREPODIR" ]] && [[ -e "$TMPREPODIR" ]] && rsync -rv "$TMPREPODIR/." "\$MNT/etc/yum.repos.d"
 		# ls -l "\$MNT/etc/yum.repos.d"
