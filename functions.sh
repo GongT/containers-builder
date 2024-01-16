@@ -125,3 +125,7 @@ source "$COMMON_LIB_ROOT/functions/proxy.sh"
 source "$COMMON_LIB_ROOT/functions/temp.sh"
 # shellcheck source=./functions/strings.sh
 source "$COMMON_LIB_ROOT/functions/strings.sh"
+
+function function_exists() {
+	declare -F "$PREFIX_FN" >/dev/null
+}

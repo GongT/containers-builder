@@ -430,6 +430,7 @@ function unit_data() {
 }
 function unit_using_systemd() {
 	_S_SYSTEMD=true
+	unit_reload_command '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
 }
 function unit_depend() {
 	if [[ -n $* ]]; then
