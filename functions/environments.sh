@@ -1,5 +1,5 @@
 function _env_passing_file_path() {
-	echo "$CONTAINERS_DATA_PATH/save_environments/$PROJECT_NAME.$1.txt"
+	echo "$CONTAINERS_DATA_PATH/save_environments/$_S_CURRENT_UNIT_NAME.$1.txt"
 }
 
 function controller_environment_variable() {
