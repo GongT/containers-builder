@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 function find_podman0_ip() {
-	podman network inspect podman | grep -oE '"gateway": ".+",?$' | sed 's/"gateway": "\(.*\)".*/\1/g'
+	podman network inspect podman | grep -oE '"gateway": ".+",?$' | sed 's/"gateway": "\(.*\)".*/\1/g' | head -1
 }
 
 declare HOST_IP=""

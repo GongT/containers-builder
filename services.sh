@@ -8,7 +8,7 @@ function _copy_common_static_unit() {
 	write_file_share "/usr/lib/systemd/system/$FILE" "$(<"${SERVICES_DIR}/${FILE}")"
 }
 function install_common_system_support() {
-	if [[ ! $_COMMON_FILE_INSTALL ]]; then
+	if [[ ! $_COMMON_FILE_INSTALL ]] && ! is_uninstalling; then
 		_COMMON_FILE_INSTALL=yes
 
 		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null

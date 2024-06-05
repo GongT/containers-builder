@@ -27,7 +27,7 @@ function _commit_controller_environment() {
 	OUTPUT=$(echo "$OUTPUT" | sed -E 's#\s+$##g')
 
 	write_file "$F" "$OUTPUT"
-	chmod 0600 "$F"
+	chmod 0600 "$F" || true
 
 	echo "EnvironmentFile=$F"
 }
@@ -69,7 +69,7 @@ function _commit_environment() {
 	OUTPUT=$(echo "$OUTPUT" | sed -E 's#\s+$##g')
 
 	write_file "$F" "$OUTPUT"
-	chmod 0600 "$F"
+	chmod 0600 "$F" || true
 
 	unit_podman_arguments "--env-file=$F"
 }
