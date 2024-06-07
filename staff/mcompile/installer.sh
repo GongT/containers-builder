@@ -64,12 +64,13 @@ function copy_collected_files() {
 		--owner=0 --group=0 \
 		--transform="s,^${INSTALL_SOURCE/\//}/,,g"
 
-	tar --skip-old-files \
-		--extract \
-		-f /tmp/filesystem.tar \
-		--keep-directory-symlink \
-		--no-same-owner --no-same-permissions \
-		"--directory=$INSTALL_TARGET"
+	cp -f /tmp/filesystem.tar "$INSTALL_TARGET"
+	# tar --skip-old-files \
+	# 	--extract \
+	# 	-f /tmp/filesystem.tar \
+	# 	--keep-directory-symlink \
+	# 	--no-same-owner --no-same-permissions \
+	# 	"--directory=$INSTALL_TARGET"
 	echo -e '\e[0m' >&2
 	info_log "======================"
 }
