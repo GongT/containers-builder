@@ -61,13 +61,14 @@ function copy_collected_files() {
 		--ignore-command-error \
 		"--directory=/" \
 		"--files-from=$UNI_LIST_FILE" \
+		--owner=0 --group=0 \
 		--transform="s,^${INSTALL_SOURCE/\//}/,,g"
 
 	tar --skip-old-files \
 		--extract \
 		-f /tmp/filesystem.tar \
 		--keep-directory-symlink \
-		--owner=0 --group=0 --no-same-owner \
+		--no-same-owner --no-same-permissions \
 		"--directory=$INSTALL_TARGET"
 	echo -e '\e[0m' >&2
 	info_log "======================"
