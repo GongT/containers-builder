@@ -84,7 +84,7 @@ function run_install() {
 	TGT="$(create_temp_dir)"
 	echo "install $TARGET_CONTAINER with WORKER=$WORKER [using temp folder $TGT]"
 	buildah run "--volume=$TGT:/mnt/install" "$WORKER" bash < "$TMPF"
-	buildah add "$TGT/filesystem.tar" "$TARGET_CONTAINER"
+	buildah add "$TARGET_CONTAINER" "$TGT/filesystem.tar" /
 
 	control_ci groupEnd
 }
