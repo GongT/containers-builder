@@ -81,18 +81,10 @@ function run_install() {
 		echo "$PREPARE_SCRIPT"
 	} >"$TMPF"
 
-	local TMPF2=$(create_temp_file install.script)
-	cat <<-EOF >"$TMPF2"
-		set -Eeuo pipefail
-		MNT=\$(buildah mount "$TARGET_CONTAINER")
-		echo "mounted $TARGET_CONTAINER to \$MNT; WORKER=$WORKER"
-		buildah run "--volume=\$MNT:/mnt/install" "$WORKER" bash < "$TMPF"
-	EOF
-	if is_root; then
-		bash "$TMPF2"
-	else
-		buildah unshare bash "$TMPF2"
-	fi
+	TGT="$(create_temp_dir)"
+	echo "install $TARGET_CONTAINER with WORKER=$WORKER [using temp folder $TGT]"
+	buildah run "--volume=$TGT:/mnt/install" "$WORKER" bash < "$TMPF"
+	buildah add "$TGT/filesystem.tar" "$TARGET_CONTAINER"
 
 	control_ci groupEnd
 }

@@ -15,7 +15,7 @@ function _dnf_prep() {
 		buildah run $(use_fedora_dnf_cache) -e "FEDORA_VERSION=$FEDORA_VERSION" "--volume=$COMMON_LIB_ROOT/staff/mdnf/prepare.sh:/tmp/_script" "$DNF" bash '/tmp/_script'
 	fi
 
-	if [[ "${http_proxy:-}" ]]; then
+	if [[ "${http_proxy-}" ]]; then
 		info_warn "dnf is using proxy $http_proxy."
 		buildah run "$DNF" sh -c "echo 'proxy=$http_proxy' >> /etc/dnf/dnf.conf"
 	else
@@ -37,7 +37,7 @@ function dnf_install() {
 	_dnf_hash_cb() {
 		cat "$PKG_LIST_FILE"
 		dnf_list_version "$PKG_LIST_FILE"
-		echo "${POST_SCRIPT:-}"
+		echo "${POST_SCRIPT-}"
 	}
 	_dnf_build_cb() {
 		local CONTAINER="$1"
@@ -61,7 +61,7 @@ function make_base_image_by_dnf() {
 	_dnf_hash_cb() {
 		cat "$PKG_LIST_FILE"
 		dnf_list_version "$PKG_LIST_FILE"
-		echo "${POST_SCRIPT:-}"
+		echo "${POST_SCRIPT-}"
 	}
 	_dnf_build_cb() {
 		local CONTAINER="$1"
@@ -116,12 +116,12 @@ function run_dnf() {
 			$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
 		XXX
 	_EOF
-	if [[ ${POST_SCRIPT:-} ]]; then
+	if [[ ${POST_SCRIPT-} ]]; then
 		cat <<-_EOF >>"$DNF_CMD"
 			cat << 'XXX' | buildah run "$WORKER" bash -Eeuo pipefail
 				$(declare -p PACKAGES)
 				declare -xr FEDORA_VERSION="$FEDORA_VERSION"
-				${POST_SCRIPT:-}
+				${POST_SCRIPT-}
 			XXX
 		_EOF
 	fi
@@ -163,7 +163,11 @@ function dnf_list_version() {
 	local FILE=$1 PKGS=()
 
 	mapfile -t PKGS <"$FILE"
-	run_dnf_host list -q --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}'
+	RET=$(run_dnf_host list -q --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
+	echo "$RET"
+	echo "=================================================" >&2
+	echo "$RET" >&2
+	echo "=================================================" >&2
 }
 
 function dnf() {
