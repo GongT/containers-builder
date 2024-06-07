@@ -85,6 +85,7 @@ function run_install() {
 	cat <<-EOF >"$TMPF2"
 		set -Eeuo pipefail
 		MNT=\$(buildah mount "$TARGET_CONTAINER")
+		echo "mounted $TARGET_CONTAINER to \$MNT; WORKER=$WORKER"
 		buildah run "--volume=\$MNT:/mnt/install" "$WORKER" bash < "$TMPF"
 	EOF
 	if is_root; then

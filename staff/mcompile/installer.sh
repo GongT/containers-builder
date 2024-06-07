@@ -2,6 +2,8 @@
 
 set -Eeuo pipefail
 
+### this file execute inside container
+
 declare -rx INSTALL_TARGET="/mnt/install"
 declare -rx INSTALL_SOURCE="/opt/dist"
 mkdir -p "$INSTALL_SOURCE"
@@ -31,12 +33,8 @@ function collect_dist_binary_dependencies() {
 
 	collect_binary_dependencies "${BINS[@]}"
 }
-function copy_dist_root() {
-	# old name
-	collect_dist_root
-}
 function collect_dist_root() {
-	info_log "Copy all files from $INSTALL_SOURCE to $INSTALL_TARGET"
+	info_log "Collect all files from $INSTALL_SOURCE to $INSTALL_TARGET"
 	local LIST FILE
 	mapfile -t LIST < <(find "$INSTALL_SOURCE" -type f)
 	for FILE in "${LIST[@]}"; do
@@ -45,11 +43,6 @@ function collect_dist_root() {
 			echo "$FILE" >>"$__INSTALL_LIST_FILE"
 		fi
 	done
-}
-
-function copy_collected_dependencies() {
-	# old name
-	copy_collected_files
 }
 function copy_collected_files() {
 	if ! [[ -e $__INSTALL_LIST_FILE ]]; then
@@ -74,6 +67,7 @@ function copy_collected_files() {
 		--extract \
 		-f /tmp/filesystem.tar \
 		--keep-directory-symlink \
+		--owner=0 --group=0 --no-same-owner \
 		"--directory=$INSTALL_TARGET"
 	echo -e '\e[0m' >&2
 	info_log "======================"
