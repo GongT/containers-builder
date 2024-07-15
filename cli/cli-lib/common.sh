@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-declare -ra CONTROL_SERVICES=(wait-all-fstab.service wait-dns-working.service containers-ensure-health.timer services-pull-all.service services-boot.service)
+declare -ra CONTROL_SERVICES=(wait-dns-working.service containers-ensure-health.timer services-boot.service)
 BIN_SRC_HOME=$(</usr/share/scripts/cli-home)
 
 function die() {

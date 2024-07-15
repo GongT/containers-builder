@@ -24,6 +24,7 @@ function unit_fs_bind() {
 
 	_S_PREP_FOLDER+=("$FROM")
 	_S_VOLUME_ARG+=("'--volume=$FROM:$TO$OPTIONS'")
+	unit_unit RequiresMountsFor "$FROM"
 }
 function _pass_socket_path_env() {
 	controller_environment_variable "SHARED_SOCKET_PATH=$SHARED_SOCKET_PATH"

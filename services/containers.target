@@ -1,0 +1,9 @@
+[Unit]
+Description=Prepare to run containers
+Requires=multi-user.target
+After=multi-user.target
+AllowIsolate=no
+RequiresMountsFor=/var/lib/containers
+
+[Install]
+WantedBy=multi-user.target

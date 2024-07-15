@@ -1,12 +1,12 @@
 [Unit]
 Description=Check unexepcted shutdown
-After=multi-user.target sshd.socket systemd-networkd.service systemd-resolved.service dnsmasq.service
-Requires=multi-user.target
-Before=services.target
+After=multi-user.target containers.target
+Requires=multi-user.target containers.target
+
+After=sshd.socket systemd-networkd.service systemd-resolved.service dnsmasq.service
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/env bash "__SCRIPT__"
 Restart=no
 RemainAfterExit=yes
-

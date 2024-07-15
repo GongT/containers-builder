@@ -1,6 +1,8 @@
 [Unit]
 Description=delete stopped container during startup and shutdown
 Requires=local-fs.target
+Requires=containers.target
+After=containers.target
 
 [Service]
 Type=oneshot

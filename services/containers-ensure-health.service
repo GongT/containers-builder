@@ -1,6 +1,8 @@
 [Unit]
 Description=finally ensure all containers status is healthy
 After=network-online.target
+Requires=containers.target
+After=containers.target
 
 [Service]
 Type=oneshot

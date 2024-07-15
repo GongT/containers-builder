@@ -1,6 +1,8 @@
 [Unit]
 Description=System Worker Services
-Requires=services-pre.target
-After=services-pre.target
-Conflicts=rescue.service rescue.target shutdown.target
+Requires=services-pre.target services-spin-up.service multi-user.target
+After=services-pre.target services-spin-up.service multi-user.target
 AllowIsolate=no
+
+[Install]
+WantedBy=multi-user.target

@@ -443,9 +443,9 @@ function unit_unit() {
 	local K=$1
 	shift
 	local V="$*"
-	if echo "$K" | grep -qE '^(Before|After|Requires|Wants|PartOf|WantedBy)$'; then
+	if echo "$K" | grep -qE '^(Before|After|Requires|Wants|PartOf|WantedBy|RequiresMountsFor)$'; then
 		_S_UNIT_CONFIG[$K]+=" $V"
-	elif echo "$K" | grep -qE '^(WantedBy)$'; then
+	elif echo "$K" | grep -qE '^(WantedBy|RequiredBy)$'; then
 		_S_INSTALL="$V"
 	else
 		_S_UNIT_CONFIG[$K]="$V"
