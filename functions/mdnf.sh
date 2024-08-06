@@ -163,7 +163,7 @@ function dnf_list_version() {
 	local FILE=$1 PKGS=()
 
 	mapfile -t PKGS <"$FILE"
-	RET=$(run_dnf_host list -q --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
+	RET=$(run_dnf_host --quiet list --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
 	echo "$RET"
 	echo "=================================================" >&2
 	echo "$RET" >&2
