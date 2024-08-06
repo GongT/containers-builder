@@ -4,6 +4,7 @@ env
 
 set -xEeuo pipefail
 
+dnf --version
 dnf makecache
 
 dnf install -y dnf-plugins-core \
