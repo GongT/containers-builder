@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer for the services target
+After=default.target timers.target
+Requires=default.target timers.target
+
+[Timer]
+OnBootSec=30s
+Unit=services.target
+
+[Install]
+WantedBy=multi-user.target

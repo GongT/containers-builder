@@ -10,3 +10,4 @@ Type=oneshot
 ExecStart=/usr/bin/env bash "__SCRIPT__"
 Restart=no
 RemainAfterExit=yes
+Slice=services.slice

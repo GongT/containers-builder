@@ -4,3 +4,4 @@ After=systemd-resolved.service libvirt-guests.service libvirtd.service libvirtd.
 
 [Service]
 ExecStartPre=!/usr/bin/env bash "__SCRIPT__"
+Slice=services.slice

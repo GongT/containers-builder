@@ -3,6 +3,3 @@ Description=System Worker Services
 Requires=services-pre.target services-spin-up.service multi-user.target
 After=services-pre.target services-spin-up.service multi-user.target
 AllowIsolate=no
-
-[Install]
-WantedBy=multi-user.target

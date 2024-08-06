@@ -228,7 +228,7 @@ function download_git() {
 	export GIT_DIR
 	local TIMESTAMP="$GIT_DIR/timestamp"
 
-	control_ci group " * github clone $URL($BRANCH)"
+	control_ci group " * git clone $URL ($BRANCH)"
 	info_log "  to $GIT_DIR"
 
 	if [[ -e "$GIT_DIR/config" ]]; then
