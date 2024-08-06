@@ -88,7 +88,7 @@ function run_dnf() {
 	shift
 	local PACKAGES=("$@")
 
-	_dnf_prep
+	_dnf_prep >&2
 
 	control_ci group "DNF run ($DNF, worker: $WORKER)"
 	DNF_CMD=$(create_temp_file dnf.cmd)
@@ -144,7 +144,7 @@ function run_dnf_host() {
 	shift
 	local PACKAGES=("$@")
 
-	_dnf_prep
+	_dnf_prep >&2
 
 	{
 		declare -p ACTION
