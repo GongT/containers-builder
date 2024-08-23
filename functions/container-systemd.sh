@@ -54,6 +54,7 @@ function setup_systemd() {
 			die "extra arguments: ${TARGS[*]}"
 		fi
 
+		systemd_use_basic "$C"
 	}
 
 	export BUILDAH_HISTORY=false
