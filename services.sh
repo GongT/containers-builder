@@ -8,7 +8,9 @@ function _copy_common_static_unit() {
 	write_file_share "/usr/lib/systemd/system/$FILE" "$(<"${SERVICES_DIR}/${FILE}")"
 }
 function install_common_system_support() {
-	if [[ ! $_COMMON_FILE_INSTALL ]] && ! is_uninstalling; then
+	if is_uninstalling; then
+		: # no reduce method now
+	elif [[ ! $_COMMON_FILE_INSTALL ]]; then
 		_COMMON_FILE_INSTALL=yes
 
 		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
@@ -21,23 +23,24 @@ function install_common_system_support() {
 		_copy_common_static_unit services-pre.target
 		_copy_common_static_unit services.target
 		_copy_common_static_unit containers.target
+		install_common_script_service wait-dns-working
+		install_common_script_service cleanup-stopped-containers
+		install_common_script_service services-boot
+		_copy_common_static_unit services-spin-up.service
+		edit_system_service dnsmasq create-dnsmasq-config
+		service_dropin systemd-networkd alias-nameserver.conf
+
+		install_common_script_service containers-ensure-health
+		_copy_common_static_unit containers-ensure-health.timer
+
 		if ! systemctl is-enabled --quiet services.timer; then
 			systemctl daemon-reload
 			systemctl enable services.timer
 		fi
-
-		install_common_script_service wait-dns-working
-		install_common_script_service cleanup-stopped-containers
-		install_common_script_service services-boot
-		install_common_script_service services-spin-up
-		edit_system_service dnsmasq create-dnsmasq-config
-
-		install_common_script_service containers-ensure-health
-		_copy_common_static_unit containers-ensure-health.timer
 	fi
 }
 function install_common_script_service() {
-	local SRV="$1" ARG="${2:-}" SCRIPT
+	local SRV="$1" ARG="${2-}" SCRIPT
 	local SRV_FILE
 
 	if [[ "$ARG" ]]; then
@@ -50,25 +53,7 @@ function install_common_script_service() {
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#$SCRIPT#g" \
-		| fix_old_systemd \
 		| write_file_share "/usr/lib/systemd/system/$SRV_FILE"
-}
-
-function fix_old_systemd() {
-	local V CatchData
-	CatchData=$(cat)
-
-	if ! echo "$CatchData" | grep -qi 'Type=oneshot'; then
-		echo "$CatchData"
-		return
-	fi
-
-	V=$(systemctl --version | grep -oE 'systemd [0-9]+' | sed 's#systemd ##')
-	if [[ $V -gt 244 ]]; then
-		echo "$CatchData"
-	else
-		echo "$CatchData" | sed -E "s/^Restart=/### systemd $V not support Restart=/g"
-	fi
 }
 
 function use_common_timer() {
@@ -93,7 +78,7 @@ function use_common_service() {
 
 	install_common_script_service "$@"
 
-	local SRV="$1" ARG="${2:-}" SRV_NAME
+	local SRV="$1" ARG="${2-}" SRV_NAME
 	if [[ "$ARG" ]]; then
 		SRV_NAME="$SRV@$ARG.service"
 	else
@@ -109,6 +94,17 @@ function use_common_service() {
 	fi
 }
 
+function service_dropin() {
+	local SRV="${1}.service" OVERWRITE="${2}" ONAME
+	local FOLDER="/usr/lib/systemd/system/$SRV.d"
+	mkdir -p "$FOLDER"
+
+	ONAME=$(basename "$OVERWRITE" .conf)
+
+	cat "${SERVICES_DIR}/${OVERWRITE}" \
+		| write_file_share "$FOLDER/$ONAME.conf"
+
+}
 function edit_system_service() {
 	local SRV="$1" OVERWRITE="${2}" SCRIPT
 
@@ -118,11 +114,10 @@ function edit_system_service() {
 	if [[ $SRV != *".service" ]]; then
 		SRV="$SRV.service"
 	fi
-	local FOLDER="/etc/systemd/system/$SRV.d"
+	local FOLDER="/usr/lib/systemd/system/$SRV.d"
 	mkdir -p "$FOLDER"
 
 	cat "${SERVICES_DIR}/${OVERWRITE}.service" \
 		| sed "s#__SCRIPT__#$SCRIPT#g" \
-		| fix_old_systemd \
 		| write_file_share "$FOLDER/$OVERWRITE.conf"
 }

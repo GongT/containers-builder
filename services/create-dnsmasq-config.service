@@ -1,7 +1,10 @@
 [Unit]
 After=systemd-resolved.service libvirt-guests.service libvirtd.service libvirtd.socket
-# Requires=systemd-resolved.service
+Conflicts=systemd-resolved.service
 
 [Service]
 ExecStartPre=!/usr/bin/env bash "__SCRIPT__"
 Slice=services.slice
+
+[Install]
+Alias=nameserver.service

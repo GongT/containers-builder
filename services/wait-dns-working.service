@@ -1,6 +1,9 @@
 [Unit]
 Description=wait dns server ready to resolve name
 After=dnsmasq.service systemd-resolved.service unbound.service coredns.service
+Requires=nameserver.service
+StartLimitIntervalSec=90
+StartLimitBurst=10
 
 [Service]
 Type=oneshot
@@ -9,6 +12,4 @@ Restart=on-failure
 NotifyAccess=all
 RemainAfterExit=yes
 RestartSec=10
-StartLimitInterval=90
-StartLimitBurst=10
 Slice=services.slice

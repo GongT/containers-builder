@@ -3,6 +3,7 @@ Description=Delay 30s on boot
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/env bash "__SCRIPT__"
+ExecStart=/usr/bin/env bash -c "sleep 30s"
 Restart=no
 RemainAfterExit=yes
+TimeoutStartSec=infinity

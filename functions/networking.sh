@@ -70,7 +70,8 @@ function network_use_nat() {
 	info "Network: NAT"
 	_N_TYPE="nat"
 	unit_depend "network-online.target"
-	unit_unit After "firewalld.service"
+	unit_unit After "firewalld.service" "nameserver.service"
+	unit_unit Requires "nameserver.service"
 	unit_unit PartOf "firewalld.service"
 	unit_podman_arguments --dns=h.o.s.t
 	local i
