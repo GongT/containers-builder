@@ -46,7 +46,6 @@ function _unit_init() {
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
 	_S_INSTALL=services.target
-	_S_EXEC_RELOAD=
 	_S_START_WAIT_SLEEP=10
 	_S_START_WAIT_OUTPUT=
 	_S_START_ACTIVE_FILE=
@@ -355,10 +354,6 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo "ExecStopPost=$I"
 	done
 
-	if [[ -n $_S_EXEC_RELOAD ]]; then
-		echo "ExecReload=$_S_EXEC_RELOAD"
-	fi
-
 	for VAR_NAME in "${!_S_BODY_CONFIG[@]}"; do
 		echo "$VAR_NAME=${_S_BODY_CONFIG[$VAR_NAME]}"
 	done
@@ -430,7 +425,7 @@ function unit_data() {
 }
 function unit_using_systemd() {
 	_S_SYSTEMD=true
-	unit_reload_command '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
+	unit_body ExecReload '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
 }
 function unit_depend() {
 	if [[ -n $* ]]; then
@@ -502,9 +497,6 @@ function unit_hook_prestop() {
 }
 function unit_hook_stop() {
 	_S_EXEC_STOP_POST+=("$*")
-}
-function unit_reload_command() {
-	_S_EXEC_RELOAD="$*"
 }
 function unit_start_notify() {
 	local TYPE="$1" ARG="${2-}"

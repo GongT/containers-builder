@@ -14,6 +14,7 @@ function buildah_config() {
 		echo "${ARGS[*]}"
 	}
 	__buildah_config_do() {
+		xbuildah config --stop-signal SIGINT "$1"
 		xbuildah config "${ARGS[@]}" "$1"
 	}
 	buildah_cache2 "$NAME" __buildah_config_hash __buildah_config_do
