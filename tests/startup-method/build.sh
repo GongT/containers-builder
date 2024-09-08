@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 export PROJECT_NAME="test-wait-logic"
-source ../../../functions-build.sh
+source ../../functions-build.sh
 guard_no_root
 
 buildah_cache_start fedora:latest

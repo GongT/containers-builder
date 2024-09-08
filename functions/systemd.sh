@@ -238,14 +238,12 @@ function _unit_get_scopename() {
 	fi
 }
 function export_base_envs() {
-	(
-		declare -r START_WAIT_DEFINE="$_S_START_WAIT"
-		declare -r NETWORK_TYPE="$_N_TYPE"
-		declare -r USING_SYSTEMD="$_S_SYSTEMD"
-		declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
-		declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
-		declare -p START_WAIT_DEFINE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
-	)
+	declare -r START_WAIT_DEFINE="$_S_START_WAIT"
+	declare -r NETWORK_TYPE="$_N_TYPE"
+	declare -r USING_SYSTEMD="$_S_SYSTEMD"
+	declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
+	declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
+	declare -p START_WAIT_DEFINE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
 }
 function _unit_assemble() {
 	_network_use_not_define
@@ -319,7 +317,7 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo 'set -Eeuo pipefail'
 		export_base_envs
 		declare -p PREP_FOLDERS_INS
-		mapfile -t -d '' _FILES < <(find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 | sort -z)
+		mapfile -t -d '' _FILES < <(find "$COMMON_LIB_ROOT/staff/service-wait" -type f -print0 | sort -z)
 		for _FILE in "${_FILES[@]}"; do
 			echo
 			echo "## $(basename "$_FILE")"
