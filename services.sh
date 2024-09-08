@@ -5,7 +5,7 @@ _COMMON_FILE_INSTALL=
 
 function _copy_common_static_unit() {
 	local FILE=$1
-	write_file_share "/usr/lib/systemd/system/$FILE" "$(<"${SERVICES_DIR}/${FILE}")"
+	copy_file "$SERVICES_DIR/$FILE" "$SYSTEM_UNITS_DIR/$FILE"
 }
 function install_common_system_support() {
 	if is_uninstalling; then
@@ -20,18 +20,20 @@ function install_common_system_support() {
 		_copy_common_static_unit services-normal.slice
 		_copy_common_static_unit services.slice
 		_copy_common_static_unit services.timer
-		_copy_common_static_unit services-pre.target
 		_copy_common_static_unit services.target
-		_copy_common_static_unit containers.target
 		install_common_script_service wait-dns-working
 		install_common_script_service cleanup-stopped-containers
-		install_common_script_service services-boot
-		_copy_common_static_unit services-spin-up.service
-		edit_system_service dnsmasq create-dnsmasq-config
-		service_dropin systemd-networkd alias-nameserver.conf
-
 		install_common_script_service containers-ensure-health
 		_copy_common_static_unit containers-ensure-health.timer
+
+		if is_root; then
+			_copy_common_static_unit services-pre.target
+			_copy_common_static_unit containers.target
+			_copy_common_static_unit services-spin-up.service
+			install_common_script_service services-boot
+			service_dropin systemd-networkd alias-nameserver.conf
+			edit_system_service dnsmasq create-dnsmasq-config
+		fi
 
 		if ! systemctl is-enabled --quiet services.timer; then
 			systemctl daemon-reload
@@ -53,7 +55,7 @@ function install_common_script_service() {
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#$SCRIPT#g" \
-		| write_file_share "/usr/lib/systemd/system/$SRV_FILE"
+		| output_file "$SYSTEM_UNITS_DIR/$SRV_FILE"
 }
 
 function use_common_timer() {
@@ -62,11 +64,8 @@ function use_common_timer() {
 
 	TIMER_FILE="$NAME.timer"
 
-	cat "${SERVICES_DIR}/${TIMER_FILE}" \
-		| write_file_share "/usr/lib/systemd/system/$TIMER_FILE"
-	unit_unit Requires "$NAME.timer"
-
-	# systemctl enable "$NAME.timer"
+	_copy_common_static_unit "$TIMER_FILE"
+	unit_unit Requires "$TIMER_FILE"
 }
 
 function use_common_service() {
@@ -96,28 +95,22 @@ function use_common_service() {
 
 function service_dropin() {
 	local SRV="${1}.service" OVERWRITE="${2}" ONAME
-	local FOLDER="/usr/lib/systemd/system/$SRV.d"
-	mkdir -p "$FOLDER"
-
 	ONAME=$(basename "$OVERWRITE" .conf)
 
-	cat "${SERVICES_DIR}/${OVERWRITE}" \
-		| write_file_share "$FOLDER/$ONAME.conf"
-
+	copy_file "$SERVICES_DIR/$OVERWRITE" "$SYSTEM_UNITS_DIR/$SRV.d/$ONAME.conf"
 }
 function edit_system_service() {
-	local SRV="$1" OVERWRITE="${2}" SCRIPT
+	local SRV="$1" OVERWRITE="${2}" SCRIPT_FILE
 
 	install_common_system_support
-	SCRIPT=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
+	SCRIPT_FILE=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
 
 	if [[ $SRV != *".service" ]]; then
 		SRV="$SRV.service"
 	fi
-	local FOLDER="/usr/lib/systemd/system/$SRV.d"
-	mkdir -p "$FOLDER"
+	local FOLDER=""
 
 	cat "${SERVICES_DIR}/${OVERWRITE}.service" \
-		| sed "s#__SCRIPT__#$SCRIPT#g" \
-		| write_file_share "$FOLDER/$OVERWRITE.conf"
+		| sed "s#__SCRIPT__#$SCRIPT_FILE#g" \
+		| output_file "$SYSTEM_UNITS_DIR/$SRV.d/$OVERWRITE.conf"
 }

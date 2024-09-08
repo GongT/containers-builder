@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# merge "fs" folder to cache
+# eg:
+# 	merge_local_fs "ccc"
+#  
+# with extra bash script:
+#   merge_local_fs "ccc" --env=a=b --volume=a:b ./scripts/install.sh
 function merge_local_fs() {
 	local -r CACHE_BRANCH=$1
 	shift

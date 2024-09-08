@@ -16,7 +16,7 @@ do_pull_all() {
 		fi
 	done
 
-	cd /usr/lib/systemd/system
+	cd "$SYSTEM_UNITS_DIR"
 	local -a IMAGE_LIST
 	if [[ ${#LIST[@]} -eq 0 ]]; then
 		mapfile -t IMAGE_LIST < <(get_image_name_from_service_file .)

@@ -26,8 +26,7 @@ function _commit_controller_environment() {
 
 	OUTPUT=$(echo "$OUTPUT" | sed -E 's#\s+$##g')
 
-	write_file "$F" "$OUTPUT"
-	chmod 0600 "$F" || true
+	write_file --mode 0600 "$F" "$OUTPUT"
 
 	echo "EnvironmentFile=$F"
 }
@@ -54,22 +53,24 @@ function _commit_environment() {
 	local F="$(_env_passing_file_path container)"
 
 	local OUTPUT='' VAR_NAME
-	echo -e "\e[2mPasthrough Environments:\e[0m" >&2
-	if [[ ${#_S_ENVIRONMENTS[@]} -eq 0 ]]; then
-		echo -e "\e[2m    empty\e[0m" >&2
-		return
+
+	if is_installing; then
+		echo -e "\e[2mPasthrough Environments:\e[0m" >&2
+		if [[ ${#_S_ENVIRONMENTS[@]} -eq 0 ]]; then
+			echo -e "\e[2m    empty\e[0m" >&2
+			return
+		fi
 	fi
 
 	for VAR_NAME in "${!_S_ENVIRONMENTS[@]}"; do
 		OUTPUT+="$VAR_NAME=${_S_ENVIRONMENTS[$VAR_NAME]}"
 		OUTPUT+=$'\n'
-		echo -e "\e[2m    - $VAR_NAME -> ${_S_ENVIRONMENTS[$VAR_NAME]}\e[0m" >&2
+		is_installing && info_note "    - $VAR_NAME -> ${_S_ENVIRONMENTS[$VAR_NAME]}"
 	done
 
 	OUTPUT=$(echo "$OUTPUT" | sed -E 's#\s+$##g')
 
-	write_file "$F" "$OUTPUT"
-	chmod 0600 "$F" || true
+	write_file --mode 0600 "$F" "$OUTPUT"
 
 	unit_podman_arguments "--env-file=$F"
 }

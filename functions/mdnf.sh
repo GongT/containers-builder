@@ -6,13 +6,23 @@ mkdir -p "$REPO_CACHE_DIR" "$SYSTEM_COMMON_CACHE/dnf/packges"
 
 TMPREPODIR=
 
+declare -ra DNF_RUN_ARGS=(
+	"--volume=$REPO_CACHE_DIR:/var/lib/dnf/repos"
+	"--volume=$SYSTEM_COMMON_CACHE/dnf/packges:/var/cache/dnf"
+	"--env=FEDORA_VERSION=$FEDORA_VERSION"
+	"--cap-add=CAP_SYS_ADMIN"
+)
+
 function _dnf_prep() {
 	if container_exists mdnf; then
 		DNF=$(container_get_id mdnf)
 	else
+		control_ci group "prepare dnf container"
 		DNF=$(new_container "mdnf" "fedora:$FEDORA_VERSION")
 		buildah copy "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
-		buildah run $(use_fedora_dnf_cache) -e "FEDORA_VERSION=$FEDORA_VERSION" "--volume=$COMMON_LIB_ROOT/staff/mdnf/prepare.sh:/tmp/_script" "$DNF" bash '/tmp/_script'
+		buildah copy --chmod=0777 "$DNF" "$COMMON_LIB_ROOT/staff/mdnf/bin.sh" /usr/bin/dnf.sh
+		buildah run "${DNF_RUN_ARGS[@]}" "--volume=$COMMON_LIB_ROOT/staff/mdnf/prepare.sh:/tmp/_script" "$DNF" bash /tmp/_script
+		control_ci groupEnd
 	fi
 
 	if [[ "${http_proxy-}" ]]; then
@@ -23,16 +33,11 @@ function _dnf_prep() {
 	fi
 }
 
-function use_fedora_dnf_cache() {
-	printf '%q %q' "--volume=$REPO_CACHE_DIR:/var/lib/dnf/repos" \
-		"--volume=$SYSTEM_COMMON_CACHE/dnf/packges:/var/cache/dnf"
-}
-
 function dnf_install() {
 	local CACHE_NAME="$1"
 	local PKG_LIST_FILE="$2"
 
-	info "dnf install (list file: $PKG_LIST_FILE)..."
+	info_log "dnf install (list file: $PKG_LIST_FILE)..."
 
 	_dnf_hash_cb() {
 		cat "$PKG_LIST_FILE"
@@ -84,58 +89,47 @@ function run_dnf_with_list_file() {
 	run_dnf "$WORKER" "${PKGS[@]}"
 }
 function run_dnf() {
-	local WORKER="$1" DNF DNF_CMD
+	local WORKING_CONTAINER="$1"
 	shift
-	local PACKAGES=("$@")
 
+	local PACKAGES=("$@")
+	local TMPSCRIPT ROOT
+
+	local DNF # init in _dnf_prep
 	_dnf_prep >&2
 
-	control_ci group "DNF run ($DNF, worker: $WORKER)"
-	DNF_CMD=$(create_temp_file dnf.cmd)
-	cat <<-_EOF >"$DNF_CMD"
-		#!/bin/bash
-		set -Eeuo pipefail
-		FEDORA_VERSION="$FEDORA_VERSION"
-		MNT=\$(buildah mount "$WORKER")
-		MNT_DNF=\$(buildah mount "$DNF")
-		mkdir -p "\$MNT/etc/yum.repos.d"
-		rsync -rv "\$MNT_DNF/etc/yum.repos.d/." "\$MNT/etc/yum.repos.d"
-		rsync -rv "$COMMON_LIB_ROOT/staff/extra-repos/." "\$MNT/etc/yum.repos.d"
-		[[ "$TMPREPODIR" ]] && [[ -e "$TMPREPODIR" ]] && rsync -rv "$TMPREPODIR/." "\$MNT/etc/yum.repos.d"
-		# ls -l "\$MNT/etc/yum.repos.d"
-		cd "\$MNT"
-		for D in bin sbin lib lib64 ; do
-			if [[ ! -e "\$D" ]]; then
-				mkdir -p "usr/\$D"
-				ln -s "usr/\$D" "./\$D"
-			fi
-		done
-		cat << 'XXX' | buildah run --cap-add=CAP_SYS_ADMIN "--volume=\$MNT:/install-root" $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
-			$(declare -p PACKAGES)
-			declare -xr FEDORA_VERSION="$FEDORA_VERSION"
-			$(cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh")
-		XXX
-	_EOF
-	if [[ ${POST_SCRIPT-} ]]; then
-		cat <<-_EOF >>"$DNF_CMD"
-			cat << 'XXX' | buildah run "$WORKER" bash -Eeuo pipefail
-				$(declare -p PACKAGES)
-				declare -xr FEDORA_VERSION="$FEDORA_VERSION"
-				${POST_SCRIPT-}
-			XXX
-		_EOF
-	fi
-	cat <<-_EOF >>"$DNF_CMD"
-		buildah unmount "$WORKER"
-		buildah unmount "$DNF"
-	_EOF
+	control_ci group "DNF run (worker: $WORKING_CONTAINER, dnf worker: $DNF)"
 
-	unset POST_SCRIPT
-	if is_root; then
-		bash "$DNF_CMD"
-	else
-		buildah unshare bash "$DNF_CMD"
+	ROOT=$(buildah mount "$WORKING_CONTAINER")
+	MNT_DNF=$(buildah mount "$DNF")
+	mkdir -p "$ROOT/etc/yum.repos.d"
+	rsync -rv "$MNT_DNF/etc/yum.repos.d/." "$ROOT/etc/yum.repos.d"
+	rsync -rv "$COMMON_LIB_ROOT/staff/extra-repos/." "$ROOT/etc/yum.repos.d"
+	[[ "$TMPREPODIR" ]] && [[ -e $TMPREPODIR ]] && rsync -rv "$TMPREPODIR/." "$ROOT/etc/yum.repos.d"
+	info_note "using repos: " $(ls "$ROOT/etc/yum.repos.d")
+	for D in bin sbin lib lib64; do
+		if [[ ! -e "${ROOT}/$D" ]]; then
+			mkdir -p "${ROOT}/usr/$D"
+			ln -s "./usr/$D" "${ROOT}/$D"
+		fi
+	done
+
+	buildah run "--volume=$ROOT:/install-root" "${DNF_RUN_ARGS[@]}" "$DNF" \
+		dnf.sh "${PACKAGES[@]}"
+
+	if [[ ${POST_SCRIPT-} ]]; then
+		TMPSCRIPT=$(create_temp_file dnf.script.sh)
+		{
+			declare -p PACKAGES FEDORA_VERSION
+			echo "${POST_SCRIPT}"
+		} >"$TMPSCRIPT"
+		chmod a+x "$TMPSCRIPT"
+		buildah run "--volume=$TMPSCRIPT:/tmp/_script" "$WORKING_CONTAINER" \
+			bash /tmp/_script
 	fi
+	buildah unmount "$WORKING_CONTAINER"
+	buildah unmount "$DNF"
+
 	echo "DNF run FINISH"
 	control_ci groupEnd
 }
@@ -146,12 +140,8 @@ function run_dnf_host() {
 
 	_dnf_prep >&2
 
-	{
-		declare -p ACTION
-		declare -p PACKAGES
-		declare -p FEDORA_VERSION
-		cat "$COMMON_LIB_ROOT/staff/mdnf/bin.sh"
-	} | buildah run --cap-add=CAP_SYS_ADMIN $(use_fedora_dnf_cache) "$DNF" bash -Eeuo pipefail
+	buildah run "${DNF_RUN_ARGS[@]}" "--env=ACTION=$ACTION" "$DNF" \
+		dnf.sh "${PACKAGES[@]}"
 }
 
 function delete_rpm_files() {

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 declare -A _CURRENT_STAGE_STORE=()
-declare -r BUILDAH_CACHE_BASE="${DOCKER_CACHE_CENTER:-cache.example.com/gongt/cache}"
 declare LAST_CACHE_COMES_FROM=build # or pull
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
@@ -14,79 +13,77 @@ function buildah_cache() {
 	fi
 
 	local -r BUILDAH_NAME_BASE=$1
-
 	# no arg callback
 	local -r BUILDAH_HASH_CALLBACK=$2
-
 	# arg1=working container name [must create container this name]
 	local -r BUILDAH_BUILD_CALLBACK=$3
 
-	if [[ ${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]+found} == 'found' ]]; then
-		local -ir CURRENT_STAGE="${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]}"
-		local -ir NEXT_STAGE="${CURRENT_STAGE} + 1"
-	else
-		local -ir CURRENT_STAGE=0
-		local -ir NEXT_STAGE=1
-	fi
-	_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]="$NEXT_STAGE"
+	local STEP_RESULT_IMAGE PREV_STEP_IMAGE
 
-	info "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE: \e[0;38;5;11m$_STITLE"
+	if [[ ${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]+found} == 'found' ]]; then
+		local -ir DONE_STAGE="${_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]}"
+		local -ir WORK_STAGE="${DONE_STAGE} + 1"
+	else
+		local -ir DONE_STAGE=0
+		local -ir WORK_STAGE=1
+	fi
+	_CURRENT_STAGE_STORE[$BUILDAH_NAME_BASE]="$WORK_STAGE"
+
+	info "[$BUILDAH_NAME_BASE] STEP $WORK_STAGE: \e[0;38;5;11m$_STITLE"
 	indent
 
-	local -r BUILDAH_FROM="$BUILDAH_CACHE_BASE:${BUILDAH_NAME_BASE}-stage-$CURRENT_STAGE"
-	if [[ $CURRENT_STAGE -gt 0 ]]; then
-		if ! image_exists "$BUILDAH_FROM"; then
-			die "required previous stage [$BUILDAH_FROM] did not exists"
+	PREV_STEP_IMAGE=$(cache_create_name "$BUILDAH_NAME_BASE" $DONE_STAGE)
+	STEP_RESULT_IMAGE=$(cache_create_name "$BUILDAH_NAME_BASE" $WORK_STAGE)
+
+	if [[ $DONE_STAGE -gt 0 ]]; then
+		if ! image_exists "$PREV_STEP_IMAGE"; then
+			die "required previous stage [$PREV_STEP_IMAGE] did not exists"
 		fi
-		local -r PREVIOUS_ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_FROM")
+		local -r PREVIOUS_ID=$(buildah inspect --type image --format '{{.FromImageID}}' "$PREV_STEP_IMAGE")
 		if [[ ! $PREVIOUS_ID ]]; then
-			die "failed get id from image ($BUILDAH_FROM) cache state is invalid."
+			die "failed get id from image ($PREV_STEP_IMAGE) cache state is invalid."
 		fi
 	else
 		local -r PREVIOUS_ID="none"
 	fi
-	local -r BUILDAH_TO="$BUILDAH_CACHE_BASE:${BUILDAH_NAME_BASE}-stage-$NEXT_STAGE"
 
-	if [[ ${BUILDAH_FORCE-no} != "yes" ]]; then
-		cache_try_pull "$BUILDAH_TO"
-	fi
+	cache_try_pull "$BUILDAH_NAME_BASE" $WORK_STAGE
 
 	local WANTED_HASH HASH_TMP
-	HASH_TMP=$(mktemp)
+	HASH_TMP=$(create_temp_file)
 	"$BUILDAH_HASH_CALLBACK" >"$HASH_TMP"
 	# if ! [[ $CID =~ ^[a-fA-F0-9]{32}$ ]]; then
 	# 	info_warn "Step cache string is not MD5!!! <$CID>"
 	# 	CID=$(echo "$CID" | md5sum | awk '{print $1}')
 	# fi
 	WANTED_HASH=$(md5sum "$HASH_TMP" | awk '{print $1}')
-	unlink "$HASH_TMP"
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=$WANTED_HASH"
-	elif image_exists "$BUILDAH_TO"; then
-		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_PREV_STAGE")"
-		local -r EXISTS_HASH="$(builah_get_annotation "$BUILDAH_TO" "$ANNOID_CACHE_HASH")"
+	elif image_exists "$STEP_RESULT_IMAGE"; then
+		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "$STEP_RESULT_IMAGE" "$ANNOID_CACHE_PREV_STAGE")"
+		local -r EXISTS_HASH="$(builah_get_annotation "$STEP_RESULT_IMAGE" "$ANNOID_CACHE_HASH")"
+		# info_note "EXISTS_HASH=$EXISTS_HASH EXISTS_PREVIOUS_ID=$EXISTS_PREVIOUS_ID"
 
-		if [[ ! $EXISTS_PREVIOUS_ID ]] || [[ ! $EXISTS_HASH ]]; then
-			die "failed get annotation from image ($BUILDAH_TO) cache state is invalid."
+		if ! [[ $EXISTS_PREVIOUS_ID ]] || ! [[ $EXISTS_HASH ]]; then
+			info_warn "cache state is invalid!"
+		else
+			info_success "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
+			if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" == "$WANTED_HASH++$PREVIOUS_ID" ]]; then
+				BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$STEP_RESULT_IMAGE")
+				_buildah_cache_done
+				return
+			fi
+			info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
 		fi
-
-		info_success "cache exists <hash=$EXISTS_HASH, base=$EXISTS_PREVIOUS_ID>"
-		if [[ "$EXISTS_HASH++$EXISTS_PREVIOUS_ID" == "$WANTED_HASH++$PREVIOUS_ID" ]]; then
-			BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "$BUILDAH_TO")
-			cache_push "$BUILDAH_TO"
-			_buildah_cache_done
-			return
-		fi
-		info_note "cache outdat <want=$WANTED_HASH, base=$PREVIOUS_ID>"
 	else
-		info_warn "step result not cached: target=$WANTED_HASH"
+		info_note "step result not cached: no such image: $STEP_RESULT_IMAGE"
 	fi
 
 	LAST_CACHE_COMES_FROM=build
-	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${CURRENT_STAGE}_to${NEXT_STAGE}"
+	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${DONE_STAGE}_to${WORK_STAGE}"
 	"$BUILDAH_BUILD_CALLBACK" "$CONTAINER_ID"
-	info_note "build callback finish"
+	info "build callback finish"
 
 	if ! container_exists "$CONTAINER_ID"; then
 		die "BUILDAH_BUILD_CALLBACK<$BUILDAH_BUILD_CALLBACK> did not create $CONTAINER_ID."
@@ -95,7 +92,7 @@ function buildah_cache() {
 	buildah config --add-history \
 		"--annotation=$ANNOID_CACHE_HASH=$WANTED_HASH" \
 		"--annotation=$ANNOID_CACHE_PREV_STAGE=$PREVIOUS_ID" \
-		"--created-by=# layer <$CURRENT_STAGE> to <$NEXT_STAGE> base $BUILDAH_NAME_BASE" \
+		"--created-by=# layer <$DONE_STAGE> to <$WORK_STAGE> base $BUILDAH_NAME_BASE" \
 		"$CONTAINER_ID" >/dev/null
 
 	if [[ ${CHANGE_TIMESTAMP:-no} != yes ]]; then
@@ -104,20 +101,18 @@ function buildah_cache() {
 	else
 		local OMIT_TS=()
 	fi
-	BUILDAH_LAST_IMAGE=$(xbuildah commit "${OMIT_TS[@]}" --rm "$CONTAINER_ID" "$BUILDAH_TO")
-	info_note "$BUILDAH_LAST_IMAGE"
-
-	cache_push "$BUILDAH_TO"
+	BUILDAH_LAST_IMAGE=$(buildah commit "${OMIT_TS[@]}" "$CONTAINER_ID" "$STEP_RESULT_IMAGE")
 
 	_buildah_cache_done
 }
 
 _buildah_cache_done() {
+	cache_push "$BUILDAH_NAME_BASE" "$WORK_STAGE"
 	dedent
 	if [[ "$_STITLE" ]]; then
-		info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE (\e[0;38;5;13m$_STITLE\e[0;2m) DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
+		info_note "[$BUILDAH_NAME_BASE] STEP $WORK_STAGE (\e[0;38;5;13m$_STITLE\e[0;2m) DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
 	else
-		info_note "[$BUILDAH_NAME_BASE] STEP $NEXT_STAGE DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
+		info_note "[$BUILDAH_NAME_BASE] STEP $WORK_STAGE DONE | BUILDAH_LAST_IMAGE=$BUILDAH_LAST_IMAGE\n"
 	fi
 }
 

@@ -45,6 +45,8 @@ source "$COMMON_LIB_ROOT/functions/python.sh"
 source "$COMMON_LIB_ROOT/functions/build-folder-hash.sh"
 # shellcheck source=./functions/healthcheck.sh
 source "$COMMON_LIB_ROOT/functions/healthcheck.sh"
+# shellcheck source=./functions/custom-stop-reload.sh
+source "$COMMON_LIB_ROOT/functions/custom-stop-reload.sh"
 # shellcheck source=./functions/container-systemd.sh
 source "$COMMON_LIB_ROOT/functions/container-systemd.sh"
 
@@ -106,35 +108,45 @@ function container_exists() {
 }
 
 function image_exists() {
-	local ID X
-	ID=$(image_get_id "$1")
-	X=$?
-	if [[ $X -eq 0 ]] && [[ $ID == "" ]]; then
-		info_warn "inspect image $1 success, but nothing return"
-		return 1
-	fi
-	return $X
+	"$BUILDAH" inspect --type image "$1" &>/dev/null
 }
 
 function image_get_id() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null
+	local R
+	R=$("$BUILDAH" inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null)
+	digist_to_short "$R"
 }
 function image_find_id() {
-	buildah inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null || true
+	local R
+	R=$("$BUILDAH" inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null || true)
+	digist_to_short "$R"
 }
 
 function container_get_id() {
-	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null
+	local R
+	R=$("$BUILDAH" inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null)
+	digist_to_short "$R"
 }
 function container_find_id() {
-	buildah inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null || true
+	local R
+	R=$("$BUILDAH" inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null || true)
+	digist_to_short "$R"
 }
 function container_get_base_image_id() {
-	buildah inspect --type container --format '{{.FromImageID}}' "$1" 2>/dev/null
+	local R
+	R=$("$BUILDAH" inspect --type container --format '{{.FromImageID}}' "$1" 2>/dev/null)
+	digist_to_short "$R"
 }
 
 function is_id_digist() {
-	echo "$*" | grep -qiE '^[0-9A-Z]+$'
+	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]] || [[ $1 =~ ^[0-9a-fA-F]{12}$ ]]
+}
+function digist_to_short() {
+	if [[ $1 =~ ^[0-9a-fA-F]{64}$ ]]; then
+		echo "${1:0:12}"
+	else
+		echo "$1"
+	fi
 }
 
 function new_container() {
@@ -142,7 +154,7 @@ function new_container() {
 	local EXISTS
 	EXISTS=$(container_get_id "$NAME" || true)
 	if [[ -n $EXISTS ]]; then
-		info_log "Remove exists container '$EXISTS'"
+		info_log "remove exists container '$EXISTS'"
 		buildah rm "$EXISTS" >/dev/null
 	fi
 	local FROM="${2-scratch}"
@@ -155,5 +167,5 @@ function new_container() {
 			buildah pull "$FROM" >&2
 		fi
 	fi
-	buildah from --name "$NAME" "$FROM"
+	buildah from --pull=never --name "$NAME" "$FROM"
 }

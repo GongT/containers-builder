@@ -57,7 +57,7 @@ function perfer_proxy() {
 	fi
 }
 function deny_proxy() {
-	info_note "[proxy] deny proxy"
+	# info_note "[proxy] deny proxy"
 	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 }
 

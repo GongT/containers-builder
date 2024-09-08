@@ -15,7 +15,7 @@ do_rm() {
 		echo -ne "disable (and stop) service $I\n    "
 		systemctl disable --now --no-block "$I" || true
 
-		local F="/usr/lib/systemd/system/$I"
+		local F="$SYSTEM_UNITS_DIR/$I"
 		if [[ -e $F ]]; then
 			echo "remove service file: $F"
 			rm -f "$F"

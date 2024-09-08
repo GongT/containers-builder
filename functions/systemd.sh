@@ -17,20 +17,18 @@ declare -A _S_CONTROL_ENVS
 
 declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
 
-if podman stop --help 2>&1 | grep -q -- '--ignore'; then
-	info_note "podman support --ignore flag"
-	declare -r PODMAN_USE_IGNORE=yes
+SYSTEMCTL=$(command -v systemctl)
+if is_root; then
+	if [[ ${TEST_MODE-} == yes ]]; then
+		declare -r SYSTEM_UNITS_DIR="/run/systemd/system"
+	else
+		declare -r SYSTEM_UNITS_DIR="/usr/lib/systemd/system"
+	fi
 else
-	echo "podman version is old. can't use --ignore flag" >&2
-	declare -r PODMAN_USE_IGNORE=
-fi
-
-if podman run --help 2>&1 | grep -q -- '--replace'; then
-	info_note "podman support --replace flag"
-	declare -r PODMAN_USE_REPLACE=yes
-else
-	echo "podman version is old. can't use --replace flag" >&2
-	declare -r PODMAN_USE_REPLACE=
+	declare -r SYSTEM_UNITS_DIR="$HOME/.config/systemd/user"
+	function systemctl() {
+		"$SYSTEMCTL" --user "$@"
+	}
 fi
 
 function _unit_init() {
@@ -46,9 +44,7 @@ function _unit_init() {
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
 	_S_INSTALL=services.target
-	_S_START_WAIT_SLEEP=10
-	_S_START_WAIT_OUTPUT=
-	_S_START_ACTIVE_FILE=
+	_S_START_WAIT=sleep:10
 	_S_SYSTEMD=false
 
 	_S_PREP_FOLDER=()
@@ -80,6 +76,9 @@ function _unit_init() {
 
 	## healthcheck.sh
 	_healthcheck_reset
+
+	## stop.sh
+	_customstop_reset
 }
 
 function auto_create_pod_service_unit() {
@@ -126,21 +125,19 @@ function unit_write() {
 
 	install_common_system_support
 
-	local -r TF=$(mktemp -u)
-	_unit_assemble >$TF
-	write_file "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" <$TF
-	unlink $TF
+	local -r TF=$(create_temp_file "${_S_CURRENT_UNIT_FILE}.unit")
+	_unit_assemble >"$TF"
+	copy_file "$TF" "$SYSTEM_UNITS_DIR/$_S_CURRENT_UNIT_FILE"
 }
 _get_debugger_script() {
-	echo "/usr/share/scripts/debug-startup-$(_unit_get_name).sh"
+	echo "$SCRIPTS_DIR/debug-startup.sh"
 }
 _debugger_file_write() {
-	local -r TF=$(mktemp -u)
-	local I
+	local I FILE_DATA
 	local -a STARTUP_ARGS=()
 
 	_create_startup_arguments
-	{
+	FILE_DATA=$(
 		echo "#!/usr/bin/env bash"
 		echo "set -Eeuo pipefail"
 		echo "declare -r CONTAINER_ID='$(_unit_get_scopename)'"
@@ -161,7 +158,8 @@ _debugger_file_write() {
 		echo ")"
 
 		cat "$COMMON_LIB_ROOT/staff/debugger.sh"
-	} | write_executable_file "$(_get_debugger_script)"
+	)
+	write_file --mode 0755 "$(_get_debugger_script)" "$FILE_DATA"
 }
 
 function unit_finish() {
@@ -241,14 +239,12 @@ function _unit_get_scopename() {
 }
 function export_base_envs() {
 	(
-		declare -r WAIT_TIME="$_S_START_WAIT_SLEEP"
-		declare -r WAIT_OUTPUT="$_S_START_WAIT_OUTPUT"
-		declare -r ACTIVE_FILE="$_S_START_ACTIVE_FILE"
+		declare -r START_WAIT_DEFINE="$_S_START_WAIT"
 		declare -r NETWORK_TYPE="$_N_TYPE"
 		declare -r USING_SYSTEMD="$_S_SYSTEMD"
 		declare -r KILL_TIMEOUT="$_S_KILL_TIMEOUT"
 		declare -r KILL_IF_TIMEOUT="$_S_KILL_FORCE"
-		declare -p WAIT_TIME WAIT_OUTPUT ACTIVE_FILE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
+		declare -p START_WAIT_DEFINE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
 	)
 }
 function _unit_assemble() {
@@ -316,22 +312,25 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		done
 	fi
 
-	local _SERVICE_WAITER="/usr/share/scripts/$(_unit_get_name).pod"
-	{
+	local _SERVICE_WAITER="$SCRIPTS_DIR/$(_unit_get_name).pod"
+	local _WAITER_DATA _FILES _FILE
+	_WAITER_DATA=$(
 		echo '#!/usr/bin/env bash'
 		echo 'set -Eeuo pipefail'
 		export_base_envs
 		declare -p PREP_FOLDERS_INS
-		find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 \
-			| sort -z \
-			| xargs -0 -IF -n1 bash -c "echo && echo '##' \$(basename 'F') && tail -n +4 'F' && echo"
-	} | write_executable_file "$_SERVICE_WAITER"
-	echo -n "ExecStart=${_SERVICE_WAITER} \\
-	--conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID'"
+		mapfile -t -d '' _FILES < <(find "$COMMON_LIB_ROOT/tools/service-wait" -type f -print0 | sort -z)
+		for _FILE in "${_FILES[@]}"; do
+			echo
+			echo "## $(basename "$_FILE")"
+			tail -n +4 "$_FILE"
+			echo
+		done
+	)
+	write_file --mode 0755 "$_SERVICE_WAITER" "$_WAITER_DATA"
 
-	if [[ $PODMAN_USE_REPLACE == yes ]]; then
-		echo -n " --replace=true"
-	fi
+	echo "ExecStart=${_SERVICE_WAITER} \\
+	--replace=true --conmon-pidfile=/run/$SCOPE_ID.conmon.pid '--name=$SCOPE_ID' \\"
 
 	local -a STARTUP_ARGS=()
 	_create_startup_arguments
@@ -368,12 +367,19 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 	echo "IMAGE_NAME_PULL=$_S_IMAGE_PULL"
 	echo "CONTAINERS_DATA_PATH=$CONTAINERS_DATA_PATH"
 	echo "COMMON_LIB_ROOT=$COMMON_LIB_ROOT"
-	echo "MONO_ROOT_DIR=$MONO_ROOT_DIR"
+	echo "MONO_ROOT_DIR=${MONO_ROOT_DIR-}"
 	echo "CURRENT_DIR=$CURRENT_DIR"
 	echo "INSTALLER_SCRIPT=$CURRENT_FILE"
 	echo "PROJECT_NAME=$PROJECT_NAME"
 	echo "SYSTEM_COMMON_CACHE=$SYSTEM_COMMON_CACHE"
 	echo "SYSTEM_FAST_CACHE=$SYSTEM_FAST_CACHE"
+}
+
+function _add_argument() {
+	if ! is_set _PODMAN_RUN_ARGS; then
+		die "wrong call timing"
+	fi
+	_PODMAN_RUN_ARGS+=("$@")
 }
 
 function _create_startup_arguments() {
@@ -395,7 +401,9 @@ function _create_startup_arguments() {
 	STARTUP_ARGS+=("--restart=no")
 
 	local _PODMAN_RUN_ARGS=()
+
 	_healthcheck_arguments_podman
+
 	STARTUP_ARGS+=("${_PODMAN_RUN_ARGS[@]}")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
 	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
@@ -404,9 +412,6 @@ function _create_startup_arguments() {
 			CAP_LIST+=",$CAP_ITEM"
 		done
 		STARTUP_ARGS+=("--cap-add=${CAP_LIST:1}")
-	fi
-	if [[ -n $_S_START_ACTIVE_FILE ]]; then
-		STARTUP_ARGS+=("'--volume=ACTIVE_FILE:/tmp/ready-volume'" "'--env=ACTIVE_FILE=/tmp/ready-volume/$_S_START_ACTIVE_FILE'")
 	fi
 	STARTUP_ARGS+=("'--pull=never' --rm '${_S_IMAGE:-"$NAME"}'")
 	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
@@ -500,24 +505,31 @@ function unit_hook_stop() {
 }
 function unit_start_notify() {
 	local TYPE="$1" ARG="${2-}"
-	_S_START_WAIT_SLEEP=
-	_S_START_WAIT_OUTPUT=
-	_S_START_ACTIVE_FILE=
+	_S_START_WAIT=
 	case "$TYPE" in
+	socket)
+		_S_START_WAIT="unix:$ARG"
+		;;
+	port)
+		if [[ $ARG != tcp:* ]] || [[ $ARG != udp:* ]]; then
+			die "start notify port must use tcp:xxx or udp:xxx"
+		fi
+		_S_START_WAIT="net:$ARG"
+		;;
 	sleep)
-		_S_START_WAIT_SLEEP="$ARG"
+		_S_START_WAIT="sleep:$ARG"
 		;;
 	output)
-		_S_START_WAIT_OUTPUT="$ARG"
+		_S_START_WAIT="output:$ARG"
 		;;
 	touch)
-		if [[ -z $ARG ]]; then
-			ARG="$_S_CURRENT_UNIT_FILE.$RANDOM.ready"
+		if [[ -n $ARG ]]; then
+			die "touch method do not allow argument"
 		fi
-		_S_START_ACTIVE_FILE="$ARG"
+		_S_START_WAIT="file"
 		;;
 	*)
-		die "Unknown start notify method $TYPE, allow: sleep, output, touch."
+		die "Unknown start notify method $TYPE, allow: socket, port, sleep, output, touch."
 		;;
 	esac
 }
@@ -525,14 +537,14 @@ function _create_service_library() {
 	if [[ ${_CONTAINER_STOP+found} == "found" ]]; then
 		return
 	fi
-	mkdir -p /usr/share/scripts/
+	mkdir -p "$SCRIPTS_DIR"
 
-	cat "$COMMON_LIB_ROOT/tools/stop-container.sh" | write_executable_file_share /usr/share/scripts/stop-container.sh
-	_CONTAINER_STOP=/usr/share/scripts/stop-container.sh
+	copy_file --mode 0755 "$COMMON_LIB_ROOT/tools/stop-container.sh" "$SCRIPTS_DIR/stop-container.sh"
+	_CONTAINER_STOP=$SCRIPTS_DIR/stop-container.sh
 
-	cat "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" | write_executable_file_share /usr/share/scripts/lowlevel-clear.sh
-	_LOWLEVEL_CLEAR=/usr/share/scripts/lowlevel-clear.sh
+	copy_file --mode 0755 "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" "$SCRIPTS_DIR/lowlevel-clear.sh"
+	_LOWLEVEL_CLEAR=$SCRIPTS_DIR/lowlevel-clear.sh
 
-	cat "$COMMON_LIB_ROOT/tools/update-hosts.sh" | write_executable_file_share /usr/share/scripts/update-hosts.sh
-	_UPDATE_HOSTS=/usr/share/scripts/update-hosts.sh
+	copy_file --mode 0755 "$COMMON_LIB_ROOT/tools/update-hosts.sh" "$SCRIPTS_DIR/update-hosts.sh"
+	_UPDATE_HOSTS=$SCRIPTS_DIR/update-hosts.sh
 }

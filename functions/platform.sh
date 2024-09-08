@@ -18,6 +18,8 @@ function guard_root_only() {
 	fi
 }
 
-function is_root() {
-	[[ $(id -u) == 0 ]]
+function guard_no_root() {
+	if is_root; then
+		die "This action can not run by root."
+	fi
 }

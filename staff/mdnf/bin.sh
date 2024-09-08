@@ -21,9 +21,6 @@ bind_fs() {
 	TO_UNMOUNT+=("/install-root$FS")
 }
 
-if ! command -v "mount" &>/dev/null; then
-	dnf install -y util-linux-core
-fi
 bind_fs /var/lib/dnf/repos
 bind_fs /var/cache/dnf
 
@@ -54,12 +51,12 @@ dnf() {
 
 # dnf clean expire-cache
 # dnf makecache
-dnf "$ACTION" "${PACKAGES[@]}"
+dnf "$ACTION" "${@}"
 
 if [[ $ACTION == install ]]; then
 	cd /install-root
 
-	BUSYBOX_BIN=$(find . -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
+	BUSYBOX_BIN=$(find bin usr/bin -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
 
 	if [[ "$BUSYBOX_BIN" ]]; then
 		echo "installing busybox ($BUSYBOX_BIN)..."

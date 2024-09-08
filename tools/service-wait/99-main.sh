@@ -18,6 +18,12 @@ function main() {
 
 	debug "Wait container $CONTAINER_ID."
 
+	local WAIT_TYPE=${START_WAIT_DEFINE%%:*}
+	local WAIT_ARGS=${START_WAIT_DEFINE#*:}
+	
+	case "$WAIT_TYPE" in
+	sleep)
+	
 	if [[ -n $WAIT_TIME ]]; then
 		debug "   method: sleep $WAIT_TIME seconds"
 		wait_by_sleep

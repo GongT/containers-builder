@@ -37,23 +37,22 @@ function _healthcheck_config_buildah() {
 	fi
 	local IMAGE="$1"
 
-	local -a ARGS
 	local I CMD=''
 
 	for I in "${HEALTHCHECK_CMD[@]}"; do
 		CMD+=" '${I}'"
 	done
 
-	ARGS+=("--healthcheck=CMD-SHELL $CMD")
-	ARGS+=("--healthcheck-interval=$HEALTHCHECK_INTERVAL")
-	ARGS+=("--healthcheck-retries=$HEALTHCHECK_RETRY")
+	_add_config "--healthcheck=CMD-SHELL $CMD"
+	_add_config "--healthcheck-interval=$HEALTHCHECK_INTERVAL"
+	_add_config "--healthcheck-retries=$HEALTHCHECK_RETRY"
 	if [[ "$HEALTHCHECK_START_PERIOD" ]]; then
-		ARGS+=("--healthcheck-start-period=$HEALTHCHECK_START_PERIOD")
+		_add_config "--healthcheck-start-period=$HEALTHCHECK_START_PERIOD"
 	fi
 	if [[ "$HEALTHCHECK_TIMEOUT" ]]; then
-		ARGS+=("--healthcheck-timeout=$HEALTHCHECK_TIMEOUT")
+		_add_config "--healthcheck-timeout=$HEALTHCHECK_TIMEOUT"
 	fi
-	xbuildah config "${ARGS[@]}" "$IMAGE"
+	_healthcheck_reset
 }
 
 function _healthcheck_arguments_podman() {
@@ -66,14 +65,14 @@ function _healthcheck_arguments_podman() {
 		CMD+=("'${I}'")
 	done
 
-	_PODMAN_RUN_ARGS+=("--health-cmd=${CMD[*]}")
+	_add_argument "--health-cmd=${CMD[*]}"
 
-	_PODMAN_RUN_ARGS+=("--health-interval='$HEALTHCHECK_INTERVAL'")
-	_PODMAN_RUN_ARGS+=("--health-retries='$HEALTHCHECK_RETRY'")
+	_add_argument "--health-interval='$HEALTHCHECK_INTERVAL'"
+	_add_argument "--health-retries='$HEALTHCHECK_RETRY'"
 	if [[ "$HEALTHCHECK_START_PERIOD" ]]; then
-		_PODMAN_RUN_ARGS+=("--health-start-period='$HEALTHCHECK_START_PERIOD'")
+		_add_argument "--health-start-period='$HEALTHCHECK_START_PERIOD'"
 	fi
 	if [[ "$HEALTHCHECK_TIMEOUT" ]]; then
-		_PODMAN_RUN_ARGS+=("--health-timeout='$HEALTHCHECK_TIMEOUT'")
+		_add_argument "--health-timeout='$HEALTHCHECK_TIMEOUT'"
 	fi
 }

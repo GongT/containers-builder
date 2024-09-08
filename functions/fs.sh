@@ -2,69 +2,129 @@
 
 declare -a _REG_FILES=()
 
-function write_executable_file_share() {
-	write_executable_file "$@"
+function output_file() {
+	local DATA
+	read -r DATA
+	write_file "$@" "$DATA"
 }
 
-function write_executable_file() {
-	write_file "$@"
-	if is_installing; then
-		chmod a+x "$1"
+function __fs_args() {
+	while [[ $# -gt 0 ]]; do
+		if [[ $1 == "--nodir" ]]; then
+			MKDIR=0
+		elif [[ $1 == "--mode" ]]; then
+			shift
+			MODE="$1"
+		else
+			ARGS+=("$1")
+		fi
+		shift
+	done
+}
+
+function ensure_parent() {
+	local MKDIR=$1 FILE=$2 DIR
+	DIR=$(dirname "$FILE")
+	if [[ $MKDIR -eq 1 ]] && [[ ! -d $DIR ]]; then
+		info_note "  * create directory: $DIR"
+		mkdir -p "$DIR"
 	fi
 }
-
-function write_file_share() {
-	write_file "$@"
+function resolve() {
+	local D="$PWD" F
+	for F; do
+		if [[ $F == /* ]]; then
+			D="$F"
+		else
+			D=$(realpath -m "$D/$F")
+		fi
+	done
+	echo "$D"
 }
+function file_in_folder() {
+	local FILE=$1 FOLDER=$2 REL
+	REL=$(realpath --no-symlinks "--relative-base=$FOLDER" "--relative-to=$FOLDER" "$FILE")
+	[[ $REL != /* ]]
+}
+function is_project_file() {
+	file_in_folder "$1" "$CURRENT_DIR" || file_in_folder "$1" "$COMMON_LIB_ROOT" || file_in_folder "$1" "$TMPDIR"
+}
+function delete_file() {
+	local MKDIR=$1 FILE=$2 PARENT
 
-function write_file() {
+	if [[ -e $TARGET ]]; then
+		info_note "  * remove file: $TARGET"
+		[[ -e $TARGET ]] && unlink "$TARGET"
+	fi
+
+	if [[ $MKDIR -eq 1 ]]; then
+		PARENT=$(dirname "$TARGET")
+		if [[ -d $PARENT ]]; then
+			rmdir --ignore-fail-on-non-empty "$PARENT"
+		fi
+	fi
+}
+function copy_file() {
 	_arg_ensure_finish
-	local -r F="$1"
+	local ARGS MODE MKDIR=1
+	__fs_args "$@"
+
+	local FILE=${ARGS[0]} TARGET=${ARGS[1]}
+	FILE=$(resolve "$CURRENT_DIR" "$FILE")
+	if ! is_project_file "$FILE"; then
+		die "file outside project: $FILE"
+	fi
+
+	if [[ $TARGET != /* ]]; then
+		die "copy_file target must be absolute path"
+	fi
+
+	_REG_FILES+=("$TARGET")
 	if is_uninstalling; then
-		if [[ -e $F ]]; then
-			echo -e "\e[2m * remove file: $F\e[0m" >&2
-			unlink "$F"
-		fi
-		if [[ $# -eq 1 ]]; then
-			cat >/dev/null
-		fi
+		delete_file $MKDIR "$TARGET"
 		return
 	fi
 
-	_REG_FILES+=("$F")
-	if [[ ! -d "$(dirname "$F")" ]]; then
-		echo -e "\e[2m * create directory: $F\e[0m" >&2
-		mkdir -p "$(dirname "$F")"
-	fi
-	echo -ne "\e[2m * write file: $F" >&2
+	ensure_parent $MKDIR "$TARGET"
+	info_note "  * copy file: $TARGET"
+	cp -pT "$FILE" "$TARGET"
 
-	if [[ $# -eq 1 ]]; then
-		if [[ -e $F ]]; then
-			local -r TMPF="/tmp/${RANDOM}"
-			cat >"$TMPF"
-			if [[ "$(<$TMPF)" == "$(<$F)" ]]; then
-				echo -ne " - same" >&2
-			else
-				cat "$TMPF" >"$F"
-			fi
-			rm -f "$TMPF"
-		else
-			cat >"$F"
-		fi
-	else
-		local -r CONTENT=$2
-		if [[ -e $F ]] && [[ $CONTENT == "$(<$F)" ]]; then
-			echo -ne " - same" >&2
-		else
-			echo "$2" >"$F"
-		fi
+	if [[ ${MODE-} ]]; then
+		chmod "${MODE}" "$TARGET"
 	fi
-	echo -e "\e[0m" >&2
+}
+function write_file() {
+	_arg_ensure_finish
+	local ARGS MODE MKDIR=1
+	__fs_args "$@"
+	local TARGET=${ARGS[0]} DATA=${ARGS[1]}
+	TARGET=$(resolve "$SCRIPTS_DIR" "$TARGET")
+	_REG_FILES+=("$TARGET")
+
+	# info_warn "--> ${#TARGET} / ${#DATA} / ${MODE-unbound}"
+
+	if is_uninstalling; then
+		delete_file $MKDIR "$TARGET"
+		return
+	fi
+
+	ensure_parent $MKDIR "$TARGET"
+
+	if [[ -e $TARGET ]] && [[ $DATA == "$(<"$TARGET")" ]]; then
+		info_note "  * write file: $TARGET - same"
+	else
+		echo "$DATA" >"$TARGET"
+		info_note "  * write file: $TARGET - ok"
+	fi
+	if [[ ${MODE-} ]]; then
+		chmod "${MODE}" "$TARGET"
+	fi
 }
 function find_command() {
 	env -i "PATH=$PATH" "$SHELL" --noprofile --norc -c "command -v '$1'"
 }
 function ensure_symlink() {
+	# uninstall
 	local LINK_FILE=$1 TARGET=$2 CURR
 	if [[ -L $LINK_FILE ]]; then
 		CURR=$(readlink --canonicalize-missing --no-newline "$LINK_FILE")

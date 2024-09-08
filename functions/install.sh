@@ -8,15 +8,13 @@ function install_script_as() {
 		die "Cannot found script file: $F"
 	fi
 
-	mkdir -p /usr/share/scripts
-	write_file "/usr/share/scripts/$BASE" <"$F"
-	echo "/usr/share/scripts/$BASE"
+	copy_file --mode 0755 "$F" "$SCRIPTS_DIR/$BASE"
+	echo "$SCRIPTS_DIR/$BASE"
 }
 function install_binary() {
 	local F=$1 AS="${2-$(basename "$1" .sh)}"
-	if ! [[ -f $F ]]; then
-		die "Cannot found script file: $F ($(pwd))"
-	fi
-	write_executable_file "/usr/local/bin/$AS" "bash '$(pwd)/$F' \"\$@\""
-	info "installed binary: \e[38;5;2m/usr/local/bin/$AS"
+	F=$(realpath --no-symlinks "$F")
+	write_file --nodir --mode 0777 "/usr/local/bin/$AS" "$(head -n1 "$F")
+source '$F'"
+	info "installed binary: \e[38;5;2m$AS"
 }

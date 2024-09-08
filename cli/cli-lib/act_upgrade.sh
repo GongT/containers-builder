@@ -5,7 +5,7 @@ function do_upgrade() {
 
 	mapfile -t DISABLED < <(do_ls disabled)
 
-	cd /usr/lib/systemd/system
+	cd "$SYSTEM_UNITS_DIR"
 
 	mapfile -t SCRIPT_LIST < <(grep 'INSTALLER_SCRIPT=' . -R | sed -E 's/^.+INSTALLER_SCRIPT=//g' | sort | uniq)
 

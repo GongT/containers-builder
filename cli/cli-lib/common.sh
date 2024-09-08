@@ -2,6 +2,7 @@
 
 declare -ra CONTROL_SERVICES=(wait-dns-working.service containers-ensure-health.timer services-boot.service)
 BIN_SRC_HOME=$(</usr/share/scripts/cli-home)
+declare -r SYSTEM_UNITS_DIR="/usr/lib/systemd/system"
 
 function die() {
 	echo "$*" >&2

@@ -8,6 +8,3 @@ function use_full_system_privilege() {
 function add_network_privilege() {
 	add_capability NET_ADMIN NET_RAW
 }
-function is_root() {
-	[[ $(id -u) -eq 0 ]]
-}

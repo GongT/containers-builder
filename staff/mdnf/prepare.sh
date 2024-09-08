@@ -12,3 +12,4 @@ dnf install -y dnf-plugins-core \
 	"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$FEDORA_VERSION.noarch.rpm"
 
 dnf config-manager --set-enabled rpmfusion-free rpmfusion-nonfree
+dnf install jq util-linux-core curl

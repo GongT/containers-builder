@@ -23,29 +23,44 @@ function xbuildah() {
 	local ACT=$1
 	shift
 	OUT=$(
-		echo -ne "$_CURRENT_INDENT\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m"
+		echo -ne "\e[0;2mbuildah \e[0;2;4m$ACT\e[0;2m"
 		local I
 		for I; do
-			printf ' %q' "$I"
+			printf ' %q' "$(digist_to_short "$I")"
 		done
 		echo -e "\e[0m"
 	)
 
 	local SGROUP=
 	if (! is_ci) || [[ $INSIDE_GROUP ]] || [[ $ACT == run ]] || [[ $ACT == inspect ]] || [[ $ACT == config ]] || [[ $ACT == from ]]; then
-		echo "$OUT" >&2
+		info_log "$OUT" >&2
+		indent
 	else
 		SGROUP=yes
 		control_ci group "$OUT"
 	fi
 
-	"$BUILDAH" "$ACT" "$@"
-	local X=$?
+	local -i X=-1
+	if "$BUILDAH" "$ACT" "$@"; then
+		X=0
+	else
+		X=$?
+		info_warn "failed with $X"
+	fi
 
 	if [[ "$SGROUP" ]]; then
 		control_ci groupEnd
+	else
+		dedent
 	fi
 	return $X
+}
+
+function _add_config() {
+	if ! is_set COMMIT_CONFIGS; then
+		die "wrong call timing"
+	fi
+	COMMIT_CONFIGS+=("$@")
 }
 
 function buildah() {
@@ -57,7 +72,9 @@ function buildah() {
 	local EXARGS=()
 	case "$ACTION" in
 	copy)
+		EXARGS+=(--quiet)
 		if ! [[ ${PASSARGS[*]} == *'--from'* ]]; then
+			# convert source file to absolute (for debug)
 			local -i I="$LEN - 1"
 			while [[ $I -gt 0 ]]; do
 				local CCI=$I
@@ -73,48 +90,65 @@ function buildah() {
 			done
 		fi
 		;;
+	mount | unmount)
+		xbuildah unshare buildah "$ACTION" "${PASSARGS[@]}"
+		return
+		;;
 	from)
 		# TODO: all image ids
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
+		local OUTPUT_ID
+		OUTPUT_ID=$(xbuildah "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}")
+		digist_to_short "$OUTPUT_ID"
+		return
 		;;
 	commit)
-		if [[ ${REWRITE_IMAGE_NAME+found} == found ]]; then
-			info "rewrite commit image name: $REWRITE_IMAGE_NAME"
-			PASSARGS=("${PASSARGS[@]:0:LEN}" "$REWRITE_IMAGE_NAME")
-		fi
-		control_ci group "buildah commit ${PASSARGS[*]}"
+		local IID="${PASSARGS[*]: -1}"   # Image Id
+		local CID="${PASSARGS[*]: -2:1}" # Container Id
 
-		local IID="${PASSARGS[*]: -1}"
-		local CID="${PASSARGS[*]: -2:1}"
+		if [[ $IID != "$CACHE_CENTER_NAME_BASE"* ]]; then
+			info_success "commiting final image $CID as $IID"
+			local -a COMMIT_CONFIGS=()
 
-		if [[ $CID != "$BUILDAH_CACHE_BASE"* ]]; then
+			if [[ ${REWRITE_IMAGE_NAME+found} == found ]]; then
+				info "rewrite commit image name: $REWRITE_IMAGE_NAME"
+				PASSARGS=("${PASSARGS[@]:0:LEN}" "$REWRITE_IMAGE_NAME")
+			fi
+
 			if is_ci; then
-				EXARGS+=("--rm")
-
 				local HASH
 				HASH=$(hash_current_folder | md5sum | awk '{print $1}')
-				xbuildah config --label "$LABELID_RESULT_HASH=$HASH" "$CID"
+				COMMIT_CONFIGS+=("--label=$LABELID_RESULT_HASH=$HASH")
 			else
-				xbuildah config --label "$LABELID_RESULT_HASH-" "$CID"
+				COMMIT_CONFIGS+=("--unsetlabel=$LABELID_RESULT_HASH")
 			fi
 
-			if [[ ${GITHUB_SERVER_URL:-} ]] && [[ ${GITHUB_REPOSITORY:-} ]]; then
-				xbuildah config --annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" "$CID"
+			if [[ ${GITHUB_SERVER_URL-} ]] && [[ ${GITHUB_REPOSITORY-} ]]; then
+				COMMIT_CONFIGS+=("--annotation=org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY")
 			fi
-			if [[ ${GITHUB_SHA:-} ]]; then
-				xbuildah config --annotation "org.opencontainers.image.version=$GITHUB_SHA" "$CID"
+			if [[ ${GITHUB_SHA-} ]]; then
+				COMMIT_CONFIGS+=("--annotation=org.opencontainers.image.version=$GITHUB_SHA")
 			fi
 
-			xbuildah config --annotation "$ANNOID_CACHE_PREV_STAGE-" --annotation "$ANNOID_CACHE_HASH-" "$CID"
-			_healthcheck_config_buildah "$CID"
+			COMMIT_CONFIGS+=("--annotation=$ANNOID_CACHE_PREV_STAGE-" "--annotation=$ANNOID_CACHE_HASH-")
+
+			## healthcheck.sh
+			_healthcheck_config_buildah
+
+			## stop.sh
+			_stopreload_config_buildah
+
+			xbuildah config "${COMMIT_CONFIGS[@]}" "$CID"
+		else
+			info_success "commiting cache image $CID as $IID"
 		fi
 
 		local OUTPUT
-		OUTPUT=$("$BUILDAH" "$ACTION" "${EXARGS[@]}" "${PASSARGS[@]}")
-
+		OUTPUT=$(xbuildah commit --rm --quiet "${PASSARGS[@]}")
+		info_note "commit: $OUTPUT"
 		control_ci "set-env" "LAST_COMMITED_IMAGE" "$OUTPUT"
 
-		control_ci groupEnd
+		digist_to_short "$OUTPUT"
 		return
 		;;
 	run)
