@@ -11,4 +11,4 @@ ExecStop=/bin/bash /opt/scripts/nginx-attach.sh 0
 RestartPreventExitStatus=66
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

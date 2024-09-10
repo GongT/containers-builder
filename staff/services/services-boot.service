@@ -1,0 +1,13 @@
+[Unit]
+Description=Check unexepcted shutdown
+After=default.target containers.target
+Requires=default.target containers.target
+
+After=sshd.socket systemd-networkd.service systemd-resolved.service dnsmasq.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash "__SCRIPT__"
+Restart=no
+RemainAfterExit=yes
+Slice=services.slice

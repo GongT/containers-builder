@@ -2,24 +2,24 @@
 set -Eeuo pipefail
 
 function self_journal() {
-	debug "journalctl _SYSTEMD_INVOCATION_ID=$INVOCATION_ID -f"
-	journalctl "_SYSTEMD_INVOCATION_ID=$INVOCATION_ID" -f 2>&1
+	debug "journalctl _SYSTEMD_INVOCATION_ID=${INVOCATION_ID} -f"
+	journalctl "_SYSTEMD_INVOCATION_ID=${INVOCATION_ID}" -f 2>&1
 }
 
 __NOTIFYSOCKET=
 function load_sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
-		echo "[SDNOTIFY] using socket: $NOTIFY_SOCKET"
-		__NOTIFYSOCKET="$NOTIFY_SOCKET"
+		echo "[SDNOTIFY] using socket: ${NOTIFY_SOCKET}"
+		__NOTIFYSOCKET="${NOTIFY_SOCKET}"
 
 		echo "[SDNOTIFY] hide socket from podman"
 		unset NOTIFY_SOCKET
 
 		function sdnotify() {
 			if [[ $* != "--status="* ]] && [[ $* != "EXTEND_TIMEOUT_USEC="* ]]; then
-				echo "[SDNOTIFY] ($__NOTIFYSOCKET) ===== $*" >&2
+				echo "[SDNOTIFY] (${__NOTIFYSOCKET}) ===== $*" >&2
 			fi
-			NOTIFY_SOCKET="$__NOTIFYSOCKET" systemd-notify "$@"
+			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
 		}
 		sdnotify --status=prestart
 	else

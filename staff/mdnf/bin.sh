@@ -15,10 +15,10 @@ TO_UNMOUNT=()
 
 bind_fs() {
 	local FS=$1
-	rm -rf "/install-root$FS"
-	mkdir -p "/install-root$FS" "$FS"
-	mount --bind "$FS" "/install-root$FS"
-	TO_UNMOUNT+=("/install-root$FS")
+	rm -rf "/install-root${FS}"
+	mkdir -p "/install-root${FS}" "${FS}"
+	mount --bind "${FS}" "/install-root${FS}"
+	TO_UNMOUNT+=("/install-root${FS}")
 }
 
 bind_fs /var/lib/dnf/repos
@@ -34,32 +34,32 @@ _exit() {
 	mkdir -p "${DIRS_SHOULD_EMPTY[@]}"
 	chmod 0777 "${DIRS_SHOULD_EMPTY[@]}"
 
-	echo "dnf script returned $R" >&2
-	exit $R
+	echo "dnf script returned ${R}" >&2
+	exit "${R}"
 }
 
 trap _exit EXIT
 
-if ! [[ ${ACTION:-} ]]; then
+if ! [[ -n ${ACTION:-} ]]; then
 	ACTION="install"
 fi
 
 dnf() {
-	echo -e "\e[2m + /usr/bin/dnf --nodocs -y "--releasever=$FEDORA_VERSION" --installroot=/install-root $*\e[0m" >&2
-	/usr/bin/dnf --nodocs -y "--releasever=$FEDORA_VERSION" --installroot=/install-root "$@"
+	echo -e "\e[2m + /usr/bin/dnf --nodocs -y "--releasever="${FEDORA_VERSION}"" --installroot=/install-root $*\e[0m" >&2
+	/usr/bin/dnf --nodocs -y "--releasever=${FEDORA_VERSION}" --installroot=/install-root "$@"
 }
 
 # dnf clean expire-cache
 # dnf makecache
-dnf "$ACTION" "${@}"
+dnf "${ACTION}" "${@}"
 
-if [[ $ACTION == install ]]; then
+if [[ ${ACTION} == install ]]; then
 	cd /install-root
 
 	BUSYBOX_BIN=$(find bin usr/bin -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
 
-	if [[ "$BUSYBOX_BIN" ]]; then
-		echo "installing busybox ($BUSYBOX_BIN)..."
-		chroot /install-root "$BUSYBOX_BIN" --install -s /bin
+	if [[ -n "${BUSYBOX_BIN}" ]]; then
+		echo "installing busybox (${BUSYBOX_BIN})..."
+		chroot /install-root "${BUSYBOX_BIN}" --install -s /bin
 	fi
 fi

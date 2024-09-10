@@ -10,6 +10,9 @@ disable=SC2317
 # Useless cat. Consider cmd < file | .. or cmd file | .. instead.
 disable=SC2002
 
+# When used with -p, -m only applies to the deepest directory.
+disable=SC2174
+
 shell=bash
 enable=add-default-case
 enable=avoid-nullary-conditions

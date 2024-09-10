@@ -30,7 +30,7 @@ function do_upgrade() {
 	do_ls enabled >/dev/null
 
 	if [[ "${#LIST_RESULT[@]}" ]]; then
-		x systemctl -q reenable "${LIST_RESULT[@]}"
+		systemctl -q reenable "${LIST_RESULT[@]}"
 	fi
 
 	echo "All Done!"

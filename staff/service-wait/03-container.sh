@@ -6,7 +6,7 @@ LCID=""
 LSTAT=""
 function get_container() {
 	local DATA=()
-	mapfile -t DATA < <(podman inspect --type container --format $'{{.State.ConmonPid}}\n{{.Id}}\n{{.State.Status}}' "$CONTAINER_ID" 2>/dev/null || true)
+	mapfile -t DATA < <(podman inspect --type container --format $'{{.State.ConmonPid}}\n{{.Id}}\n{{.State.Status}}' "${CONTAINER_ID}" 2>/dev/null || true)
 	LPID=${DATA[0]:-}
 	LCID=${DATA[1]:-}
 	LSTAT=${DATA[2]:-}
@@ -14,7 +14,7 @@ function get_container() {
 
 function ensure_container_not_running() {
 	get_container
-	if [[ ! $LCID ]]; then
+	if [[ ! -n ${LCID} ]]; then
 		debug "good, no old container"
 		return
 	fi
@@ -22,14 +22,14 @@ function ensure_container_not_running() {
 	expand_timeout_seconds "30"
 
 	while true; do
-		debug "Conmon PID: $LPID" >&2
-		debug "Container ID: $LCID" >&2
-		debug "State: $LSTAT" >&2
-		if [[ $LSTAT == "running" ]]; then
-			if [[ $KILL_IF_TIMEOUT == yes ]]; then
-				podman stop "$CONTAINER_ID" || true
+		debug "Conmon PID: ${LPID}" >&2
+		debug "Container ID: ${LCID}" >&2
+		debug "State: ${LSTAT}" >&2
+		if [[ ${LSTAT} == "running" ]]; then
+			if [[ ${KILL_IF_TIMEOUT} == yes ]]; then
+				podman stop "${CONTAINER_ID}" || true
 			else
-				podman stop --time 9999 "$CONTAINER_ID" || true
+				podman stop --time 9999 "${CONTAINER_ID}" || true
 			fi
 		else
 			podman ps -a | tail -n +2 \
@@ -39,7 +39,7 @@ function ensure_container_not_running() {
 		fi
 
 		get_container
-		if [[ ! $LCID ]]; then
+		if [[ ! -n ${LCID} ]]; then
 			debug "good, old container removed."
 			return
 		fi

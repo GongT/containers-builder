@@ -10,29 +10,29 @@ else
 	ACTION=""
 fi
 
-if [[ $UID -eq 0 ]]; then
+if [[ ${UID} -eq 0 ]]; then
 	declare -xr SCRIPTS_DIR="/usr/local/libexec/image-builder-cli"
 	declare -r SYSTEM_UNITS_DIR="/usr/local/lib/systemd/system"
 else
-	declare -xr SCRIPTS_DIR="$HOME/.local/libexec/image-builder-cli"
-	declare -r SYSTEM_UNITS_DIR="$HOME/.config/systemd/user"
+	declare -xr SCRIPTS_DIR="${HOME}/.local/libexec/image-builder-cli"
+	declare -r SYSTEM_UNITS_DIR="${HOME}/.config/systemd/user"
 	declare -r SYSTEMCTL=$(command -v systemctl)
 	function systemctl() {
-		"$SYSTEMCTL" --user "$@"
+		"${SYSTEMCTL}" --user "$@"
 	}
 fi
 
-cd "$SCRIPTS_DIR"
+cd "${SCRIPTS_DIR}"
 
 source cli-lib/common.sh
 source cli-lib/table.sh
 source cli-lib/usage.sh
 for i in cli-lib/act_*.sh; do
 	# shellcheck disable=SC1090
-	source "$i"
+	source "${i}"
 done
 
-case "$ACTION" in
+case "${ACTION}" in
 '')
 	do_default
 	;;
@@ -47,7 +47,7 @@ refresh)
 	do_refresh "$@"
 	;;
 rm)
-	if ! [[ "${1-}" ]]; then
+	if ! [[ -n "${1-}" ]]; then
 		usage >&2
 		die "missing 1 argument"
 	fi
@@ -61,8 +61,8 @@ start | restart | stop | reload | reset-failed | status | enable | disable)
 		die "this command is to control ALL enabled service, not some of them"
 	fi
 	do_ls enabled >/dev/null
-	if [[ "${#LIST_RESULT[@]}" ]]; then
-		x systemctl "$ACTION" "${LIST_RESULT[@]}"
+	if [[ -n "${#LIST_RESULT[@]}" ]]; then
+		systemctl "${ACTION}" "${LIST_RESULT[@]}"
 	fi
 	;;
 log)
@@ -75,8 +75,8 @@ abort)
 	systemctl list-units '*.pod@.service' '*.pod.service' --all --no-pager --no-legend | grep activating \
 		| awk '{print $1}' | mapfile -t LIST_RESULT
 
-	if [[ "${#LIST_RESULT[@]}" ]]; then
-		x systemctl stop "${LIST_RESULT[@]}"
+	if [[ -n "${#LIST_RESULT[@]}" ]]; then
+		systemctl stop "${LIST_RESULT[@]}"
 	fi
 	;;
 attach)
@@ -96,6 +96,6 @@ deps)
 	;;
 *)
 	usage
-	die "unknown action: $ACTION"
+	die "unknown action: ${ACTION}"
 	;;
 esac

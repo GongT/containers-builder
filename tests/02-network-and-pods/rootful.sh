@@ -10,5 +10,6 @@ guard_root_only
 arg_finish "$@"
 
 network_define_bridge_interface "bridge0"
+network_provide_pod infra veth:bridge0
 
 systemctl daemon-reload

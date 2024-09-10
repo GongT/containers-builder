@@ -38,7 +38,7 @@ do_pull_all() {
 	FAILED=()
 	for IMAGE_NAME in "${IMAGE_LIST[@]}"; do
 		echo -e "\e[7;38;5;3m$IMAGE_NAME\e[0m" >&2
-		if bash ../tools/pull-image.sh "registry.gongt.me/$IMAGE_NAME" always; then
+		if bash ../staff/tools/pull-image.sh "registry.gongt.me/$IMAGE_NAME" always; then
 			echo -e "\e[38;5;10mDone!\e[0m" >&2
 		else
 			echo -e "\e[38;5;9mFailed!\e[0m" >&2

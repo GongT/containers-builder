@@ -11,34 +11,34 @@ function add_argument() {
 function make_arguments() {
 	detect_host_ip
 
-	if [[ "${INVOCATION_ID:-}" ]]; then
+	if [[ -n "${INVOCATION_ID:-}" ]]; then
 		add_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
 	fi
 
 	for i; do
-		if [[ $i == "--dns=h.o.s.t" ]]; then
-			if ! [[ "$HOST_IP" ]]; then
-				critical_die "Try to use h.o.s.t when network type is $NETWORK_TYPE, this is currently not supported."
+		if [[ ${i} == "--dns=h.o.s.t" ]]; then
+			if ! [[ -n "${HOST_IP}" ]]; then
+				critical_die "Try to use h.o.s.t when network type is ${NETWORK_TYPE}, this is currently not supported."
 			fi
-			ARGS+=("--dns=$HOST_IP")
-		elif [[ $i == "--dns=p.a.s.s" ]]; then
+			ARGS+=("--dns=${HOST_IP}")
+		elif [[ ${i} == "--dns=p.a.s.s" ]]; then
 			dns_pass argument
-		elif [[ $i == "--dns-env=p.a.s.s" ]]; then
+		elif [[ ${i} == "--dns-env=p.a.s.s" ]]; then
 			dns_pass env
-		elif [[ $i == "--dns="* ]]; then
+		elif [[ ${i} == "--dns="* ]]; then
 			if ip route get "${i#--dns=}" &>/dev/null; then
-				ARGS+=("$i")
+				ARGS+=("${i}")
 			else
 				dns_resolve argument "${i#--dns=}"
 			fi
-		elif [[ $i == "--dns-env="* ]]; then
+		elif [[ ${i} == "--dns-env="* ]]; then
 			if ip route get "${i#--dns-env=}" &>/dev/null; then
-				ARGS+=("$i")
+				ARGS+=("${i}")
 			else
 				dns_resolve env "${i#--dns-env=}"
 			fi
 		else
-			ARGS+=("$i")
+			ARGS+=("${i}")
 		fi
 	done
 
