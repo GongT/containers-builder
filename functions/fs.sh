@@ -2,6 +2,10 @@
 
 declare -a _REG_FILES=()
 
+function get_written_files() {
+	echo "${_REG_FILES[@]}"
+}
+
 function output_file() {
 	local DATA
 	read -r DATA
@@ -79,11 +83,12 @@ function copy_file() {
 		die "copy_file target must be absolute path"
 	fi
 
-	_REG_FILES+=("$TARGET")
 	if is_uninstalling; then
 		delete_file $MKDIR "$TARGET"
 		return
 	fi
+
+	_REG_FILES+=("$TARGET")
 
 	ensure_parent $MKDIR "$TARGET"
 	info_note "  * copy file: $TARGET"
@@ -99,7 +104,6 @@ function write_file() {
 	__fs_args "$@"
 	local TARGET=${ARGS[0]} DATA=${ARGS[1]}
 	TARGET=$(resolve "$SCRIPTS_DIR" "$TARGET")
-	_REG_FILES+=("$TARGET")
 
 	# info_warn "--> ${#TARGET} / ${#DATA} / ${MODE-unbound}"
 
@@ -107,6 +111,8 @@ function write_file() {
 		delete_file $MKDIR "$TARGET"
 		return
 	fi
+
+	_REG_FILES+=("$TARGET")
 
 	ensure_parent $MKDIR "$TARGET"
 

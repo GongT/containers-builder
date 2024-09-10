@@ -1,0 +1,22 @@
+# foo appears unused. Verify it or export it.
+disable=SC2034
+
+# Command appears to be unreachable. Check usage (or ignore if invoked indirectly).
+disable=SC2317
+
+# This function is invoked in an 'if' condition so set -e will be disabled. Invoke separately if failures should cause the script to exit.
+# disable=SC2310
+
+# Useless cat. Consider cmd < file | .. or cmd file | .. instead.
+disable=SC2002
+
+shell=bash
+enable=add-default-case
+enable=avoid-nullary-conditions
+enable=check-extra-masked-returns
+# enable=check-set-e-suppressed
+# enable=check-unassigned-uppercase
+enable=deprecate-which
+enable=quote-safe-variables
+enable=require-double-brackets
+enable=require-variable-braces

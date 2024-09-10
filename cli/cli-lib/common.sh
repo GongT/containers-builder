@@ -1,37 +1,43 @@
 #!/usr/bin/env bash
 
 declare -ra CONTROL_SERVICES=(wait-dns-working.service containers-ensure-health.timer services-boot.service)
-BIN_SRC_HOME=$(</usr/share/scripts/cli-home)
-declare -r SYSTEM_UNITS_DIR="/usr/lib/systemd/system"
+BIN_SRC_HOME=$(<"$SCRIPTS_DIR/cli-home")
 
 function die() {
 	echo "$*" >&2
 	exit 1
 }
+function x() {
+	printf "\x1B[2m+ %s\x1B[0m\n" "$*" >&2
+	"$@"
+}
 
+declare -a LIST_RESULT=()
 function do_ls() {
-	local US U
+	local _LIST_RESULT U
+	LIST_RESULT=()
 
-	mapfile -t US < <(
+	mapfile -t _LIST_RESULT < <(
 		{
 			systemctl list-units --all --no-pager --no-legend --type=service '*.pod@*.service' '*.pod.service' | sed 's/●//g' | awk '{print $1}'
 			systemctl list-unit-files --no-legend --no-pager --type=service '*.pod.service' | awk '{print $1}'
 		} | sed -E 's/\.service$//g' | sort | uniq
 	)
 	if [[ $# -eq 0 ]]; then
-		for U in "${US[@]}"; do
-			echo "$U"
-		done
-	elif [[ ${1:-} == 'enabled' ]]; then
-		for U in "${US[@]}"; do
+		LIST_RESULT=("${_LIST_RESULT[@]}")
+		printf '%s\n' "${_LIST_RESULT[@]}"
+	elif [[ ${1-} == 'enabled' ]]; then
+		for U in "${_LIST_RESULT[@]}"; do
 			if systemctl is-enabled -q "${U}.service"; then
 				echo "$U"
+				LIST_RESULT+=("$U")
 			fi
 		done
-	elif [[ ${1:-} == 'disabled' ]]; then
-		for U in "${US[@]}"; do
+	elif [[ ${1-} == 'disabled' ]]; then
+		for U in "${_LIST_RESULT[@]}"; do
 			if ! systemctl is-enabled -q "${U}.service"; then
 				echo "$U"
+				LIST_RESULT+=("$U")
 			fi
 		done
 	else

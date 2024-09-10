@@ -15,32 +15,16 @@ declare -a _S_NETWORK_ARGS
 declare -A _S_ENVIRONMENTS
 declare -A _S_CONTROL_ENVS
 
-declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets
-
-SYSTEMCTL=$(command -v systemctl)
-if is_root; then
-	if [[ ${TEST_MODE-} == yes ]]; then
-		declare -r SYSTEM_UNITS_DIR="/run/systemd/system"
-	else
-		declare -r SYSTEM_UNITS_DIR="/usr/lib/systemd/system"
-	fi
-else
-	declare -r SYSTEM_UNITS_DIR="$HOME/.config/systemd/user"
-	function systemctl() {
-		"$SYSTEMCTL" --user "$@"
-	}
-fi
-
-function _unit_init() {
-	_S_IMAGE=
-	_S_CURRENT_UNIT_SERVICE_TYPE=
-	_S_AT_=
-	_S_CURRENT_UNIT_TYPE=
-	_S_CURRENT_UNIT_NAME=
-	_S_CURRENT_UNIT_FILE=
-	_S_IMAGE_PULL=${IMAGE_PULL:-always}
-	_S_HOST=
-	_S_STOP_CMD=
+_unit_reset() {
+	_S_IMAGE=''
+	_S_CURRENT_UNIT_SERVICE_TYPE=''
+	_S_AT_=''
+	_S_CURRENT_UNIT_TYPE=''
+	_S_CURRENT_UNIT_NAME=''
+	_S_CURRENT_UNIT_FILE=''
+	_S_IMAGE_PULL="${IMAGE_PULL:-always}"
+	_S_HOST=''
+	_S_STOP_CMD=''
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
 	_S_INSTALL=services.target
@@ -51,7 +35,6 @@ function _unit_init() {
 	_S_LINUX_CAP=()
 	_S_VOLUME_ARG=()
 	_S_UNIT_CONFIG=()
-	_S_BODY_CONFIG=()
 	_S_EXEC_START_PRE=()
 	_S_EXEC_START_POST=()
 	_S_EXEC_STOP_POST=()
@@ -62,14 +45,19 @@ function _unit_init() {
 	_S_ENVIRONMENTS=()
 	_S_CONTROL_ENVS=()
 
+	_S_BODY_CONFIG=()
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
 	_S_BODY_CONFIG[Restart]="always"
 	_S_BODY_CONFIG[RestartSec]="10"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="services-normal.slice"
+}
+
+function _unit_init() {
+	_unit_reset
 
 	## network.sh
-	_N_TYPE=
+	_network_reset
 
 	## service env
 	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
@@ -127,6 +115,9 @@ function unit_write() {
 
 	local -r TF=$(create_temp_file "${_S_CURRENT_UNIT_FILE}.unit")
 	_unit_assemble >"$TF"
+	if [[ -e "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE" ]]; then
+		delete_file 0 "/usr/lib/systemd/system/$_S_CURRENT_UNIT_FILE"
+	fi
 	copy_file "$TF" "$SYSTEM_UNITS_DIR/$_S_CURRENT_UNIT_FILE"
 }
 _get_debugger_script() {
@@ -246,7 +237,7 @@ function export_base_envs() {
 	declare -p START_WAIT_DEFINE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
 }
 function _unit_assemble() {
-	_network_use_not_define
+	_set_network_if_not
 	_create_service_library
 	_commit_environment
 
@@ -355,9 +346,11 @@ PIDFile=/run/$SCOPE_ID.conmon.pid"
 		echo "$VAR_NAME=${_S_BODY_CONFIG[$VAR_NAME]}"
 	done
 
-	echo ""
-	echo "[Install]"
-	echo "WantedBy=$_S_INSTALL"
+	if [[ $_S_INSTALL ]]; then
+		echo ""
+		echo "[Install]"
+		echo "WantedBy=$_S_INSTALL"
+	fi
 
 	echo ""
 	echo "[X-Containers]"
@@ -428,13 +421,14 @@ function unit_data() {
 }
 function unit_using_systemd() {
 	_S_SYSTEMD=true
+	# shellcheck disable=SC2016
 	unit_body ExecReload '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
 }
 function unit_depend() {
 	if [[ -n $* ]]; then
 		unit_unit After "$*"
 		unit_unit Requires "$*"
-		unit_unit PartOf "$*"
+		# unit_unit PartOf "$*"
 	fi
 }
 function unit_unit() {
@@ -506,7 +500,10 @@ function unit_start_notify() {
 	_S_START_WAIT=
 	case "$TYPE" in
 	socket)
-		_S_START_WAIT="unix:$ARG"
+		if [[ -n $ARG ]]; then
+			die "touch method do not allow argument"
+		fi
+		_S_START_WAIT="sockets"
 		;;
 	port)
 		if [[ $ARG != tcp:* ]] || [[ $ARG != udp:* ]]; then
@@ -521,9 +518,6 @@ function unit_start_notify() {
 		_S_START_WAIT="output:$ARG"
 		;;
 	touch)
-		if [[ -n $ARG ]]; then
-			die "touch method do not allow argument"
-		fi
 		_S_START_WAIT="file"
 		;;
 	*)
@@ -542,7 +536,4 @@ function _create_service_library() {
 
 	copy_file --mode 0755 "$COMMON_LIB_ROOT/tools/lowlevel-clear.sh" "$SCRIPTS_DIR/lowlevel-clear.sh"
 	_LOWLEVEL_CLEAR=$SCRIPTS_DIR/lowlevel-clear.sh
-
-	copy_file --mode 0755 "$COMMON_LIB_ROOT/tools/update-hosts.sh" "$SCRIPTS_DIR/update-hosts.sh"
-	_UPDATE_HOSTS=$SCRIPTS_DIR/update-hosts.sh
 }

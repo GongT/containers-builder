@@ -8,3 +8,5 @@ if [[ ${FEDORA_VERSION+found} != found ]]; then
 	FEDORA_VERSION="40"
 fi
 declare -xr FEDORA_VERSION
+
+declare -r SHARED_SOCKET_PATH=/dev/shm/container-shared-socksets

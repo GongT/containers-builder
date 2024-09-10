@@ -27,8 +27,11 @@ function do_upgrade() {
 
 	echo "daemon-reload..."
 	systemctl daemon-reload
-	echo "enable: " $(do_ls enabled)
-	do_ls enabled | xargs --no-run-if-empty systemctl -q reenable
+	do_ls enabled >/dev/null
+
+	if [[ "${#LIST_RESULT[@]}" ]]; then
+		x systemctl -q reenable "${LIST_RESULT[@]}"
+	fi
 
 	echo "All Done!"
 }

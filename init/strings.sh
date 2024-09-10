@@ -21,3 +21,7 @@ function split_url_domain_path() {
 		PATHNAME="/$PATHNAME"
 	fi
 }
+
+function emit_bash_arguments() {
+	printf " %q" "$@"
+}

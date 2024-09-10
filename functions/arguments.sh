@@ -28,7 +28,7 @@ function arg_string() {
 	fi
 
 	shift
-	_arg_parse_name $1
+	_arg_parse_name "$1"
 	shift
 	_ARG_COMMENT[$VAR_NAME]="$*"
 	[[ -n $LONG ]] && {
@@ -50,10 +50,10 @@ function arg_flag() {
 	_ARG_USING=yes
 	local VAR_NAME=$1 SHORT LONG IN=''
 	shift
-	_arg_parse_name $1
+	_arg_parse_name "$1"
 	shift
 	_ARG_COMMENT[$VAR_NAME]="$*"
-	declare $VAR_NAME=""
+	declare "$VAR_NAME="
 	[[ -n $LONG ]] && {
 		IN+="/--$LONG"
 		_ARG_GETOPT_LONG+=("$LONG")

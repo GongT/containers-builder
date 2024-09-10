@@ -12,8 +12,10 @@ else
 		TMPDIR="$SYSTEM_FAST_CACHE/tmp"
 	fi
 fi
-declare -xr TMPDIR=$(mktemp "--tmpdir=$TMPDIR" --directory --dry-run "container-builder-$PROJECT_NAME.XXX")
+
+TMPDIR=$(mktemp "--tmpdir=$TMPDIR" --directory --dry-run "container-builder-$PROJECT_NAME.XXX")
 mkdir -p "$TMPDIR"
+declare -xr TMPDIR
 
 declare -xr TMP_REGISTRY_FILE="$TMPDIR/other-tempfiles"
 declare -xr TMP_CONTAINER_FILE="$TMPDIR/temp-containers"
@@ -47,6 +49,11 @@ function __exit_delete_temp_files() {
 	local TEMP_TO_DELETE I
 	mapfile -t TEMP_TO_DELETE <"$TMP_REGISTRY_FILE"
 
+	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
+		info_note "no temp container or image"
+		return
+	fi
+
 	control_ci group "deleting temp files..."
 	for I in "${TEMP_TO_DELETE[@]}"; do
 		if [[ -e $I ]]; then
@@ -76,6 +83,11 @@ function __exit_delete_container() {
 	local TODEL_IMG TODEL_CTR I
 	mapfile -t TODEL_CTR <"$TMP_CONTAINER_FILE"
 	mapfile -t TODEL_IMG <"$TMP_IMAGE_FILE"
+
+	if [[ ${#TODEL_CTR[@]} -eq 0 && ${#TODEL_IMG[@]} -eq 0 ]]; then
+		info_note "no temp container or image"
+		return
+	fi
 
 	control_ci group "deleting temp containers and images..."
 	if [[ ${#TODEL_CTR[@]} -ne 0 ]]; then

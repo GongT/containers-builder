@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-declare -r SERVICES_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/services"
+SERVICES_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/services"
+declare -r SERVICES_DIR
 _COMMON_FILE_INSTALL=
 
 function _copy_common_static_unit() {

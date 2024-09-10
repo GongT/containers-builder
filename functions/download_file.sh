@@ -115,7 +115,7 @@ function extract_zip() {
 	done
 	STRIPSTR+="*"
 
-	mv -f $STRIPSTR -t "$TARGET"
+	mv -f "$STRIPSTR" -t "$TARGET"
 
 	popd &>/dev/null || die "error syscall chdir"
 }
@@ -175,6 +175,7 @@ function http_get_github_unstable_release_id() {
 function github_release_asset_download_url() {
 	local -r NAME="$1"
 	local RESULT=
+	# shellcheck disable=SC2016
 	RESULT=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name==$name) | .browser_download_url' --arg name "$1")
 
 	if [[ "$RESULT" ]]; then
@@ -186,6 +187,7 @@ function github_release_asset_download_url() {
 function github_release_asset_download_url_regex() {
 	local -r NAME="$1"
 	local RESULT=
+	# shellcheck disable=SC2016
 	RESULT=$(echo "$LAST_GITHUB_RELEASE_JSON" | filtered_jq '.assets[] | select(.name|test($name; "i")) | .browser_download_url' --arg name "$1")
 
 	if [[ "$RESULT" ]]; then

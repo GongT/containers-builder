@@ -1,3 +1,5 @@
+X="$@"
+
 function _env_passing_file_path() {
 	echo "$CONTAINERS_DATA_PATH/save_environments/$_S_CURRENT_UNIT_NAME.$1.txt"
 }
@@ -12,7 +14,8 @@ function controller_environment_variable() {
 	done
 }
 function _commit_controller_environment() {
-	local F="$(_env_passing_file_path control)"
+	local F
+	F="$(_env_passing_file_path control)"
 
 	local VAR_NAME OUTPUT=''
 	if [[ ${#_S_CONTROL_ENVS[@]} -eq 0 ]]; then
@@ -50,7 +53,8 @@ function safe_environment() {
 }
 
 function _commit_environment() {
-	local F="$(_env_passing_file_path container)"
+	local F
+	F="$(_env_passing_file_path container)"
 
 	local OUTPUT='' VAR_NAME
 

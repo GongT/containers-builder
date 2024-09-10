@@ -5,14 +5,15 @@ if [[ ${__PRAGMA_ONCE_FUNCTIONS_INSTALL_SH+found} == found ]]; then
 fi
 declare -r __PRAGMA_ONCE_FUNCTIONS_INSTALL_SH=yes
 
-# shellcheck source=./functions.sh
+# shellcheck source=./functions.sh disable=SC2312
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"
 
 PODMAN=$(find_command podman || die "podman not installed")
 declare -rx PODMAN
 
-pushd "$COMMON_LIB_ROOT" &>/dev/null
+pushd "${COMMON_LIB_ROOT}" &>/dev/null
 source "./functions/networking.sh"
+source "./functions/pod.sh"
 source "./functions/environments.sh"
 source "./functions/volumes.sh"
 source "./functions/systemd.sh"

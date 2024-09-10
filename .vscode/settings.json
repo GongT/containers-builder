@@ -1,0 +1,26 @@
+{
+	"bashIde.includeAllWorkspaceSymbols": true,
+	"bashIde.backgroundAnalysisMaxFiles": 5000,
+	"terminal.integrated.defaultProfile.linux": "test",
+	"bashIde.shfmt.languageDialect": "bash",
+	"bashIde.shfmt.simplifyCode": true,
+	"terminal.integrated.profiles.linux": {
+		"test": {
+			"args": ["test@localhost", "-t"],
+			"icon": "terminal-bash",
+			"path": "ssh",
+			"color": "terminal.ansiGreen",
+			"env": {
+				"VSCODE_CWD": "${workspaceRoot}"
+			}
+		},
+		"bash": {
+			"args": ["--login", "-i"],
+			"icon": "terminal-bash",
+			"path": "bash"
+		},
+		"pwsh":null,
+		"unshare": null,
+		"JavaScript Debug Terminal": null,
+	},
+}

@@ -84,7 +84,27 @@ else
 fi
 
 if is_root; then
-	declare -xr SCRIPTS_DIR="/usr/share/scripts/$PROJECT_NAME"
+	declare -xr SCRIPTS_DIR="/usr/local/libexec/$PROJECT_NAME"
+	declare -xr BINARY_DIR="/usr/local/bin"
 else
-	declare -xr SCRIPTS_DIR="$HOME/.local/share/scripts/$PROJECT_NAME"
+	declare -xr SCRIPTS_DIR="$HOME/.local/libexec/$PROJECT_NAME"
+	declare -xr BINARY_DIR="$HOME/.local/bin"
+fi
+
+SYSTEMCTL=$(command -v systemctl)
+if is_root; then
+	if [[ ${TEST_MODE-} == yes ]]; then
+		info_warn "runing in test mode"
+		declare -r PODMAN_QUADLET_DIR="/run/containers/systemd"
+		declare -r SYSTEM_UNITS_DIR="/run/systemd/system"
+	else
+		declare -r PODMAN_QUADLET_DIR="/etc/containers/systemd"
+		declare -r SYSTEM_UNITS_DIR="/usr/local/lib/systemd/system"
+	fi
+else
+	declare -r PODMAN_QUADLET_DIR="$HOME/.config/containers/systemd"
+	declare -r SYSTEM_UNITS_DIR="$HOME/.config/systemd/user"
+	function systemctl() {
+		"$SYSTEMCTL" --user "$@"
+	}
 fi

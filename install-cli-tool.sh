@@ -3,16 +3,17 @@
 set -Eeuo pipefail
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+declare -xr PROJECT_NAME="image-builder-cli"
+source "functions.sh"
 cd cli
 
-PWD="$(pwd)"
+mkdir -p "$SCRIPTS_DIR"
+rsync --itemize-changes --archive --human-readable "$PWD/cli-lib" "$SCRIPTS_DIR" --delete
+rsync --itemize-changes --archive --human-readable bin.sh "$BINARY_DIR/ms"
 
-rsync -avh "$PWD/cli-lib" /usr/share/scripts --delete
+echo "$PWD" >"$SCRIPTS_DIR/cli-home"
 
-echo "$PWD" > /usr/share/scripts/cli-home
+chmod a+x "$BINARY_DIR/ms"
 
-if [[ -L /usr/local/bin/ms ]]; then
-	unlink /usr/local/bin/ms
-fi
-cp bin.sh /usr/local/bin/ms
-chmod a+x /usr/local/bin/ms
+echo "binary installed to $BINARY_DIR/ms"
+echo "library installed to $SCRIPTS_DIR"
