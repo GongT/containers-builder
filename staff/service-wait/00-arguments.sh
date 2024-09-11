@@ -5,20 +5,22 @@ declare -a ARGS=()
 function add_run_argument() {
 	ARGS=("$@" "${ARGS[@]}")
 }
-# ARGS+=("--attach=stdin,stdout,stderr")
-ARGS+=("--log-level=error")
+add_run_argument "--log-level=info"
+add_run_argument "--restart=no"
+add_run_argument "--log-driver=none"
+add_run_argument "--attach=stdin,stdout,stderr"
 
 function make_arguments() {
 	detect_host_ip
 
-	if [[ -n "${INVOCATION_ID:-}" ]]; then
+	if [[ -n ${INVOCATION_ID-} ]]; then
 		add_run_argument "--env=INVOCATION_ID=${INVOCATION_ID}"
-		add_run_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
+		add_run_argument "--annotation=systemd.service.invocation_id=${INVOCATION_ID}"
 	fi
 
 	for i; do
 		if [[ ${i} == "--dns=h.o.s.t" ]]; then
-			if ! [[ -n "${HOST_IP}" ]]; then
+			if ! [[ -n ${HOST_IP} ]]; then
 				critical_die "Try to use h.o.s.t when network type is ${NETWORK_TYPE}, this is currently not supported."
 			fi
 			ARGS+=("--dns=${HOST_IP}")

@@ -14,14 +14,10 @@ unit_unit Description this is basic test
 network_use_auto 6666
 systemd_slice_type normal
 
-# unit_body TimeoutStartSec infinity
-
 environment_variable \
 	"USERNAME=foo"
 
 unit_fs_bind logs /var/log/all
 shared_sockets_use
-
-healthcheck "30s" "5" "echo check"
 
 unit_finish

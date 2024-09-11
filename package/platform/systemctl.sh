@@ -27,14 +27,25 @@ function finalize_daemon_reloaded() {
 
 register_exit_handler finalize_daemon_reloaded
 
+uptime_sec() {
+	local T
+	T=$(awk '{print $1}' /proc/uptime)
+	printf "%.0f" "${T}"
+}
 timespan_seconds() {
+	local span=$1
 	local -i us
-	us=$(systemd-analyze timespan 3min | grep 'μs:' | awk '{print $2}')
-	printf "%.0f" $((us / 1000000))
+	if [[ $span == infinity ]]; then
+		printf '-1'
+	elif us=$(systemd-analyze timespan "${span}" | grep 'μs:' | awk '{print $2}'); then
+		printf "%.0f" $((us / 1000000))
+	else
+		printf '-1'
+	fi
 }
 seconds_timespan() {
 	local -i sec=$1
 	local h
-	h=$(systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}')
-	printf '%s' "${h}"
+
+	systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}'
 }

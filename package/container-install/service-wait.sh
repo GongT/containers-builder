@@ -17,6 +17,11 @@ function _service_executer_write() {
 __concat_wait_files() {
 	printf '\n\n'
 	local FILE_PATH
+
+	printf '\n## HELPERS: \n'
+	declare -fp callstack json_array json_array_get_back uptime_sec timespan_seconds seconds_timespan
+	printf '\n'
+
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
 		printf '\n## FILE: %s\n' "$(basename "${FILE_PATH}")"
 		tail -n +4 "${FILE_PATH}"
@@ -114,7 +119,7 @@ function __emit_start_helpers() {
 		_S_START_WAIT+=":${_S_WAIT_SOCKETS[0]}"
 	fi
 
-	printf "declare -r START_WAIT_DEFINE=%q" "${_S_START_WAIT}"
+	printf "declare START_WAIT_DEFINE=%q" "${_S_START_WAIT}"
 }
 
 register_script_emit __emit_start_helpers

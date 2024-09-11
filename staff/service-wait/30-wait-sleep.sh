@@ -10,16 +10,19 @@ function wait_by_sleep() {
 		sleep 1
 	done
 
-	if [[ -e ${PIDFile} ]]; then
-		die "podman not create pid file after ${WAIT_TIME} seconds."
+	local PID
+	PID=$(get_service_property "MainPID")
+	if [[ ${PID} -le 0 ]]; then
+		die "main pid is invalid."
 	fi
 
-	local PID
-	PID=$(<"${PIDFile}")
-	if grep -q 'conmon' "/proc/${PIDFile}/cmdline" &>/dev/null; then
-		debug "Failed wait container ${CONTAINER_ID} to stable." >&2
-		sdnotify --stopping "--status=conmon not started"
-		exit 1
+	echo "see main pid is $PID"
+	if ! grep -q 'conmon' "/proc/${PID}/cmdline"; then
+		if [[ -e "/proc/${PID}" ]]; then
+			echo "commandline: $(tr '' '' <"/proc/${PID}/cmdline")" >&2
+		else
+			echo "process ${PID} not exists" >&2
+		fi
+		return 1
 	fi
-	debug "conmon running."
 }

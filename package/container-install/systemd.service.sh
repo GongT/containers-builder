@@ -4,9 +4,13 @@ function unit_body() {
 	local K="$1" V
 	shift
 	case "${K}" in
-	ExecStop | ExecReload)
-		# meanful config
-		_S_BODY_CONFIG[${K}]=$(escape_argument_list_sameline "$@")
+	ExecReload)
+		# very special config
+		custom_reload_command "$@"
+		;;
+	ExecStop)
+		# very special config
+		custom_stop_command "$@"
 		;;
 	RestartPreventExitStatus)
 		# multiple directive, no escape
@@ -24,12 +28,17 @@ function unit_body() {
 		shift
 		split_exec_command_prefix "${COMMAND}"
 
+		if [[ ${K} == ExecStopPre ]]; then
+			K=ExecStop
+		fi
+
 		_S_BODY_RAW_LINE+=("${K}=${PREFIX}$(escape_argument_list_sameline "$COMMAND" "$@")")
 		;;
 	Exec*)
 		die "can not set $K using unit_body()"
 		;;
 	*)
+		# meanful config
 		_S_BODY_CONFIG[${K}]="${*}"
 		;;
 	esac
@@ -71,17 +80,39 @@ function __reset_body_config() {
 }
 register_unit_reset __reset_body_config
 
-function __unit_sanity() {
-	if [[ -z ${_S_BODY_CONFIG['ExecStop']-} ]]; then
-		local CONTAINER_STOP
-		CONTAINER_STOP=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/container-manage-stop.sh")
-		_S_BODY_CONFIG[ExecStop]=$(escape_argument_list_sameline "${CONTAINER_STOP}" "${PODMAN_TIMEOUT_TO_KILL}" "$(unit_get_scopename)")
-	fi
-
+function __unit_gracefull_stopper() {
+	local SCRIPT
+	SCRIPT=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/manage-stop.sh")
+	printf_command_direction ExecStop=- "${SCRIPT}"
 }
-register_unit_emit __unit_sanity
+function __unit_default_reloader() {
+	local SCRIPT
+	SCRIPT=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/manage-reload.sh")
+	printf_command_direction ExecReload=- "${SCRIPT}"
+}
+
+function __unit_final_killer() {
+	local SCRIPT
+	SCRIPT=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/manage-kill.sh")
+	printf_command_direction ExecStop=- "${SCRIPT}" stop
+	printf_command_direction ExecStopPost=- "${SCRIPT}" kill
+}
 
 function _print_unit_service_section() {
+	if [[ ${#CUSTOMSTOP_COMMAND[@]} -gt 0 ]]; then
+		echo "# custom stop command"
+		printf_command_direction ExecStop= "${CUSTOMSTOP_COMMAND[@]}"
+	else
+		echo "# default stop command"
+		__unit_gracefull_stopper
+	fi
+	if [[ ${#CUSTOMRELOAD_COMMAND[@]} -gt 0 ]]; then
+		printf_command_direction ExecReload= "${CUSTOMSTOP_COMMAND[@]}"
+	else
+		echo "# default reload command"
+		__unit_default_reloader
+	fi
+
 	echo "# configs"
 	for VAR_NAME in "${!_S_BODY_CONFIG[@]}"; do
 		echo "${VAR_NAME}=${_S_BODY_CONFIG[${VAR_NAME}]}"
@@ -90,4 +121,6 @@ function _print_unit_service_section() {
 	echo "# raw body lines"
 	printf '%s\n' "${_S_BODY_RAW_LINE[@]}"
 	echo "# end of raw"
+
+	__unit_final_killer
 }

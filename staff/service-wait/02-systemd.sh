@@ -9,9 +9,6 @@ function self_journal() {
 declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
 function load_sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
-		echo "[SDNOTIFY] hide socket from podman: $NOTIFY_SOCKET"
-		unset NOTIFY_SOCKET
-
 		function sdnotify() {
 			echo "[SDNOTIFY] $*" >&2
 			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
@@ -35,17 +32,9 @@ function expand_timeout_seconds() {
 }
 
 function startup_done() {
-	local -i PID
-	if [[ -e ${PIDFile} ]]; then
-		PID=$(<"${PIDFile}")
-		debug "pidfile seen at $PIDFile, pid=$PID"
-	else
-		critical_die "should success but PIDFile not found."
-	fi
-
-	sdnotify --ready --status=ok "--pid=$PID"
+	sdnotify --ready --status=ok
 	debug "Finish, Ok."
-	sleep 2
+	sleep 10
 	exit 0
 }
 function systemctl() {
@@ -54,4 +43,9 @@ function systemctl() {
 	else
 		/usr/bin/systemctl --user "$@"
 	fi
+}
+
+declare -i SERVICE_START_TIMEOUT=0
+function get_service_property() {
+	systemctl show "${CURRENT_SYSTEMD_UNIT_NAME}" "--property=$1" --value
 }

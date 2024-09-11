@@ -11,22 +11,6 @@ fi
 
 declare -r START_TIMEOUT=3min
 
-uptime_sec() {
-	local T=$(awk '{print $1}' /proc/uptime)
-	printf "%.0f" "${T}"
-}
-timespan_seconds() {
-	local -i us
-	us=$(systemd-analyze timespan 3min | grep 'μs:' | awk '{print $2}')
-	printf "%.0f" $((us / 1000000))
-}
-seconds_timespan() {
-	local -i sec=$1
-	local h
-	h=$(systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}')
-	printf '%s' "${h}"
-}
-
 START_TIMEOUT_SEC=$(timespan_seconds "${START_TIMEOUT}")
 start_time=$(uptime_sec)
 declare -ir start_time START_TIMEOUT_SEC

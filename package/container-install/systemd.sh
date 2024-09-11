@@ -1,35 +1,23 @@
 #!/usr/bin/env bash
 
-declare -a _S_LINUX_CAP
-declare -a _S_VOLUME_ARG
-declare -A _S_UNIT_CONFIG
-declare -a _S_COMMENTS
-declare -a _S_PODMAN_ARGS
-declare -a _S_COMMAND_LINE
-declare -a _S_NETWORK_ARGS
-declare -A _S_ENVIRONMENTS
-
 _unit_reset() {
-	_S_IMAGE=''
-	_S_CURRENT_UNIT_SERVICE_TYPE=''
-	_S_AT_=''
-	_S_CURRENT_UNIT_TYPE=''
-	_S_CURRENT_UNIT_NAME=''
-	_S_CURRENT_UNIT_FILE=''
-	_S_INSTALL=services.target
+	declare -g _S_IMAGE=''
+	declare -g _S_CURRENT_UNIT_SERVICE_TYPE=''
+	declare -g _S_AT_=''
+	declare -g _S_CURRENT_UNIT_TYPE=''
+	declare -g _S_CURRENT_UNIT_NAME=''
+	declare -g _S_CURRENT_UNIT_FILE=''
+	declare -g _S_INSTALL=services.target
 
-	_S_LINUX_CAP=()
-	_S_VOLUME_ARG=()
-	_S_PODMAN_ARGS=()
-	_S_COMMAND_LINE=()
-	_S_NETWORK_ARGS=()
-	_S_ENVIRONMENTS=()
-	_S_COMMENTS=()
+	declare -ga _S_LINUX_CAP=()
+	declare -ga _S_VOLUME_ARG=()
+	declare -ga _S_PODMAN_ARGS=()
+	declare -ga _S_COMMAND_LINE=()
+	declare -ga _S_NETWORK_ARGS=()
+	declare -gA _S_ENVIRONMENTS=()
+	declare -ga _S_COMMENTS=()
 
-	_S_EXEC_STOP=''
-	_S_EXEC_STOP_RELOAD=''
-
-	_S_UNIT_CONFIG=()
+	declare -gA _S_UNIT_CONFIG=()
 	if is_root; then
 		_S_UNIT_CONFIG[Requires]+="services-pre.target"
 		_S_UNIT_CONFIG[After]+="services-pre.target"
@@ -177,7 +165,6 @@ function unit_get_scopename() {
 	fi
 }
 function _export_base_envs() {
-	declare -r ALLOW_FORCE_KILL="${ALLOW_FORCE_KILL}"
 	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE:-"${NAME}"}"
@@ -254,9 +241,9 @@ function add_build_config() {
 }
 
 function _create_startup_arguments() {
-	STARTUP_ARGS+=()
-	STARTUP_ARGS+=("--log-driver=passthrough")
-	STARTUP_ARGS+=("--restart=no")
+	if ! is_set STARTUP_ARGS; then
+		die "wrong call timing"
+	fi
 
 	local _PODMAN_RUN_ARGS=() CAP_LIST
 
@@ -272,17 +259,6 @@ function _create_startup_arguments() {
 	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 }
 
-function unit_data() {
-	if [[ $1 == "safe" ]]; then
-		PODMAN_TIMEOUT_TO_KILL=5
-		ALLOW_FORCE_KILL=yes
-	elif [[ $1 == "danger" ]]; then
-		PODMAN_TIMEOUT_TO_KILL=120
-		ALLOW_FORCE_KILL=no
-	else
-		die "unit_data <safe|danger>"
-	fi
-}
 function unit_using_systemd() {
 	info_warn "unit_using_systemd not used"
 	# shellcheck disable=SC2016

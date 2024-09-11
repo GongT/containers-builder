@@ -13,23 +13,6 @@ function die() {
 	exit 1
 }
 
-function callstack() {
-	local -i SKIP=${1-1} i
-	local FN
-	if [[ ${#FUNCNAME[@]} -le ${SKIP} ]]; then
-		echo "  * empty callstack *" >&2
-	fi
-	for i in $(seq "${SKIP}" $((${#FUNCNAME[@]} - 1))); do
-		if [[ ${BASH_SOURCE[$((i + 1))]+found} == "found" ]]; then
-			FN="${BASH_SOURCE[$((i + 1))]}"
-			FN="$(try_resolve_file "${FN}")"
-			echo "  ${i}: ${FUNCNAME[${i}]}() at ${FN}:${BASH_LINENO[${i}]}" >&2
-		else
-			echo "  ${i}: ${FUNCNAME[${i}]}()" >&2
-		fi
-	done
-}
-
 function try_resolve_file() {
 	local i PATHS=(
 		"$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
