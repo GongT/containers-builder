@@ -10,11 +10,7 @@ function wait_by_sleep() {
 		sleep 1
 	done
 
-	local PID
-	PID=$(get_service_property "MainPID")
-	if [[ ${PID} -le 0 ]]; then
-		die "main pid is invalid."
-	fi
+	wait_for_conmon_start
 
 	echo "see main pid is $PID"
 	if ! grep -q 'conmon' "/proc/${PID}/cmdline"; then

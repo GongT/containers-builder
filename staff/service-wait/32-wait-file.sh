@@ -2,16 +2,12 @@
 set -Eeuo pipefail
 
 function wait_by_create_file() {
-	podman volume create ACTIVE_FILE --ignore >/dev/null
-	ACTIVE_FILE_ROOT=$(podman volume inspect ACTIVE_FILE -f "{{.Mountpoint}}")
-	ACTIVE_FILE_ABS="${ACTIVE_FILE_ROOT}/${ACTIVE_FILE}"
+	wait_for_conmon_start
 
-	sdnotify --status="wait:activefile"
-	rm -f "${ACTIVE_FILE_ABS}"
+	ROOT=$(podman unshare podman mount "${CONTAINER_ID}")
+	ACTIVE_FILE_ABS="${ROOT}/${ACTIVE_FILE}"
 
-	__run
-
-	debug "    file: ${ACTIVE_FILE_ROOT}/${ACTIVE_FILE}"
+	debug "file: ${ACTIVE_FILE_ABS}"
 	while ! [[ -e ${ACTIVE_FILE_ABS} ]]; do
 		sleep 1
 	done
@@ -19,4 +15,6 @@ function wait_by_create_file() {
 	debug "== ---- active file created ---- =="
 
 	rm -f "${ACTIVE_FILE_ABS}"
+
+	podman unshare podman unmount "${ROOT}"
 }

@@ -28,7 +28,7 @@ function core_switch() {
 	esac
 }
 
-function service_wait_process() {
+function service_wait_thread() {
 	trap - EXIT
 	debug "wait container ${CONTAINER_ID}, spec ${START_WAIT_DEFINE}."
 
@@ -69,8 +69,8 @@ function main() {
 	fi
 
 	if [[ $START_WAIT_DEFINE == touch ]]; then
-		declare -xr FILE_TO_CHECK="/startup.$RANDOM.signal"
-		add_run_argument "--env=STARTUP_TOUCH=$FILE_TO_CHECK"
+		declare -gxr FILE_TO_CHECK="/startup.$RANDOM.signal"
+		add_run_argument "--env=STARTUP_TOUCH_FILE=$FILE_TO_CHECK"
 	fi
 
 	if [[ $START_WAIT_DEFINE == pass ]]; then
@@ -89,9 +89,9 @@ function main() {
 
 	ensure_container_not_running
 
-	service_wait_process &
+	service_wait_thread &
 
-	__podman_run_container
+	podman_run_container
 }
 
 main "$@"

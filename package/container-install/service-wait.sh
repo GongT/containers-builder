@@ -117,6 +117,7 @@ function __emit_start_helpers() {
 			die "unit wait for socket but not provide any."
 		fi
 		_S_START_WAIT+=":${_S_WAIT_SOCKETS[0]}"
+		printf "declare -xr SHARED_SOCKET_PATH=%q" "${SHARED_SOCKET_PATH}"
 	fi
 
 	printf "declare START_WAIT_DEFINE=%q" "${_S_START_WAIT}"
