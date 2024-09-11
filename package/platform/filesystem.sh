@@ -84,13 +84,13 @@ function copy_file() {
 	fi
 
 	if is_uninstalling; then
-		delete_file """"${MKDIR}"""" "${TARGET}"
+		delete_file "${MKDIR}" "${TARGET}"
 		return
 	fi
 
 	_REG_FILES+=("${TARGET}")
 
-	ensure_parent """"${MKDIR}"""" "${TARGET}"
+	ensure_parent "${MKDIR}" "${TARGET}"
 	info_note "  * copy file: ${TARGET}"
 	cp -pT "${FILE}" "${TARGET}"
 
@@ -108,13 +108,13 @@ function write_file() {
 	# info_warn "--> ${#TARGET} / ${#DATA} / ${MODE-unbound}"
 
 	if is_uninstalling; then
-		delete_file """"${MKDIR}"""" "${TARGET}"
+		delete_file "${MKDIR}" "${TARGET}"
 		return
 	fi
 
 	_REG_FILES+=("${TARGET}")
 
-	ensure_parent """"${MKDIR}"""" "${TARGET}"
+	ensure_parent "${MKDIR}" "${TARGET}"
 
 	if [[ -e ${TARGET} ]] && [[ ${DATA} == "$(<"${TARGET}")" ]]; then
 		info_note "  * write file: ${TARGET} - same"

@@ -65,7 +65,7 @@ function make_base_image_by_apt() {
 	fi
 
 	_apt_hash_cb() {
-		podman pull "${BASEIMG}"
+		xpodman image pull "${BASEIMG}"
 		echo "${PKGS[*]} ${POSTSCRIPT}"
 	}
 	_apt_build_cb() {

@@ -5,10 +5,17 @@ SAVED_INDENT=
 export _CURRENT_INDENT=""
 
 function die() {
+	local LASTERR=$?
 	control_ci groupEnd
-	echo -e "\n\n\x1B[38;5;9;1mFatalError: $*\x1B[0m" >&2
+	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
 	control_ci error "$*"
-	exit 1
+	if [[ $LASTERR -gt 0 ]]; then
+		exit $LASTERR
+	elif [[ ${ERRNO-} -gt 0 ]]; then
+		exit $ERRNO
+	else
+		exit 1
+	fi
 }
 
 function export_script_variable() {
@@ -30,13 +37,13 @@ function control_ci() {
 		export "${1?}"
 		if ! is_ci; then
 			return
-		elif [[ -n "${GITHUB_ENV-}" ]]; then
+		elif [[ -n ${GITHUB_ENV-} ]]; then
 			{
 				echo "$1<<EOF"
 				echo "$2"
 				echo 'EOF'
 			} >>"${GITHUB_ENV}"
-		elif [[ -n "${GITLAB_ENV-}" ]]; then
+		elif [[ -n ${GITLAB_ENV-} ]]; then
 			{
 				echo "$1=\$( cat <<EOF"
 				echo "$2"
@@ -48,7 +55,7 @@ function control_ci() {
 		fi
 		;;
 	error)
-		if [[ -n "${GITHUB_ACTIONS-}" ]]; then
+		if [[ -n ${GITHUB_ACTIONS-} ]]; then
 			echo "::error ::$*" >&2
 		fi
 		;;
@@ -57,7 +64,7 @@ function control_ci() {
 			die "not allow nested output group"
 		fi
 		INSIDE_GROUP=yes
-		if [[ -n "${GITHUB_ACTIONS-}" ]]; then
+		if [[ -n ${GITHUB_ACTIONS-} ]]; then
 			SAVED_INDENT=${_CURRENT_INDENT}
 			_CURRENT_INDENT=
 			echo "::group::$*" >&2
@@ -71,7 +78,7 @@ function control_ci() {
 			return # must allow, die() rely on this
 		fi
 		INSIDE_GROUP=
-		if [[ -n "${GITHUB_ACTIONS-}" ]]; then
+		if [[ -n ${GITHUB_ACTIONS-} ]]; then
 			_CURRENT_INDENT=${SAVED_INDENT}
 			SAVED_INDENT=
 			echo "::endgroup::" >&2
@@ -87,18 +94,38 @@ function control_ci() {
 }
 
 function callstack() {
-	local -i SKIP=${1-1}
-	local -i i
+	local -i SKIP=${1-1} i
+	local FN
 	if [[ ${#FUNCNAME[@]} -le ${SKIP} ]]; then
 		echo "  * empty callstack *" >&2
 	fi
 	for i in $(seq "${SKIP}" $((${#FUNCNAME[@]} - 1))); do
 		if [[ ${BASH_SOURCE[$((i + 1))]+found} == "found" ]]; then
-			echo "  ${i}: ${BASH_SOURCE[$((i + 1))]}:${BASH_LINENO[${i}]} ${FUNCNAME[${i}]}()" >&2
+			FN="${BASH_SOURCE[$((i + 1))]}"
+			FN="$(try_resolve_file "${FN}")"
+			echo "  ${i}: ${FUNCNAME[${i}]}() at ${FN}:${BASH_LINENO[${i}]}" >&2
 		else
 			echo "  ${i}: ${FUNCNAME[${i}]}()" >&2
 		fi
 	done
+}
+
+function try_resolve_file() {
+	local i PATHS=(
+		"${COMMON_LIB_ROOT}"
+		"${COMMON_LIB_ROOT}/package"
+		"${CURRENT_DIR}"
+	)
+	if [[ -n ${MONO_ROOT_DIR-} ]]; then
+		PATHS+=("${MONO_ROOT_DIR}")
+	fi
+	for i in "${PATHS[@]}"; do
+		if [[ -f "${i}/$1" ]]; then
+			realpath -m "${i}/$1"
+			return
+		fi
+	done
+	printf "%s" "$1"
 }
 
 function SHELL_ERROR_HANDLER() {
@@ -180,11 +207,11 @@ function x() {
 
 _LINE_LABEL=""
 function branch_split() {
-	if [[ -n "${_LINE_LABEL}" ]]; then
+	if [[ -n ${_LINE_LABEL} ]]; then
 		die "tty_split can not call twice"
 	fi
 	local LABEL=$1
-	if [[ -z "${LABEL}" ]]; then
+	if [[ -z ${LABEL} ]]; then
 		die "empty label"
 	fi
 
@@ -194,7 +221,7 @@ function branch_split() {
 }
 
 function branch_join() {
-	if [[ -z "${_LINE_LABEL}" ]]; then
+	if [[ -z ${_LINE_LABEL} ]]; then
 		die "branch_join without branch_split"
 	fi
 	local RESULT=$1

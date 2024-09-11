@@ -3,6 +3,17 @@
 declare -A _CURRENT_STAGE_STORE=()
 declare LAST_CACHE_COMES_FROM=build # or pull
 
+function buildah_cache_increament_count() {
+	local NAME=$1
+	if [[ ${_CURRENT_STAGE_STORE[${NAME}]+found} == 'found' ]]; then
+		DONE_STAGE="${_CURRENT_STAGE_STORE[${NAME}]}"
+		WORK_STAGE="${DONE_STAGE} + 1"
+	else
+		DONE_STAGE=0
+		WORK_STAGE=1
+	fi
+}
+
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
 # build_function <RESULT_CONTAINER_NAME>
 function buildah_cache() {
@@ -20,26 +31,21 @@ function buildah_cache() {
 
 	local STEP_RESULT_IMAGE PREV_STEP_IMAGE
 
-	if [[ ${_CURRENT_STAGE_STORE[${BUILDAH_NAME_BASE}]+found} == 'found' ]]; then
-		local -ir DONE_STAGE="${_CURRENT_STAGE_STORE[${BUILDAH_NAME_BASE}]}"
-		local -ir WORK_STAGE="${DONE_STAGE} + 1"
-	else
-		local -ir DONE_STAGE=0
-		local -ir WORK_STAGE=1
-	fi
+	local -i DONE_STAGE WORK_STAGE
+	buildah_cache_increament_count "${BUILDAH_NAME_BASE}"
 	_CURRENT_STAGE_STORE[${BUILDAH_NAME_BASE}]="${WORK_STAGE}"
 
 	info "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE}: \e[0;38;5;11m${_STITLE}"
 	indent
 
-	PREV_STEP_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" ""${DONE_STAGE}"")
-	STEP_RESULT_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" ""${WORK_STAGE}"")
+	PREV_STEP_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${DONE_STAGE}")
+	STEP_RESULT_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${WORK_STAGE}")
 
 	if [[ ${DONE_STAGE} -gt 0 ]]; then
 		if ! image_exists "${PREV_STEP_IMAGE}"; then
 			die "required previous stage [${PREV_STEP_IMAGE}] did not exists"
 		fi
-		local -r PREVIOUS_ID=$(buildah inspect --type image --format '{{.FromImageID}}' "${PREV_STEP_IMAGE}")
+		local -r PREVIOUS_ID=$(xpodman image inspect --format '{{.ID}}' "${PREV_STEP_IMAGE}" || true)
 		if [[ -z ${PREVIOUS_ID} ]]; then
 			die "failed get id from image (${PREV_STEP_IMAGE}) cache state is invalid."
 		fi
@@ -47,7 +53,7 @@ function buildah_cache() {
 		local -r PREVIOUS_ID="none"
 	fi
 
-	cache_try_pull "${BUILDAH_NAME_BASE}" ""${WORK_STAGE}""
+	cache_try_pull "${BUILDAH_NAME_BASE}" "${WORK_STAGE}"
 
 	local WANTED_HASH HASH_TMP
 	HASH_TMP=$(create_temp_file)
@@ -61,8 +67,10 @@ function buildah_cache() {
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
 	elif image_exists "${STEP_RESULT_IMAGE}"; then
-		local -r EXISTS_PREVIOUS_ID="$(builah_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_PREV_STAGE}")"
-		local -r EXISTS_HASH="$(builah_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_HASH}")"
+		local EXISTS_PREVIOUS_ID
+		EXISTS_PREVIOUS_ID="$(image_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_PREV_STAGE}")"
+		local EXISTS_HASH
+		EXISTS_HASH="$(image_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_HASH}")"
 		# info_note "EXISTS_HASH=$EXISTS_HASH EXISTS_PREVIOUS_ID=$EXISTS_PREVIOUS_ID"
 
 		if [[ -z ${EXISTS_PREVIOUS_ID} ]] || [[ -z ${EXISTS_HASH} ]]; then
@@ -70,7 +78,7 @@ function buildah_cache() {
 		else
 			info_success "cache exists <hash=${EXISTS_HASH}, base=${EXISTS_PREVIOUS_ID}>"
 			if [[ "${EXISTS_HASH}++${EXISTS_PREVIOUS_ID}" == "${WANTED_HASH}++${PREVIOUS_ID}" ]]; then
-				BUILDAH_LAST_IMAGE=$(buildah inspect --type image --format '{{.FromImageID}}' "${STEP_RESULT_IMAGE}")
+				BUILDAH_LAST_IMAGE=$(xpodman image inspect --format '{{.ID}}' "${STEP_RESULT_IMAGE}")
 				_buildah_cache_done
 				return
 			fi
@@ -109,7 +117,7 @@ function buildah_cache() {
 _buildah_cache_done() {
 	cache_push "${BUILDAH_NAME_BASE}" "${WORK_STAGE}"
 	dedent
-	if [[ -n "${_STITLE}" ]]; then
+	if [[ -n ${_STITLE} ]]; then
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} (\e[0;38;5;13m${_STITLE}\e[0;2m) DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
 	else
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
@@ -118,18 +126,22 @@ _buildah_cache_done() {
 
 function buildah_cache_start() {
 	local BASE_IMG=$1
-	if [[ ${BASE_IMG} != scratch ]]; then
-		if [[ ${NO_PULL_BASE+found} == "found" ]] && [[ -n "${NO_PULL_BASE}" ]]; then
-			: # nothing
-		elif ! image_exists "${BASE_IMG}"; then
-			buildah pull --quiet "${BASE_IMG}"
-		elif is_ci; then
-			control_ci group "buildah pull ${BASE_IMG}"
-			buildah pull "${BASE_IMG}"
-			control_ci groupEnd
-		fi
-		BUILDAH_LAST_IMAGE=$(image_get_id "${BASE_IMG}")
+	if [[ ${BASE_IMG} == scratch ]]; then
+		info_note "using empty base"
+		BUILDAH_LAST_IMAGE="scratch"
+		return
+	fi
+
+	if [[ -n ${NO_PULL_BASE-} ]]; then
+		info_warn "skip pull base due to NO_PULL_BASE=${NO_PULL_BASE} (${BASE_IMG})"
+	elif is_ci; then
+		control_ci group "[cache start] pull base image: ${BASE_IMG}"
+		buildah pull "${BASE_IMG}" >/dev/null
+		control_ci groupEnd
+	elif BUILDAH_LAST_IMAGE=$(image_find_id "${BASE_IMG}") && [[ -n ${BUILDAH_LAST_IMAGE} ]]; then
+		info_note "using exists base: ${BASE_IMG}"
 	else
-		BUILDAH_LAST_IMAGE="${BASE_IMG}"
+		info_log "using base not exists, pull it: ${BASE_IMG}"
+		buildah pull "${BASE_IMG}" >/dev/null
 	fi
 }

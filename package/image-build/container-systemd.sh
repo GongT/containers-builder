@@ -70,5 +70,5 @@ function systemd_use_autonginx() {
 }
 
 function systemd_use_basic() {
-	buildah config '--entrypoint=["/entrypoint/entrypoint.sh"]' '--cmd=["--systemd"]' "$1"
+	buildah config '--annotation=me.gongt.using.systemd=yes' '--entrypoint=["/entrypoint/entrypoint.sh"]' '--cmd=["--systemd"]' "$1"
 }

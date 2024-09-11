@@ -2,15 +2,15 @@ function create_if_not() {
 	local NAME=$1 BASE=$2
 
 	if is_ci; then
-		info_log "[CI] Create container '${NAME}' from image '${BASE}'."
+		info_log "[CI] force create container '${NAME}' from image '${BASE}'."
 		new_container "${NAME}" "${BASE}"
 	elif [[ ${BASE} == "scratch" ]]; then
 		if container_exists "${NAME}"; then
-			info_log "Using exists container '${NAME}'."
+			info_log "using exists container '${NAME}'."
 			container_get_id "${NAME}"
 		else
-			info_log "Container '${NAME}' not exists, create from image ${BASE}."
-			new_container "${NAME}" "${BASE}"
+			info_log "container '${NAME}' not exists, create from scratch."
+			new_container "${NAME}" "scratch"
 		fi
 	else
 		if ! image_exists "${BASE}"; then
@@ -18,82 +18,108 @@ function create_if_not() {
 			buildah pull "${BASE}" >&2
 		fi
 
-		local EXPECT GOT
-		GOT=$(container_get_base_image_id "${NAME}")
-		EXPECT=$(image_get_id "${BASE}")
-		if [[ ${EXPECT} == "${GOT}" ]]; then
-			info_log "Using exists container '${NAME}'."
-			container_get_id "${NAME}"
-		elif [[ -n ${GOT} ]]; then
-			info_log "Not using exists container: ${BASE} is updated"
-			info_log "    current image:          ${EXPECT}"
-			info_log "    exists container based: ${GOT}"
-			buildah rm "${NAME}" >/dev/null
-			new_container "${NAME}" "${BASE}"
+		local EXISTS_CID GOT EXPECT
+		EXISTS_CID=$(container_find_id "${NAME}")
+		if [[ -n ${EXISTS_CID} ]]; then
+			GOT=$(container_get_base_image_id "${EXISTS_CID}")
+			EXPECT=$(image_get_id "${BASE}")
+			if [[ ${EXPECT} == "${GOT}" ]]; then
+				info_log "using exists container '${NAME}'."
+				container_get_id "${NAME}"
+			else
+				info_log "not using exists container: ${BASE} is updated"
+				info_log "    current image:          ${EXPECT}"
+				info_log "    exists container based: ${GOT}"
+				buildah rm "${NAME}" >/dev/null
+				new_container "${NAME}" "${BASE}"
+			fi
 		else
-			info_log "Container '${NAME}' not exists, create from image ${BASE}."
+			info_log "container '${NAME}' not exists, create from image ${BASE}."
 			new_container "${NAME}" "${BASE}"
 		fi
 	fi
 }
 
 function container_exists() {
-	local ID X
-	ID=$(container_get_id "$1")
-	X=$?
-	if [[ ${X} -eq 0 ]] && [[ ${ID} == "" ]]; then
-		info_warn "inspect container $1 success, but nothing return"
-		return 1
-	fi
-	return "${X}"
+	local ID
+	ID=$(container_find_id "$1")
+	[[ -n ${ID} ]]
 }
 
 function image_exists() {
-	"${BUILDAH}" inspect --type image "$1" &>/dev/null
+	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
+		return 0
+	elif grep -qF 'image not known' "$TMP_STDERR"; then
+		return 1
+	else
+		error_with_manager_output
+	fi
 }
 
 function image_get_id() {
-	local R
-	R=$("${BUILDAH}" inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null)
-	digist_to_short "${R}"
+	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
+		digist_to_short "$(<"${TMP_STDOUT}")"
+	elif grep -qF 'image not known' "$TMP_STDERR"; then
+		die "missing required image: $1"
+	else
+		error_with_manager_output
+	fi
 }
 function image_find_id() {
-	local R
-	R=$("${BUILDAH}" inspect --type image --format '{{.FromImageID}}' "$1" 2>/dev/null || true)
-	digist_to_short "${R}"
+	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
+		digist_to_short "$(<"${TMP_STDOUT}")"
+	elif grep -qF 'image not known' "$TMP_STDERR"; then
+		return 0
+	else
+		error_with_manager_output
+	fi
 }
 
 function container_get_id() {
-	local R
-	R=$("${BUILDAH}" inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null)
-	digist_to_short "${R}"
+	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
+		digist_to_short "$(<"${TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		die "missing required build container: $1"
+	else
+		error_with_manager_output
+	fi
 }
 function container_find_id() {
-	local R
-	R=$("${BUILDAH}" inspect --type container --format '{{.ContainerID}}' "$1" 2>/dev/null || true)
-	digist_to_short "${R}"
+	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
+		digist_to_short "$(<"${TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		return 0
+	else
+		error_with_manager_output
+	fi
 }
 function container_get_base_image_id() {
-	local R
-	R=$("${BUILDAH}" inspect --type container --format '{{.FromImageID}}' "$1" 2>/dev/null)
-	digist_to_short "${R}"
+	if xbuildah_capture inspect --type=container --format '{{.FromImageID}}' "$1"; then
+		digist_to_short "$(<"${TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		die "missing required build container: $1"
+	else
+		error_with_manager_output
+	fi
 }
 
 function is_id_digist() {
 	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]] || [[ $1 =~ ^[0-9a-fA-F]{12}$ ]]
 }
 function digist_to_short() {
-	if [[ $1 =~ ^[0-9a-fA-F]{64}$ ]]; then
+	if [[ $1 =~ ^[0-9a-fA-F]{64}$ || $1 =~ ^[0-9a-fA-F]{12}$ ]]; then
 		echo "${1:0:12}"
+	elif [[ -z $1 ]]; then
+		echo
 	else
-		echo "$1"
+		die "invalid digist: $1"
 	fi
 }
 
 function new_container() {
 	local NAME=$1
 	local EXISTS
-	EXISTS=$(container_get_id "${NAME}" || true)
+	EXISTS=$(container_find_id "${NAME}")
 	if [[ -n ${EXISTS} ]]; then
 		info_log "remove exists container '${EXISTS}'"
 		buildah rm "${EXISTS}" >/dev/null
@@ -108,5 +134,6 @@ function new_container() {
 			buildah pull "${FROM}" >&2
 		fi
 	fi
-	buildah from --pull=never --name "${NAME}" "${FROM}"
+	NAME=$(buildah from --pull=never --name "${NAME}" "${FROM}")
+	container_get_id "${NAME}"
 }

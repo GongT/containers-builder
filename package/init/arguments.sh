@@ -23,7 +23,7 @@ function arg_string() {
 	if [[ ${VAR_NAME} == *=* ]]; then
 		local VAR_NAME=${VAR_NAME%%=*} DEFAULT_VAL=${VAR_NAME#*=}
 		_ARG_DEFAULT[${VAR_NAME}]="${DEFAULT_VAL}"
-	elif [[ -n "${!VAR_NAME:-}" ]]; then
+	elif [[ -n ${!VAR_NAME-} ]]; then
 		_ARG_DEFAULT[${VAR_NAME}]="${!VAR_NAME}"
 	fi
 
@@ -42,7 +42,7 @@ function arg_string() {
 		_ARG_OUTPUT["-${SHORT}"]=${VAR_NAME}
 	}
 	if [[ ${!VAR_NAME+found} != found ]]; then
-		declare """"${VAR_NAME}""""=""
+		declare "${VAR_NAME}="
 	fi
 	_ARG_INPUT[${VAR_NAME}]="${IN:1} <${VAR_NAME}>"
 }
@@ -132,7 +132,7 @@ function arg_finish() {
 
 	local E
 	E=$(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}" 2>&1 >/dev/null || true)
-	if [[ -n "${E}" ]]; then
+	if [[ -n ${E} ]]; then
 		die "${E}"
 	fi
 	# echo "ARGS=${ARGS[*]}"
@@ -205,8 +205,8 @@ function _arg_set() {
 	fi
 
 	for VAR_NAME in "${!_ARG_INPUT[@]}"; do
-		if [[ -z ${_ARG_RESULT[${VAR_NAME}]:-} ]] && [[ -n ${_ARG_REQUIRE[${VAR_NAME}]:-} ]]; then
-			die "Argument '${_ARG_INPUT[${VAR_NAME}]} - ${_ARG_COMMENT[${VAR_NAME}]:-}' is required"
+		if [[ -z ${_ARG_RESULT[${VAR_NAME}]-} && -n ${_ARG_REQUIRE[${VAR_NAME}]-} ]]; then
+			die "Argument '${_ARG_INPUT[${VAR_NAME}]} - ${_ARG_COMMENT[${VAR_NAME}]-}' is required"
 		fi
 		if [[ ${_ARG_RESULT[${VAR_NAME}]+found} == found ]]; then
 			declare -rg "${VAR_NAME}=${_ARG_RESULT[${VAR_NAME}]}"

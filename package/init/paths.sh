@@ -101,9 +101,7 @@ if is_root; then
 		declare -r PODMAN_QUADLET_DIR="/etc/containers/systemd"
 		declare -r SYSTEM_UNITS_DIR="/usr/local/lib/systemd/system"
 	fi
-	declare -r PIDFILE_DIR="/run/containers/pids"
 else
 	declare -r PODMAN_QUADLET_DIR="${HOME}/.config/containers/systemd"
 	declare -r SYSTEM_UNITS_DIR="${HOME}/.config/systemd/user"
-	declare -r PIDFILE_DIR="${XDG_RUNTIME_DIR}/containers/pids"
 fi

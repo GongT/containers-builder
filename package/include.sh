@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
 set -Eeuo pipefail
-shopt -s lastpipe nullglob
+shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
 
 # shellcheck disable=SC2155
 declare -r __STARTUP_PWD=$(pwd)
@@ -25,9 +24,10 @@ declare -xr CURRENT_ACTION
 
 pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 
+source "./init/0-lifecycle-dedup.sh"
+source "./init/output.sh"
 source "./init/basic.sh"
 source "./init/strings.sh"
-source "./init/output.sh"
 source "./init/constants.sh"
 source "./init/paths.sh"
 source "./init/exit.sh"
@@ -38,8 +38,9 @@ source "./platform/systemctl.sh"
 source "./platform/temp.sh"
 source "./platform/filesystem.sh"
 source "./platform/download-file.sh"
-source "./platform/containers.sh"
 source "./platform/healthcheck.sh"
+source "./platform/start-stop-reload.sh"
+source "./platform/xrun.sh"
 
 popd &>/dev/null
 

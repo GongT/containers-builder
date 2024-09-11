@@ -44,16 +44,14 @@ fi
 
 function XX() {
 	local ARGS=("$@")
-	echo -ne "\e[2m"
+	printf "\e[2m"
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo
-	echo -n "$1"
-	for i in "${ARGS[@]:1}"; do
-		printf ' \\\n\t %q' "$i"
-	done
+	echo -n "${ARGS[1]}"
+	printf ' \\\n\t %q' "${ARGS[@]:1}"
 	echo
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
-	echo -e "\e[0m"
+	printf "\e[0m\n"
 
 	exec "${ARGS[@]}"
 }
@@ -71,7 +69,7 @@ ensure_mounts "${_S_PREP_FOLDER[@]}"
 podman volume prune -f &>/dev/null || true
 
 make_arguments "${STARTUP_ARGS[@]}"
-if [[ "${ENTRYPOINT:-}" ]]; then
+if [[ "${ENTRYPOINT-}" ]]; then
 	echo "force using entrypoint: $ENTRYPOINT"
 	ARGS=("--entrypoint=$ENTRYPOINT" "${ARGS[@]}")
 fi

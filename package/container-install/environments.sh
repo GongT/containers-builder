@@ -1,4 +1,3 @@
-
 function _env_passing_file_path() {
 	echo "${CONTAINERS_DATA_PATH}/save_environments/${_S_CURRENT_UNIT_NAME}.$1.txt"
 }
@@ -11,26 +10,6 @@ function controller_environment_variable() {
 		V="${KV#*=}"
 		_S_CONTROL_ENVS["${K}"]="${V}"
 	done
-}
-function _commit_controller_environment() {
-	local F
-	F="$(_env_passing_file_path control)"
-
-	local VAR_NAME OUTPUT=''
-	if [[ ${#_S_CONTROL_ENVS[@]} -eq 0 ]]; then
-		return
-	fi
-
-	for VAR_NAME in "${!_S_CONTROL_ENVS[@]}"; do
-		OUTPUT+="${VAR_NAME}=${_S_CONTROL_ENVS[${VAR_NAME}]}"
-		OUTPUT+=$'\n'
-	done
-
-	OUTPUT=$(echo "${OUTPUT}" | sed -E 's#\s+$##g')
-
-	write_file --mode 0600 "${F}" "${OUTPUT}"
-
-	echo "EnvironmentFile=${F}"
 }
 
 function unit_podman_safe_environment() {
@@ -51,16 +30,16 @@ function safe_environment() {
 	die "removed function safe_environment, use environment_variable"
 }
 
-function _commit_environment() {
+function __commit_environment() {
 	local F
 	F="$(_env_passing_file_path container)"
 
 	local OUTPUT='' VAR_NAME
 
 	if is_installing; then
-		echo -e "\e[2mPasthrough Environments:\e[0m" >&2
+		info_note "Pasthrough Environments:"
 		if [[ ${#_S_ENVIRONMENTS[@]} -eq 0 ]]; then
-			echo -e "\e[2m    empty\e[0m" >&2
+			info_note "    empty"
 			return
 		fi
 	fi
@@ -76,4 +55,30 @@ function _commit_environment() {
 	write_file --mode 0600 "${F}" "${OUTPUT}"
 
 	unit_podman_arguments "--env-file=${F}"
+
+	local VAR_NAME OUTPUT=''
+	if [[ ${#_S_CONTROL_ENVS[@]} -eq 0 ]]; then
+		return
+	fi
+
+	# shellcheck disable=SC2155
+	local F="$(_env_passing_file_path control)"
+
+	for VAR_NAME in "${!_S_CONTROL_ENVS[@]}"; do
+		OUTPUT+=$(printf '%s=%q\n' "${VAR_NAME}" "${_S_CONTROL_ENVS[${VAR_NAME}]}")
+	done
+
+	OUTPUT=$(echo "${OUTPUT}" | sed -E 's#\s+$##g')
+
+	write_file --mode 0600 "${F}" "${OUTPUT}"
+
+	unit_body "EnvironmentFile=${F}"
 }
+register_unit_emit __commit_environment
+
+declare -A _S_CONTROL_ENVS
+__reset_env_container() {
+	_S_CONTROL_ENVS=()
+	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
+}
+register_unit_reset __reset_env_container

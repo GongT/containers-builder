@@ -12,6 +12,7 @@ function make_arguments() {
 	detect_host_ip
 
 	if [[ -n "${INVOCATION_ID:-}" ]]; then
+		add_argument "--env=INVOCATION_ID=${INVOCATION_ID}"
 		add_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
 	fi
 

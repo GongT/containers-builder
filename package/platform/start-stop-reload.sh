@@ -1,6 +1,3 @@
-CUSTOMSTOP_COMMAND=""
-CUSTOMRELOAD_COMMAND=""
-
 function custom_reload_command() {
 	CUSTOMRELOAD_COMMAND=$(json_array "$@")
 }
@@ -12,6 +9,7 @@ function _customstop_reset() {
 	CUSTOMSTOP_COMMAND=''
 	CUSTOMRELOAD_COMMAND=''
 }
+register_unit_reset _customstop_reset
 
 function _stopreload_config_buildah() {
 	if [[ -n "${CUSTOMSTOP_COMMAND}" ]]; then

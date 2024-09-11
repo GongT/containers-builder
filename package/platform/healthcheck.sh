@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-
-HEALTHCHECK_INTERVAL='5min'
-declare -i HEALTHCHECK_RETRY=3
-declare -a HEALTHCHECK_CMD=()
-HEALTHCHECK_START_PERIOD=''
-HEALTHCHECK_TIMEOUT=''
+declare -i HEALTHCHECK_RETRY
+declare -a HEALTHCHECK_CMD
 
 # healthcheck interval retry CMD...
 function healthcheck() {
@@ -23,13 +19,14 @@ function healthcheck_start_period() {
 	HEALTHCHECK_START_PERIOD="$1"
 }
 
-function _healthcheck_reset() {
+function __healthcheck_reset() {
 	HEALTHCHECK_INTERVAL='5min'
 	HEALTHCHECK_RETRY=3
 	HEALTHCHECK_CMD=()
 	HEALTHCHECK_START_PERIOD=''
 	HEALTHCHECK_TIMEOUT=''
 }
+register_unit_reset __healthcheck_reset
 
 function _healthcheck_config_buildah() {
 	if [[ ${#HEALTHCHECK_CMD[@]} -eq 0 ]]; then
@@ -46,10 +43,10 @@ function _healthcheck_config_buildah() {
 	_add_config "--healthcheck=CMD-SHELL ${CMD}"
 	_add_config "--healthcheck-interval=${HEALTHCHECK_INTERVAL}"
 	_add_config "--healthcheck-retries=${HEALTHCHECK_RETRY}"
-	if [[ -n "${HEALTHCHECK_START_PERIOD}" ]]; then
+	if [[ -n ${HEALTHCHECK_START_PERIOD} ]]; then
 		_add_config "--healthcheck-start-period=${HEALTHCHECK_START_PERIOD}"
 	fi
-	if [[ -n "${HEALTHCHECK_TIMEOUT}" ]]; then
+	if [[ -n ${HEALTHCHECK_TIMEOUT} ]]; then
 		_add_config "--healthcheck-timeout=${HEALTHCHECK_TIMEOUT}"
 	fi
 	_healthcheck_reset
@@ -69,10 +66,10 @@ function _healthcheck_arguments_podman() {
 
 	_add_argument "--health-interval=${HEALTHCHECK_INTERVAL}"
 	_add_argument "--health-retries=${HEALTHCHECK_RETRY}"
-	if [[ -n "${HEALTHCHECK_START_PERIOD}" ]]; then
+	if [[ -n ${HEALTHCHECK_START_PERIOD} ]]; then
 		_add_argument "--health-start-period=${HEALTHCHECK_START_PERIOD}"
 	fi
-	if [[ -n "${HEALTHCHECK_TIMEOUT}" ]]; then
+	if [[ -n ${HEALTHCHECK_TIMEOUT} ]]; then
 		_add_argument "--health-timeout=${HEALTHCHECK_TIMEOUT}"
 	fi
 }

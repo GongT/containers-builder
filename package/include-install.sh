@@ -19,7 +19,7 @@ source "./container-install/systemd.slices.sh"
 source "./container-install/install-script.sh"
 source "./container-install/uninstall.sh"
 source "./container-install/capability.sh"
-source "./container-install/custom-stop-reload.sh"
 source "./container-install/services.sh"
+source "./container-install/service-wait.sh"
 
 popd &>/dev/null

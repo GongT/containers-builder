@@ -12,7 +12,7 @@ x() {
 	"$@" >&2
 }
 
-OUTPUT="$(podman inspect --type container -f '{{.State.Status}}' "${SCOPE_ID}" 2>&1)"
+OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${SCOPE_ID}" 2>&1)"
 if [[ "${OUTPUT}" = *"no such container"* ]]; then
 	exit 0
 fi

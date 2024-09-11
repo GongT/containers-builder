@@ -3,7 +3,7 @@ set -Eeuo pipefail
 shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
 
 function image_get_id() {
-	podman inspect --type image --format '{{.Id}}' "${IMAGE_TO_PULL}" 2>/dev/null | grep -ioE '^[0-9a-f]{12}' || true
+	podman image inspect --format '{{.Id}}' "${IMAGE_TO_PULL}" 2>/dev/null | grep -ioE '^[0-9a-f]{12}' || true
 }
 function log() {
 	echo "$*"

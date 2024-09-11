@@ -11,6 +11,6 @@ buildah_cache_start fedora:latest
 
 merge_local_fs "$PROJECT_NAME"
 
-buildah_config "$PROJECT_NAME" --entrypoint=/opt/entrypoint.sh
+buildah_config "$PROJECT_NAME" --entrypoint=/opt/test-entry.sh '--cmd=[]'
 
 buildah_finalize_image "$PROJECT_NAME" "$PROJECT_NAME"

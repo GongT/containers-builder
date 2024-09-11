@@ -34,7 +34,7 @@ function _exit() {
 		info_note "script success."
 	fi
 
-	exit """"${EXIT_CODE}""""
+	exit "${EXIT_CODE}"
 }
 
 trap _exit EXIT

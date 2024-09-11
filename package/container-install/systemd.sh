@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 
-declare -a _S_PREP_FOLDER
 declare -a _S_LINUX_CAP
 declare -a _S_VOLUME_ARG
 declare -A _S_UNIT_CONFIG
 declare -A _S_BODY_CONFIG
 declare -a _S_BODY_RAW_LINE
+declare -a _S_COMMENTS
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
 declare -a _S_NETWORK_ARGS
 declare -A _S_ENVIRONMENTS
-declare -A _S_CONTROL_ENVS
 
 _unit_reset() {
 	_S_IMAGE=''
@@ -24,17 +23,14 @@ _unit_reset() {
 	_S_KILL_TIMEOUT=5
 	_S_KILL_FORCE=yes
 	_S_INSTALL=services.target
-	_S_START_WAIT=sleep:10
-	_S_SYSTEMD=false
 
-	_S_PREP_FOLDER=()
 	_S_LINUX_CAP=()
 	_S_VOLUME_ARG=()
 	_S_PODMAN_ARGS=()
 	_S_COMMAND_LINE=()
 	_S_NETWORK_ARGS=()
 	_S_ENVIRONMENTS=()
-	_S_CONTROL_ENVS=()
+	_S_COMMENTS=()
 
 	_S_EXEC_STOP=''
 	_S_EXEC_STOP_RELOAD=''
@@ -57,19 +53,8 @@ _unit_reset() {
 }
 
 function _unit_init() {
+	call_unit_reset
 	_unit_reset
-
-	## network.sh
-	_network_reset
-
-	## service env
-	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
-
-	## healthcheck.sh
-	_healthcheck_reset
-
-	## stop.sh
-	_customstop_reset
 }
 
 function auto_create_pod_service_unit() {
@@ -125,41 +110,6 @@ function unit_write() {
 	info_note "verify unit: ${TF}"
 	printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"
 	copy_file "${TF}" "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
-}
-_get_debugger_script() {
-	echo "${SCRIPTS_DIR}/debug-startup.sh"
-}
-_debugger_file_write() {
-	local I FILE_DATA
-	local -a STARTUP_ARGS=()
-
-	_create_startup_arguments
-	FILE_DATA=$(
-		echo "#!/usr/bin/env bash"
-		echo "set -Eeuo pipefail"
-		echo "declare -r CONTAINER_ID='$(_unit_get_scopename)'"
-		echo "declare -r NAME='${_S_CURRENT_UNIT_NAME}'"
-		echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
-		export_base_envs
-		find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -not -name '99-*' -print0 \
-			| sort -z \
-			| while read -r -d '' F; do
-				echo
-				echo "##$(basename "$F")"
-				tail -n +4 "$F"
-				echo
-			done
-
-		declare -p _S_PREP_FOLDER
-
-		echo "STARTUP_ARGC=${#_S_COMMAND_LINE[@]}"
-		echo "declare -a STARTUP_ARGS=("
-		printf '\t%q\n' "${STARTUP_ARGS[@]}"
-		echo ")"
-
-		cat "${COMMON_LIB_ROOT}/staff/debugger.sh"
-	)
-	write_file --mode 0755 "$(_get_debugger_script)" "${FILE_DATA}"
 }
 
 function unit_finish() {
@@ -231,23 +181,18 @@ function _unit_get_scopename() {
 		echo "${NAME}"
 	fi
 }
-function export_base_envs() {
-	declare -r START_WAIT_DEFINE="${_S_START_WAIT}"
-	declare -r NETWORK_TYPE="${_N_TYPE}"
-	declare -r USING_SYSTEMD="${_S_SYSTEMD}"
+function _export_base_envs() {
 	declare -r KILL_TIMEOUT="${_S_KILL_TIMEOUT}"
 	declare -r KILL_IF_TIMEOUT="${_S_KILL_FORCE}"
-	declare -p START_WAIT_DEFINE NETWORK_TYPE USING_SYSTEMD KILL_TIMEOUT KILL_IF_TIMEOUT
-	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR PIDFILE_DIR
+	declare -p KILL_TIMEOUT KILL_IF_TIMEOUT
+	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
+	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
+	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE:-"${NAME}"}"
 }
-function _unit_assemble() {
-	_set_network_if_not
-	_commit_environment
+register_script_emit _export_base_envs
 
-	local PREP_FOLDERS_INS=()
-	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
-		PREP_FOLDERS_INS+=("${_S_PREP_FOLDER[@]}")
-	fi
+function _unit_assemble() {
+	call_unit_emit
 
 	local I
 	echo "[Unit]"
@@ -270,8 +215,7 @@ function _unit_assemble() {
 	echo ""
 	echo "[${EXT^}]
 Type=notify
-NotifyAccess=all
-# PIDFile=${PIDFILE_DIR}/${SCOPE_ID}.conmon.pid"
+NotifyAccess=all"
 
 	if [[ ${_S_IMAGE_PULL} == "never" ]]; then
 		:   # Nothing
@@ -281,35 +225,15 @@ NotifyAccess=all
 		printf_command_direction 'ExecStartPre=' "${_PULL_HELPER}" "${_S_IMAGE:-"${NAME}"}" "${_S_IMAGE_PULL}"
 	fi
 
-	local _SERVICE_WAITER="${SCRIPTS_DIR}/${_S_CURRENT_UNIT_NAME}.pod"
-	local _WAITER_DATA _FILES _FILE
-	_WAITER_DATA=$(
-		echo '#!/usr/bin/env bash'
-		echo 'set -Eeuo pipefail'
-		export_base_envs
-		declare -p PREP_FOLDERS_INS
-		mapfile -t -d '' _FILES < <(find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z)
-		for _FILE in "${_FILES[@]}"; do
-			echo
-			echo "## $(basename "${_FILE}")"
-			tail -n +4 "${_FILE}"
-			echo
-		done
-	)
-	write_file --mode 0755 "${_SERVICE_WAITER}" "${_WAITER_DATA}"
+	echo "ExecStart=$(escape_argument "$(_service_executer_write)") \\"
 
-	echo "ExecStart=$(escape_argument "${_SERVICE_WAITER}") \\"
-
-	local -a STARTUP_ARGS=(
-		'--replace=true'
-		"--conmon-pidfile=${PIDFILE_DIR}/${SCOPE_ID}.conmon.pid"
-	)
+	local -a STARTUP_ARGS=('--replace=true')
 	_create_startup_arguments
 
 	escape_argument_list_continue "${STARTUP_ARGS[@]}"
 
 	echo ""
-	echo "# debug script: $(_get_debugger_script)"
+	echo "# debug script: $(get_debugger_script)"
 
 	if [[ -z ${_S_BODY_CONFIG['ExecStop']-} ]]; then
 		copy_file --mode 0755 "${COMMON_LIB_ROOT}/staff/container-tools/container-manage-stop.sh" "${SCRIPTS_DIR}/stop-container.sh"
@@ -324,8 +248,7 @@ NotifyAccess=all
 	printf '%s\n' "${_S_BODY_RAW_LINE[@]}"
 
 	echo "Environment=CONTAINER_ID=${SCOPE_ID}"
-	echo "Environment=PODMAN_SYSTEMD_UNIT=%n"
-	_commit_controller_environment
+	echo "Environment=CURRENT_SYSTEMD_UNIT_NAME=%n"
 
 	if [[ -n ${_S_INSTALL} ]]; then
 		echo ""
@@ -335,6 +258,7 @@ NotifyAccess=all
 
 	echo ""
 	echo "[X-Containers]"
+	printf '%s\n' "${_S_COMMENTS[@]}"
 	echo "IMAGE_NAME=${_S_IMAGE}"
 	echo "IMAGE_NAME_PULL=${_S_IMAGE_PULL}"
 	echo "CONTAINERS_DATA_PATH=${CONTAINERS_DATA_PATH}"
@@ -356,12 +280,7 @@ function _add_argument() {
 
 function _create_startup_arguments() {
 	local -r SCOPE_ID="$(_unit_get_scopename)"
-	STARTUP_ARGS+=("--hostname=${_S_HOST:-${SCOPE_ID}}")
-	if [[ ${_S_SYSTEMD} == "true" ]]; then
-		STARTUP_ARGS+=(--systemd=always --tty --tmpfs=/run)
-	else
-		STARTUP_ARGS+=(--systemd=false)
-	fi
+	STARTUP_ARGS+=()
 	local PODMANV
 	PODMANV=$(podman info -f '{{.Version.Version}}')
 	if [[ ${PODMANV} == "<no value>" ]]; then
@@ -372,6 +291,10 @@ function _create_startup_arguments() {
 	fi
 
 	STARTUP_ARGS+=("--restart=no")
+
+	if [[ $_N_TYPE != 'pod' ]]; then
+		STARTUP_ARGS+=("--hostname=${_S_HOST:-${SCOPE_ID}}")
+	fi
 
 	local _PODMAN_RUN_ARGS=() CAP_LIST
 
@@ -399,7 +322,7 @@ function unit_data() {
 	fi
 }
 function unit_using_systemd() {
-	_S_SYSTEMD=true
+	info_warn "unit_using_systemd not used"
 	# shellcheck disable=SC2016
 	# unit_body ExecReload '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
 }
@@ -422,6 +345,9 @@ function unit_unit() {
 		_S_UNIT_CONFIG[${K}]="${V}"
 	fi
 }
+function unit_comment() {
+	_S_COMMENTS+=("$*")
+}
 function unit_body() {
 	local K="$1" V
 	shift
@@ -434,7 +360,7 @@ function unit_body() {
 		# multiple directive, no escape
 		_S_BODY_RAW_LINE+=("$K=$*")
 		;;
-	Environment)
+	Environment*)
 		# multiple directive, not command
 		for V; do
 			_S_BODY_RAW_LINE+=("$K=$(escape_argument "$V")")
@@ -452,7 +378,7 @@ function unit_body() {
 		die "can not set $K using unit_body()"
 		;;
 	*)
-		_S_BODY_CONFIG[${K}]="${V}"
+		_S_BODY_CONFIG[${K}]="${*}"
 		;;
 	esac
 }
@@ -492,34 +418,4 @@ function unit_hook_prestop() {
 }
 function unit_hook_stop() {
 	unit_body ExecStopPost "$@"
-}
-function unit_start_notify() {
-	local TYPE="$1" ARG="${2-}"
-	_S_START_WAIT=
-	case "${TYPE}" in
-	socket)
-		if [[ -n ${ARG} ]]; then
-			die "touch method do not allow argument"
-		fi
-		_S_START_WAIT="sockets"
-		;;
-	port)
-		if [[ ${ARG} != tcp:* ]] || [[ ${ARG} != udp:* ]]; then
-			die "start notify port must use tcp:xxx or udp:xxx"
-		fi
-		_S_START_WAIT="net:${ARG}"
-		;;
-	sleep)
-		_S_START_WAIT="sleep:${ARG}"
-		;;
-	output)
-		_S_START_WAIT="output:${ARG}"
-		;;
-	touch)
-		_S_START_WAIT="file"
-		;;
-	*)
-		die "Unknown start notify method ${TYPE}, allow: socket, port, sleep, output, touch."
-		;;
-	esac
 }

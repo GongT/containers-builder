@@ -44,6 +44,23 @@ function shared_sockets_provide() {
 	for i; do
 		FULLPATH+=("'${SHARED_SOCKET_PATH}/${i}.sock'")
 	done
+	__provide_sockets_for_wait "$@"
+
 	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
 	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
 }
+
+function __reset_volumes() {
+	declare -a _S_PREP_FOLDER=()
+}
+register_unit_reset __reset_volumes
+
+function __export_volumes() {
+	local PREPARE_FOLDERS=()
+	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
+		PREPARE_FOLDERS+=("${_S_PREP_FOLDER[@]}")
+	fi
+	local -r PREPARE_FOLDERS
+	declare -p PREPARE_FOLDERS
+}
+register_script_emit __export_volumes

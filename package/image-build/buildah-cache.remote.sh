@@ -47,14 +47,14 @@ function cache_try_pull() {
 	STDERR_FILE=$(create_temp_file "cache-pull-output.txt")
 
 	info_log "pull cache image ${URL}"
-	local CMD=(podman pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}")
+	local CMD=(xpodman image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}")
 	info_note " + ${CMD[*]}"
 
 	local O
 	if IMAGE=$("${CMD[@]}" 2>"${STDERR_FILE}"); then
 		if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]] && is_id_digist "${IMAGE}"; then
 			info_note "  - name local image to match cache name."
-			podman tag "${IMAGE}" "${NAME}"
+			xpodman image tag "${IMAGE}" "${NAME}"
 		fi
 		LAST_CACHE_COMES_FROM=pull
 		collect_temp_image "${NAME}"
@@ -92,7 +92,7 @@ function cache_push() {
 	fi
 
 	control_ci group "push cache image '${NAME}' (reason: ${LAST_CACHE_COMES_FROM}) to '${URL}'"
-	podman push "${CACHE_REGISTRY_ARGS[@]}" "${NAME}" "${URL}"
+	xpodman image push "${CACHE_REGISTRY_ARGS[@]}" "${NAME}" "${URL}"
 	collect_temp_image "${NAME}"
 	control_ci groupEnd
 }

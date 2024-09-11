@@ -2,19 +2,24 @@
 set -Eeuo pipefail
 
 function wait_by_sleep() {
-	__run
+	local -r WAIT_TIME=$1
+	local -i I
 
-	local -i I=${WAIT_TIME}
-	while [[ ${I} -gt 0 ]]; do
-		I="${I} - 1"
-		if [[ "$(readlink "/proc/${PID}/exe")" != /usr/bin/conmon ]]; then
-			debug "Failed wait container ${CONTAINER_ID} to stable." >&2
-			sdnotify --status="gone"
-			exit 1
-		fi
-		debug "${I}." >&2
+	for ((I = WAIT_TIME; I > 0; I--)); do
 		sdnotify --status="wait:${I}/${WAIT_TIME}"
 		sleep 1
 	done
-	debug "Container still running."
+
+	if [[ -e ${PIDFile} ]]; then
+		die "podman not create pid file after ${WAIT_TIME} seconds."
+	fi
+
+	local PID
+	PID=$(<"${PIDFile}")
+	if grep -q 'conmon' "/proc/${PIDFile}/cmdline" &>/dev/null; then
+		debug "Failed wait container ${CONTAINER_ID} to stable." >&2
+		sdnotify --stopping "--status=conmon not started"
+		exit 1
+	fi
+	debug "conmon running."
 }

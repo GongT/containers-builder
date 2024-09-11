@@ -8,7 +8,7 @@ function die() {
 	exit 1
 }
 function x() {
-	printf "\x1B[2m+ %s\x1B[0m\n" "$*" >&2
+	printf "\e[2m+ %s\e[0m\n" "$*" >&2
 	"$@"
 }
 

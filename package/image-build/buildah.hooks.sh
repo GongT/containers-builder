@@ -9,51 +9,14 @@ function mount_tmpfs() {
 	echo "--mount=type=tmpfs,tmpfs-size=${SIZE},destination=${PATH}"
 }
 
-function builah_get_annotation() {
+function image_get_annotation() {
 	local IMAGE=$1 ANNO_NAME="$2"
-	xbuildah inspect --type image -f "{{index .ImageAnnotations \"${ANNO_NAME}\"}}" "${IMAGE}"
+	xpodman image inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${IMAGE}"
 }
 
-function builah_get_label() {
+function image_get_label() {
 	local IMAGE=$1 LABEL_NAME="$2"
-	xbuildah inspect --type image -f "{{index .Docker.config.Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
-}
-
-function xbuildah() {
-	local ACT=$1
-	shift
-	OUT=$(
-		echo -ne "\e[0;2mbuildah \e[0;2;4m${ACT}\e[0;2m"
-		local I
-		for I; do
-			printf ' %q' "$(digist_to_short "${I}")"
-		done
-		echo -e "\e[0m"
-	)
-
-	local SGROUP=
-	if (! is_ci) || [[ -n ${INSIDE_GROUP} ]] || [[ ${ACT} == run ]] || [[ ${ACT} == inspect ]] || [[ ${ACT} == config ]] || [[ ${ACT} == from ]]; then
-		info_log "${OUT}" >&2
-		indent
-	else
-		SGROUP=yes
-		control_ci group "${OUT}"
-	fi
-
-	local -i X=-1
-	if "${BUILDAH}" "${ACT}" "$@"; then
-		X=0
-	else
-		X=$?
-		info_warn "failed with ${X}"
-	fi
-
-	if [[ -n "${SGROUP}" ]]; then
-		control_ci groupEnd
-	else
-		dedent
-	fi
-	return ""${X}""
+	xpodman image inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
 }
 
 function _add_config() {
@@ -71,7 +34,7 @@ function buildah() {
 	local -i LEN=$((${#PASSARGS[@]} - 1))
 	local EXARGS=()
 	case "${ACTION}" in
-	copy)
+	"copy")
 		EXARGS+=(--quiet)
 		if ! [[ ${PASSARGS[*]} == *'--from'* ]]; then
 			# convert source file to absolute (for debug)
@@ -156,6 +119,7 @@ function buildah() {
 			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
 		fi
 		;;
+	*) ;;
 	esac
 
 	xbuildah "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}"

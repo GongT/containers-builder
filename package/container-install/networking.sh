@@ -19,10 +19,19 @@ function _set_network_if_not() {
 		network_use_default
 	fi
 }
+register_unit_emit _set_network_if_not
+
 function _network_reset() {
 	_N_TYPE=
-	_N_PORTS=()
+	declare -a _N_PORTS=()
 }
+register_unit_reset _network_reset
+
+function _export_network_envs() {
+	printf 'declare -r NETWORK_TYPE=%q\n' "${_N_TYPE}"
+}
+register_script_emit _export_network_envs
+
 function _record_port_usage() {
 	_N_PORTS+=("$@")
 }
