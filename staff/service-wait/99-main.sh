@@ -40,14 +40,16 @@ function main() {
 	detect_image_using_systemd
 	load_sdnotify
 
-	add_argument "--name=${CONTAINER_ID}"
+	add_run_argument "--name=${CONTAINER_ID}"
 	ensure_mounts "${PREPARE_FOLDERS[@]}"
 
-	if [[ $START_WAIT_DEFINE == touch ]]; then
+	if [[ $START_WAIT_DEFINE == auto ]]; then
+	:
+	elif [[ $START_WAIT_DEFINE == touch ]]; then
 		declare -xr FILE_TO_CHECK="/startup.$RANDOM.signal"
-		add_argument "--env=STARTUP_TOUCH=$FILE_TO_CHECK"
+		add_run_argument "--env=STARTUP_TOUCH=$FILE_TO_CHECK"
 	elif [[ $START_WAIT_DEFINE == pass ]]; then
-		add_argument "--env=NOTIFYSOCKET=$__NOTIFYSOCKET"
+		add_run_argument "--sdnotify=container"
 	fi
 
 	make_arguments "$@"

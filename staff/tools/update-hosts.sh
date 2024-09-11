@@ -13,10 +13,10 @@ function is_file_ending_newline() {
 }
 function is_file_need_newline() {
 	local FILE="$1"
-	if ! [[ -f "${FILE}" ]]; then
+	if ! [[ -f ${FILE} ]]; then
 		return 1
 	fi
-	if [[ $(wc -c < "${FILE}") -eq 0 ]]; then
+	if [[ $(wc -c <"${FILE}") -eq 0 ]]; then
 		return 1
 	fi
 	is_file_ending_newline "${FILE}"
@@ -27,7 +27,7 @@ function append_text_file_line() {
 	local MARKUP="$3"
 	local CONTENT="$4"
 
-	if [[ "${CONTENT}" == *$"\n"* ]]; then
+	if [[ ${CONTENT} == *$"\n"* ]]; then
 		echo "[append_text_file_line] Error: content must have only one line" >&2
 		return 1
 	fi
@@ -40,9 +40,9 @@ function append_text_file_line() {
 		sed -i "s/^.*${SAFE_PATT}/${CONTENT}${TAG}/g" "${FILE}"
 	else
 		if is_file_need_newline "${FILE}"; then
-			echo "" >> "${FILE}"
+			echo "" >>"${FILE}"
 		fi
-		echo "${CONTENT}${TAG}" >> "${FILE}"
+		echo "${CONTENT}${TAG}" >>"${FILE}"
 	fi
 }
 
@@ -52,7 +52,7 @@ OLD_VALUE=$(grep --fixed-strings " ### ${TAG}" /etc/hosts | grep -Eo '^\S+' || e
 function signal_dnsmasq() {
 	info "send SIGHUP to dnsmasq..."
 	PID_DNS=$(systemctl show --property MainPID --value dnsmasq)
-	if [[ "${PID_DNS}" -gt 0 ]]; then
+	if [[ ${PID_DNS} -gt 0 ]]; then
 		kill -s SIGHUP "${PID_DNS}" || true
 		info 'ok.'
 	else
@@ -61,16 +61,16 @@ function signal_dnsmasq() {
 }
 
 function add() {
-	local IP=$(podman inspect "${MACHINE}" --format '{{.NetworkSettings.IPAddress}}' || echo '')
+	local IP=$(podman container inspect "${MACHINE}" --format '{{.NetworkSettings.IPAddress}}' || echo '')
 	info "bind ip address ${IP} with ${MACHINE}"
-	if [[ "${IP}" == "${OLD_VALUE}" ]]; then
+	if [[ ${IP} == "${OLD_VALUE}" ]]; then
 		info 'ip is same.'
 		return
-	elif [[ ! -n "${IP}" ]]; then
+	elif [[ -z ${IP} ]]; then
 		IP='# ip not found'
 	fi
 
-	append_text_file_line /etc/hosts '#' "${TAG}" "${IP} ${MACHINE} ${MY_HOSTNAME:-}"
+	append_text_file_line /etc/hosts '#' "${TAG}" "${IP} ${MACHINE} ${MY_HOSTNAME-}"
 	info 'ok.'
 	signal_dnsmasq
 }

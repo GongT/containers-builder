@@ -37,7 +37,7 @@ function __commit_environment() {
 	local OUTPUT='' VAR_NAME
 
 	if is_installing; then
-		info_note "Pasthrough Environments:"
+		info_log "Pasthrough Environments:"
 		if [[ ${#_S_ENVIRONMENTS[@]} -eq 0 ]]; then
 			info_note "    empty"
 			return
@@ -76,9 +76,8 @@ function __commit_environment() {
 }
 register_unit_emit __commit_environment
 
-declare -A _S_CONTROL_ENVS
 __reset_env_container() {
-	_S_CONTROL_ENVS=()
+	declare -gA _S_CONTROL_ENVS=()
 	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
 }
 register_unit_reset __reset_env_container

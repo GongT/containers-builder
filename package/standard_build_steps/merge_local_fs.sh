@@ -3,7 +3,7 @@
 # merge "fs" folder to cache
 # eg:
 # 	merge_local_fs "ccc"
-#  
+#
 # with extra bash script:
 #   merge_local_fs "ccc" --env=a=b --volume=a:b ./scripts/install.sh
 function merge_local_fs() {
@@ -24,12 +24,13 @@ function merge_local_fs() {
 		fi
 	done
 
-	if ! [[ -n "${STEP:-}" ]]; then
+	if [[ -z ${STEP-} ]]; then
 		STEP="复制文件"
 	fi
 	_hash_filesystem() {
 		hash_path fs
 		if [[ -n ${EXTRA_SCRIPT} ]]; then
+			printf "\0\0\0\0"
 			cat "${EXTRA_SCRIPT}"
 		fi
 	}

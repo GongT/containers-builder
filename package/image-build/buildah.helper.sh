@@ -14,7 +14,7 @@ function create_if_not() {
 		fi
 	else
 		if ! image_exists "${BASE}"; then
-			info_note "missing base image ${BASE}, pulling from registry (proxy=${http_proxy:-'*notset'})..."
+			info_log "missing base image ${BASE}, pulling from registry (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "${BASE}" >&2
 		fi
 
@@ -49,17 +49,27 @@ function container_exists() {
 function image_exists() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
 		return 0
-	elif grep -qF 'image not known' "$TMP_STDERR"; then
+	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
 		return 1
 	else
 		error_with_manager_output
 	fi
 }
 
+function image_get_long_id() {
+	xpodman image inspect --format '{{.ID}}' "$1"
+}
+function image_get_digist() {
+	xpodman image inspect --format '{{.Digest}}' "$1"
+}
+function image_find_full_name() {
+	local NAME_PART=$1
+	podman inspect "${NAME_PART}" | jq -r '.[0].NamesHistory + .[0].RepoTags | .[]' | grep -F "${NAME_PART}" | sort | uniq
+}
 function image_get_id() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
-		digist_to_short "$(<"${TMP_STDOUT}")"
-	elif grep -qF 'image not known' "$TMP_STDERR"; then
+		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
 		die "missing required image: $1"
 	else
 		error_with_manager_output
@@ -67,8 +77,8 @@ function image_get_id() {
 }
 function image_find_id() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
-		digist_to_short "$(<"${TMP_STDOUT}")"
-	elif grep -qF 'image not known' "$TMP_STDERR"; then
+		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
 		return 0
 	else
 		error_with_manager_output
@@ -77,8 +87,8 @@ function image_find_id() {
 
 function container_get_id() {
 	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
-		digist_to_short "$(<"${TMP_STDOUT}")"
-	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		die "missing required build container: $1"
 	else
 		error_with_manager_output
@@ -86,8 +96,8 @@ function container_get_id() {
 }
 function container_find_id() {
 	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
-		digist_to_short "$(<"${TMP_STDOUT}")"
-	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		return 0
 	else
 		error_with_manager_output
@@ -95,8 +105,8 @@ function container_find_id() {
 }
 function container_get_base_image_id() {
 	if xbuildah_capture inspect --type=container --format '{{.FromImageID}}' "$1"; then
-		digist_to_short "$(<"${TMP_STDOUT}")"
-	elif grep -qF 'container not known' "$TMP_STDERR"; then
+		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		die "missing required build container: $1"
 	else
 		error_with_manager_output
@@ -134,6 +144,5 @@ function new_container() {
 			buildah pull "${FROM}" >&2
 		fi
 	fi
-	NAME=$(buildah from --pull=never --name "${NAME}" "${FROM}")
-	container_get_id "${NAME}"
+	buildah from --pull=never --name "${NAME}" "${FROM}"
 }

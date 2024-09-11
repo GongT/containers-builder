@@ -1,3 +1,5 @@
+declare -xr BUILDAH_FORMAT=oci
+
 if [[ -e "/usr/bin/podman" ]]; then
 	PODMAN="/usr/bin/podman"
 else
@@ -13,13 +15,13 @@ fi
 declare -rx BUILDAH
 
 # shellcheck disable=SC2155
-declare -r TMP_STDERR="/tmp/container.manager.stderr.txt" TMP_STDOUT="/tmp/container.manager.stdout.txt"
+declare -r MANAGER_TMP_STDERR="/tmp/container.manager.stderr.txt" MANAGER_TMP_STDOUT="/tmp/container.manager.stdout.txt"
 
 function error_with_manager_output() {
-	cat "${TMP_STDERR}" >&2
+	cat "${MANAGER_TMP_STDERR}" >&2
 	return 1
 }
-function execute_tip_format() {
+function execute_tip() {
 	local -ri ACT_CNT=$1
 	shift
 	local -r CMD=$1
@@ -31,35 +33,44 @@ function execute_tip_format() {
 	printf '%s \e[4m%s\e[24m %s' "${CMD}" "${ACT}" "${EXTRA}"
 }
 
-function execute_tip() {
-	# shellcheck disable=SC2312
-	info_note "$(execute_tip_format "$@")"
-}
-
 function xpodman() {
-	execute_tip 2 podman "$@"
+	local TIP
+	TIP=" + $(execute_tip 2 podman "$@") >>"
+
+	if [[ $1 == image ]] && [[ $2 == pull || $2 == push ]]; then
+		get_cursor_position
+		info_warn "${TIP}"
+	else
+		info_note "${TIP}"
+	fi
 	"${PODMAN}" "$@"
+
+	if [[ $1 == image ]] && [[ $2 == pull || $2 == push ]]; then
+		restore_cursor_position
+		info_note "${TIP}"
+	fi
 }
 function xpodman_capture() {
-	execute_tip 2 podman "$@"
-	"${PODMAN}" "$@" 1>"${TMP_STDOUT}" 2>"${TMP_STDERR}"
+	local TIP
+	TIP=" + $(execute_tip 2 podman "$@") >>"
+	info_note "${TIP}"
+	"${PODMAN}" "$@" 1>"${MANAGER_TMP_STDOUT}" 2>"${MANAGER_TMP_STDERR}"
 }
 
 function xbuildah_capture() {
-	execute_tip 1 buildah "$@"
-	"${BUILDAH}" "$@" 1>"${TMP_STDOUT}" 2>"${TMP_STDERR}"
+	info_note " + $(execute_tip 1 buildah "$@") >>"
+	"${BUILDAH}" "$@" 1>"${MANAGER_TMP_STDOUT}" 2>"${MANAGER_TMP_STDERR}"
 }
 function xbuildah() {
 	local ACT=$1
 
 	local SGROUP=
 	if (! is_ci) || [[ -n ${INSIDE_GROUP} ]] || [[ ${ACT} == run ]] || [[ ${ACT} == inspect ]] || [[ ${ACT} == config ]] || [[ ${ACT} == from ]]; then
-		execute_tip 1 buildah "$@"
+		info_note " + $(execute_tip 1 buildah "$@")"
 		indent
 	else
 		SGROUP=yes
-		# shellcheck disable=SC2155
-		local OUT=$(execute_tip_format 1 buildah "$@")
+		local OUT=$(execute_tip 1 buildah "$@")
 		control_ci group "${OUT}"
 	fi
 

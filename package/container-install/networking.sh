@@ -22,8 +22,9 @@ function _set_network_if_not() {
 register_unit_emit _set_network_if_not
 
 function _network_reset() {
-	_N_TYPE=
-	declare -a _N_PORTS=()
+	declare -g _N_TYPE=''
+	declare -g _N_HOST=''
+	declare -ga _N_PORTS=()
 }
 register_unit_reset _network_reset
 
@@ -31,6 +32,21 @@ function _export_network_envs() {
 	printf 'declare -r NETWORK_TYPE=%q\n' "${_N_TYPE}"
 }
 register_script_emit _export_network_envs
+
+function _append_network_args() {
+	if [[ ${_N_TYPE} != 'pod' ]]; then
+		add_run_argument "--hostname=${_N_HOST:-$(unit_get_scopename)}"
+	fi
+}
+register_script_emit _append_network_args
+
+function unit_podman_hostname() {
+	if [[ -n ${_N_HOST} ]]; then
+		die "hostname already set to ${_N_HOST}"
+	fi
+	_N_HOST=$1
+	unit_body "Environment" "MY_HOSTNAME=${_N_HOST}"
+}
 
 function _record_port_usage() {
 	_N_PORTS+=("$@")
@@ -143,8 +159,8 @@ function network_use_veth() {
 	done
 
 	SCRIPT=$(install_script "${COMMON_LIB_ROOT}/tools/update-hosts.sh")
-	unit_hook_poststart "/usr/bin/flock /etc/hosts ${SCRIPT} add \"$(_unit_get_scopename)\" \"${_S_HOST}\""
-	unit_hook_stop "/usr/bin/flock /etc/hosts ${SCRIPT} del \"$(_unit_get_scopename)\""
+	unit_hook_poststart "/usr/bin/flock /etc/hosts ${SCRIPT} add \"$(unit_get_scopename)\" \"${_N_HOST}\""
+	unit_hook_stop "/usr/bin/flock /etc/hosts ${SCRIPT} del \"$(unit_get_scopename)\""
 }
 function network_use_container() {
 	# join another container's network namespace

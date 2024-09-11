@@ -15,7 +15,7 @@ function do_pstree() {
 	local SERVICE_FULL_NAME=$(systemctl list-units '*.pod@.service' '*.pod.service' --no-pager --no-legend | grep "$TARGET" | grep -E '(running|activating)' | awk '{print $1}' | head -n1)
 	if [[ $SERVICE_FULL_NAME ]]; then
 		TARGET=$(get_container_by_service "$SERVICE_FULL_NAME")
-		CPID=$(podman inspect --format '{{.State.ConmonPid}}' "$TARGET")
+		CPID=$(podman container inspect --format '{{.State.ConmonPid}}' "$TARGET")
 		echo -e " + pstree $* \e[38;5;11m$CPID\e[0m"
 		exec pstree "$@" "$CPID"
 	else

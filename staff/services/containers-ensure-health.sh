@@ -9,7 +9,7 @@ mapfile -t IDS < <(podman ps --format '{{.ID}}')
 
 for ID in "${IDS[@]}"; do
 	sdnotify "inspect ${ID}..."
-	STATUS=$(podman inspect "${ID}" --type=container --format='{{.State.Healthcheck.Status}}')
+	STATUS=$(podman container inspect "${ID}" --format='{{.State.Healthcheck.Status}}')
 	if [[ ${STATUS} == healthy ]]; then
 		debug "[**] it is healthy"
 	elif [[ ${STATUS} == unhealthy ]]; then
@@ -20,7 +20,7 @@ for ID in "${IDS[@]}"; do
 			debug "    not quit in 30s!"
 		fi
 	else
-		debug "[**] health check is disabled. ${STATUS:-}"
+		debug "[**] health check is disabled. ${STATUS-}"
 	fi
 done
 

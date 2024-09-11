@@ -8,7 +8,7 @@ do_refresh() {
 	done
 
 	while read -r CONTAINER IMAGE_ID IMAGE_NAME; do
-		WANT_ID=$(podman inspect "$IMAGE_NAME" --type=image --format='{{.Id}}')
+		WANT_ID=$(podman image inspect "$IMAGE_NAME" --format='{{.Id}}')
 		if ! [[ $WANT_ID ]]; then
 			echo "$IMAGE_NAME not exists" >&2
 			continue
@@ -18,7 +18,7 @@ do_refresh() {
 		else
 			NEED_RESTART+=("${CONTAINER_SERVICE_MAP[$CONTAINER]}")
 		fi
-	done < <(podman inspect "${!CONTAINER_SERVICE_MAP[@]}" --type=container --format='{{.Name}} {{.Image}} {{.ImageName}}' || true)
+	done < <(podman container inspect "${!CONTAINER_SERVICE_MAP[@]}" --format='{{.Name}} {{.Image}} {{.ImageName}}' || true)
 
 	if [[ -t 0 ]] && [[ -t 1 ]]; then
 		echo -e "\e[38;5;10mUp to date:\e[0m" >&2

@@ -24,7 +24,7 @@ declare -xr PIDFile="${XDG_RUNTIME_DIR}/podman-conmon.pid"
 
 declare PID=''
 function __podman_run_container() {
-	add_argument "--conmon-pidfile=${PIDFile}"
+	add_run_argument "--conmon-pidfile=${PIDFile}"
 	debug " + podman run$(printf ' %q' "${ARGS[@]}")"
 	local I
 	for I in "${ARGS[@]}"; do

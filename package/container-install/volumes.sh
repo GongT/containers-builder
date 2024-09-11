@@ -51,7 +51,7 @@ function shared_sockets_provide() {
 }
 
 function __reset_volumes() {
-	declare -a _S_PREP_FOLDER=()
+	declare -ga _S_PREP_FOLDER=()
 }
 register_unit_reset __reset_volumes
 

@@ -3,8 +3,6 @@
 declare -a _S_LINUX_CAP
 declare -a _S_VOLUME_ARG
 declare -A _S_UNIT_CONFIG
-declare -A _S_BODY_CONFIG
-declare -a _S_BODY_RAW_LINE
 declare -a _S_COMMENTS
 declare -a _S_PODMAN_ARGS
 declare -a _S_COMMAND_LINE
@@ -18,10 +16,6 @@ _unit_reset() {
 	_S_CURRENT_UNIT_TYPE=''
 	_S_CURRENT_UNIT_NAME=''
 	_S_CURRENT_UNIT_FILE=''
-	_S_IMAGE_PULL="${DEFAULT_IMAGE_PULL:-always}"
-	_S_HOST=''
-	_S_KILL_TIMEOUT=5
-	_S_KILL_FORCE=yes
 	_S_INSTALL=services.target
 
 	_S_LINUX_CAP=()
@@ -41,15 +35,6 @@ _unit_reset() {
 		_S_UNIT_CONFIG[After]+="services-pre.target"
 		_S_UNIT_CONFIG[RequiresMountsFor]+="${CONTAINERS_DATA_PATH}"
 	fi
-
-	_S_BODY_RAW_LINE=()
-	_S_BODY_CONFIG=()
-	_S_BODY_CONFIG[WorkingDirectory]="/tmp"
-	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
-	_S_BODY_CONFIG[Restart]="${DEFAULT_RESTART:-always}"
-	_S_BODY_CONFIG[RestartSec]="1"
-	_S_BODY_CONFIG[KillSignal]="SIGINT"
-	_S_BODY_CONFIG[Slice]="services-normal.slice"
 }
 
 function _unit_init() {
@@ -62,6 +47,7 @@ function auto_create_pod_service_unit() {
 }
 function create_pod_service_unit() {
 	_arg_ensure_finish
+
 	__create_unit__ pod "$1" service
 }
 function __create_unit__() {
@@ -96,7 +82,7 @@ function _create_unit_name() {
 
 function unit_write() {
 	if [[ -z ${_S_CURRENT_UNIT_FILE} ]]; then
-		die "create_xxxx_unit first."
+		die "create unit first."
 	fi
 
 	install_common_system_support
@@ -107,7 +93,7 @@ function unit_write() {
 	if [[ -e "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}" ]]; then
 		delete_file 0 "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}"
 	fi
-	info_note "verify unit: ${TF}"
+	info_log "verify unit: ${TF}"
 	printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"
 	copy_file "${TF}" "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 }
@@ -123,10 +109,10 @@ function unit_finish() {
 }
 function _systemctl_disable() {
 	local UN=$1
-	# if systemctl is-enabled -q "$UN"; then
-	systemctl disable "${UN}" &>/dev/null || true
-	systemctl reset-failed "${UN}" &>/dev/null || true
-	# fi
+	if systemctl is-enabled -q "$UN"; then
+		systemctl disable "${UN}" &>/dev/null || true
+		systemctl reset-failed "${UN}" &>/dev/null || true
+	fi
 }
 function apply_systemd_service() {
 	_arg_ensure_finish
@@ -163,7 +149,7 @@ function apply_systemd_service() {
 			local LIST I
 			mapfile -t LIST < <(systemctl list-units --all --no-legend "${UN%.service}*.service" | sed 's/●//g' | awk '{print $1}')
 			for I in "${LIST[@]}"; do
-				info_note "  disable ${I}..."
+				info_log "  disable ${I}..."
 				_systemctl_disable "${I}"
 			done
 		else
@@ -172,7 +158,16 @@ function apply_systemd_service() {
 		info "systemd unit ${UN} disabled."
 	fi
 }
-function _unit_get_scopename() {
+
+###
+# get scoped name for use in systemd-unit file
+# xxx.service -> xxx
+# yyy@aaa.service -> yyy_aaa
+###
+function unit_get_scopename() {
+	if [[ -z $_S_CURRENT_UNIT_FILE ]]; then
+		die "wrong call timing"
+	fi
 	local NAME="${_S_CURRENT_UNIT_NAME}"
 	if [[ -n ${_S_AT_} ]]; then
 		NAME="${NAME%@}"
@@ -182,9 +177,7 @@ function _unit_get_scopename() {
 	fi
 }
 function _export_base_envs() {
-	declare -r KILL_TIMEOUT="${_S_KILL_TIMEOUT}"
-	declare -r KILL_IF_TIMEOUT="${_S_KILL_FORCE}"
-	declare -p KILL_TIMEOUT KILL_IF_TIMEOUT
+	declare -r ALLOW_FORCE_KILL="${ALLOW_FORCE_KILL}"
 	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE:-"${NAME}"}"
@@ -211,43 +204,22 @@ function _unit_assemble() {
 
 	local EXT="${_S_CURRENT_UNIT_TYPE}"
 	local NAME="${_S_CURRENT_UNIT_NAME}"
-	local SCOPE_ID="$(_unit_get_scopename)"
 	echo ""
 	echo "[${EXT^}]
 Type=notify
 NotifyAccess=all"
 
-	if [[ ${_S_IMAGE_PULL} == "never" ]]; then
-		:   # Nothing
-	else # always
-		local _PULL_HELPER
-		_PULL_HELPER=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/pull-image.sh")
-		printf_command_direction 'ExecStartPre=' "${_PULL_HELPER}" "${_S_IMAGE:-"${NAME}"}" "${_S_IMAGE_PULL}"
-	fi
-
+	## exec start
 	echo "ExecStart=$(escape_argument "$(_service_executer_write)") \\"
-
 	local -a STARTUP_ARGS=('--replace=true')
 	_create_startup_arguments
-
 	escape_argument_list_continue "${STARTUP_ARGS[@]}"
-
 	echo ""
 	echo "# debug script: $(get_debugger_script)"
 
-	if [[ -z ${_S_BODY_CONFIG['ExecStop']-} ]]; then
-		copy_file --mode 0755 "${COMMON_LIB_ROOT}/staff/container-tools/container-manage-stop.sh" "${SCRIPTS_DIR}/stop-container.sh"
-		_CONTAINER_STOP=${SCRIPTS_DIR}/stop-container.sh
-		printf_command_direction ExecStop= "${_CONTAINER_STOP}" "${_S_KILL_TIMEOUT}" "${SCOPE_ID}"
-	fi
+	_print_unit_service_section
 
-	for VAR_NAME in "${!_S_BODY_CONFIG[@]}"; do
-		echo "${VAR_NAME}=${_S_BODY_CONFIG[${VAR_NAME}]}"
-	done
-
-	printf '%s\n' "${_S_BODY_RAW_LINE[@]}"
-
-	echo "Environment=CONTAINER_ID=${SCOPE_ID}"
+	echo "Environment=CONTAINER_ID=$(unit_get_scopename)"
 	echo "Environment=CURRENT_SYSTEMD_UNIT_NAME=%n"
 
 	if [[ -n ${_S_INSTALL} ]]; then
@@ -259,8 +231,6 @@ NotifyAccess=all"
 	echo ""
 	echo "[X-Containers]"
 	printf '%s\n' "${_S_COMMENTS[@]}"
-	echo "IMAGE_NAME=${_S_IMAGE}"
-	echo "IMAGE_NAME_PULL=${_S_IMAGE_PULL}"
 	echo "CONTAINERS_DATA_PATH=${CONTAINERS_DATA_PATH}"
 	echo "COMMON_LIB_ROOT=${COMMON_LIB_ROOT}"
 	echo "MONO_ROOT_DIR=${MONO_ROOT_DIR-}"
@@ -271,34 +241,26 @@ NotifyAccess=all"
 	echo "SYSTEM_FAST_CACHE=${SYSTEM_FAST_CACHE}"
 }
 
-function _add_argument() {
+function add_run_argument() {
 	if ! is_set _PODMAN_RUN_ARGS; then
 		die "wrong call timing"
 	fi
 	_PODMAN_RUN_ARGS+=("$@")
 }
+function add_build_config() {
+	if ! is_set _PODMAN_RUN_ARGS; then
+		die "wrong call timing"
+	fi
+}
 
 function _create_startup_arguments() {
-	local -r SCOPE_ID="$(_unit_get_scopename)"
 	STARTUP_ARGS+=()
-	local PODMANV
-	PODMANV=$(podman info -f '{{.Version.Version}}')
-	if [[ ${PODMANV} == "<no value>" ]]; then
-		info_note "Using podman version 1."
-		STARTUP_ARGS+=("--log-opt=path=/dev/null")
-	else
-		STARTUP_ARGS+=("--log-driver=none")
-	fi
-
+	STARTUP_ARGS+=("--log-driver=passthrough")
 	STARTUP_ARGS+=("--restart=no")
-
-	if [[ $_N_TYPE != 'pod' ]]; then
-		STARTUP_ARGS+=("--hostname=${_S_HOST:-${SCOPE_ID}}")
-	fi
 
 	local _PODMAN_RUN_ARGS=() CAP_LIST
 
-	_healthcheck_arguments_podman
+	call_argument_config
 
 	STARTUP_ARGS+=("${_PODMAN_RUN_ARGS[@]}")
 	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
@@ -312,11 +274,11 @@ function _create_startup_arguments() {
 
 function unit_data() {
 	if [[ $1 == "safe" ]]; then
-		_S_KILL_TIMEOUT=5
-		_S_KILL_FORCE=yes
+		PODMAN_TIMEOUT_TO_KILL=5
+		ALLOW_FORCE_KILL=yes
 	elif [[ $1 == "danger" ]]; then
-		_S_KILL_TIMEOUT=120
-		_S_KILL_FORCE=no
+		PODMAN_TIMEOUT_TO_KILL=120
+		ALLOW_FORCE_KILL=no
 	else
 		die "unit_data <safe|danger>"
 	fi
@@ -348,65 +310,25 @@ function unit_unit() {
 function unit_comment() {
 	_S_COMMENTS+=("$*")
 }
-function unit_body() {
-	local K="$1" V
-	shift
-	case "${K}" in
-	ExecStop | ExecReload)
-		# meanful config
-		_S_BODY_CONFIG[${K}]=$(escape_argument_list_sameline "$@")
-		;;
-	RestartPreventExitStatus)
-		# multiple directive, no escape
-		_S_BODY_RAW_LINE+=("$K=$*")
-		;;
-	Environment*)
-		# multiple directive, not command
-		for V; do
-			_S_BODY_RAW_LINE+=("$K=$(escape_argument "$V")")
-		done
-		;;
-	ExecStartPre | ExecStartPost | ExecStopPre | ExecStopPost)
-		# multiple directive, is command
-		local COMMAND=$1 PREFIX=''
-		shift
-		split_exec_command_prefix "${COMMAND}"
-
-		_S_BODY_RAW_LINE+=("${K}=${PREFIX}$(escape_argument_list_sameline "$COMMAND" "$@")")
-		;;
-	Exec*)
-		die "can not set $K using unit_body()"
-		;;
-	*)
-		_S_BODY_CONFIG[${K}]="${*}"
-		;;
-	esac
-}
 function _unit_podman_network_arg() {
 	_S_NETWORK_ARGS+=("$*")
 }
 function unit_podman_arguments() {
 	local I
-	if [[ -z $* ]]; then
+	if [[ $# -eq 0 ]]; then
 		return
 	fi
 	for I; do
 		_S_PODMAN_ARGS+=("${I}")
 	done
 }
-function unit_podman_hostname() {
-	_S_HOST=$1
-	unit_body "Environment" "MY_HOSTNAME=${_S_HOST}"
-}
-
-function unit_podman_image_pull() {
-	_S_IMAGE_PULL=$1
-}
-function unit_podman_image() {
-	_S_IMAGE=$1
-	shift
+function unit_podman_cmdline() {
+	if [[ ${#_S_COMMAND_LINE[@]} -gt 0 ]]; then
+		info_warn "duplicate set commandline, last one will used"
+	fi
 	_S_COMMAND_LINE=("$@")
 }
+
 function unit_hook_start() {
 	unit_body ExecStartPre "$@"
 }

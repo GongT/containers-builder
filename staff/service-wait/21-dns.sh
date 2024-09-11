@@ -79,6 +79,6 @@ function dns_append() {
 
 function dns_finalize() {
 	if [[ ${#NSS[@]} -gt 0 ]]; then
-		add_argument "--env=NSS=${NSS[*]}"
+		add_run_argument "--env=NSS=${NSS[*]}"
 	fi
 }

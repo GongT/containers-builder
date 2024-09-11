@@ -1,4 +1,7 @@
 declare -a EXIT_HANDLERS=()
+declare -i EXIT_CODE=0
+declare ALTERNATIVE_BUFFER_ENABLED=no
+
 function register_exit_handler() {
 	if [[ $# -eq 1 ]]; then
 		EXIT_HANDLERS+=("$1")
@@ -6,11 +9,15 @@ function register_exit_handler() {
 		EXIT_HANDLERS+=("$(json_array "$@")")
 	fi
 }
-function _exit() {
-	local EXIT_CODE=$?
+
+function _MAIN_exit_handler() {
+	local -i _EXIT_CODE=$?
 	set +Eeuo pipefail
 
-	echo -ne "\e[0m"
+	if [[ $ALTERNATIVE_BUFFER_ENABLED != no ]]; then
+		printf '\e[?1049l\e[J'
+	fi
+	printf "\e[0m"
 
 	local CB CMDS
 	for CB in "${EXIT_HANDLERS[@]}"; do
@@ -22,10 +29,14 @@ function _exit() {
 		fi
 	done
 
-	if [[ ${EXIT_CODE} -ne 0 ]]; then
+	if [[ ${_EXIT_CODE} -eq 0 && ${EXIT_CODE} -ne 0 ]]; then
+		_EXIT_CODE=${EXIT_CODE}
+	fi
+
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
 		control_ci groupEnd
-		control_ci error "bash exit with error code ${EXIT_CODE}"
-		info_warn "script failed, exit code: ${EXIT_CODE}."
+		control_ci error "bash exit with error code ${_EXIT_CODE}"
+		info_warn "script failed, exit code: ${_EXIT_CODE}."
 		callstack 1
 	elif [[ -n ${INSIDE_GROUP} ]]; then
 		control_ci groupEnd
@@ -34,7 +45,17 @@ function _exit() {
 		info_note "script success."
 	fi
 
-	exit "${EXIT_CODE}"
+	exit "${_EXIT_CODE}"
 }
 
-trap _exit EXIT
+trap _MAIN_exit_handler EXIT
+
+function _MAIN_cancel_handler() {
+	EXIT_CODE=$?
+	if [[ ${EXIT_CODE} -eq 0 ]]; then
+		EXIT_CODE=233
+	fi
+}
+if ! is_ci && is_tty; then
+	trap _MAIN_cancel_handler INT
+fi

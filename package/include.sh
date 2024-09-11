@@ -24,7 +24,7 @@ declare -xr CURRENT_ACTION
 
 pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 
-source "./init/0-lifecycle-dedup.sh"
+source "./init/0-lifecycle-decoupling.sh"
 source "./init/output.sh"
 source "./init/basic.sh"
 source "./init/strings.sh"
@@ -32,6 +32,7 @@ source "./init/constants.sh"
 source "./init/paths.sh"
 source "./init/exit.sh"
 source "./init/arguments.sh"
+source "./init/author-detect.sh"
 
 source "./platform/proxy.sh"
 source "./platform/systemctl.sh"

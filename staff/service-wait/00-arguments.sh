@@ -2,18 +2,18 @@
 set -Eeuo pipefail
 
 declare -a ARGS=()
-function add_argument() {
+function add_run_argument() {
 	ARGS=("$@" "${ARGS[@]}")
 }
 # ARGS+=("--attach=stdin,stdout,stderr")
-# ARGS+=("--log-level=debug")
+ARGS+=("--log-level=error")
 
 function make_arguments() {
 	detect_host_ip
 
 	if [[ -n "${INVOCATION_ID:-}" ]]; then
-		add_argument "--env=INVOCATION_ID=${INVOCATION_ID}"
-		add_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
+		add_run_argument "--env=INVOCATION_ID=${INVOCATION_ID}"
+		add_run_argument "--label=systemd.service.invocation_id=${INVOCATION_ID}"
 	fi
 
 	for i; do

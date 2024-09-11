@@ -1,6 +1,7 @@
 declare -r SHELL_SCRIPT_PREFIX=$'#!/usr/bin/env bash
 set -Eeuo pipefail
 shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
+
 '
 
 function _service_executer_write() {
@@ -14,12 +15,12 @@ function _service_executer_write() {
 }
 
 __concat_wait_files() {
+	printf '\n\n'
 	local FILE_PATH
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
-		echo
-		echo "## $(basename "${FILE_PATH}")"
+		printf '\n## FILE: %s\n' "$(basename "${FILE_PATH}")"
 		tail -n +4 "${FILE_PATH}"
-		echo
+		printf '\n'
 	done
 }
 get_debugger_script() {
@@ -32,7 +33,7 @@ _debugger_file_write() {
 	_create_startup_arguments
 	FILE_DATA=$(
 		echo "$SHELL_SCRIPT_PREFIX"
-		echo "declare -r CONTAINER_ID='$(_unit_get_scopename)'"
+		echo "declare -r CONTAINER_ID='$(unit_get_scopename)'"
 		echo "declare -r NAME='${_S_CURRENT_UNIT_NAME}'"
 		echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
 		call_script_emit
@@ -80,8 +81,14 @@ function start_notify() {
 	pass)
 		_S_START_WAIT="pass"
 		;;
+	healthy)
+		_S_START_WAIT="healthy"
+		;;
+	auto)
+		_S_START_WAIT="auto"
+		;;
 	*)
-		die "Unknown start notify method ${TYPE}, allow: socket, port, sleep, output, touch, pass."
+		die "Unknown start notify method ${TYPE}, allow: socket, port, sleep, output, touch, pass, healthy. defaults to healthy if healthcheck exists, or sleep if not."
 		;;
 	esac
 }
@@ -91,19 +98,22 @@ function __provide_sockets_for_wait() {
 }
 
 function __reset_start_notify() {
-	_S_START_WAIT=sleep:10
-	declare -a _S_WAIT_SOCKETS=()
+	declare -g _S_START_WAIT=
+	declare -ga _S_WAIT_SOCKETS=()
 }
 
 register_unit_reset __reset_start_notify
 
 function __emit_start_helpers() {
-	if [[ $_S_START_WAIT == sockets ]]; then
+	if [[ -z $_S_START_WAIT ]]; then
+		_S_START_WAIT="auto"
+	elif [[ $_S_START_WAIT == sockets ]]; then
 		if [[ ${#_S_WAIT_SOCKETS[@]} -eq 0 ]]; then
 			die "unit wait for socket but not provide any."
 		fi
 		_S_START_WAIT+=":${_S_WAIT_SOCKETS[0]}"
 	fi
+
 	printf "declare -r START_WAIT_DEFINE=%q" "${_S_START_WAIT}"
 }
 

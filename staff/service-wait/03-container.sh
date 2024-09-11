@@ -27,7 +27,7 @@ function ensure_container_not_running() {
 		debug "Container ID: ${LCID}" >&2
 		debug "State: ${LSTAT}" >&2
 		if [[ ${LSTAT} == "running" ]]; then
-			if [[ ${KILL_IF_TIMEOUT} == yes ]]; then
+			if [[ ${ALLOW_FORCE_KILL} == yes ]]; then
 				podman stop "${CONTAINER_ID}" || true
 			else
 				podman stop --time 9999 "${CONTAINER_ID}" || true

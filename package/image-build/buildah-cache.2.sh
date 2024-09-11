@@ -5,11 +5,10 @@ function buildah_cache2() {
 	local -r NAME=$1 HASH_CALLBACK=$2 BUILD_CALLBACK=$3
 
 	_hash_cb() {
-		echo "${BUILDAH_LAST_IMAGE}"
-		"${HASH_CALLBACK}"
-		# echo "===========================================" >&2
-		# cat "$TMPF" >&2
-		# echo "===========================================" >&2
+		printf '%s\n' "${BUILDAH_LAST_IMAGE}"
+		local R
+		R=$("${HASH_CALLBACK}")
+		printf '%s\n' "${R}"
 	}
 	_build_cb() {
 		local CONTAINER

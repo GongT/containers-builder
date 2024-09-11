@@ -24,6 +24,32 @@ bind_fs() {
 bind_fs /var/lib/dnf/repos
 bind_fs /var/cache/dnf
 
+function main() {
+	if [[ -z ${ACTION-} ]]; then
+		ACTION="install"
+	fi
+
+	dnf() {
+		echo -e "\e[2m + /usr/bin/dnf --nodocs -y "--releasever="${FEDORA_VERSION}"" --installroot=/install-root $*\e[0m" >&2
+		/usr/bin/dnf --nodocs -y "--releasever=${FEDORA_VERSION}" --installroot=/install-root "$@"
+	}
+
+	# dnf clean expire-cache
+	# dnf makecache
+	dnf "${ACTION}" "${@}"
+
+	if [[ ${ACTION} == install ]]; then
+		cd /install-root
+
+		BUSYBOX_BIN=$(find bin usr/bin -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
+
+		if [[ -n ${BUSYBOX_BIN} ]]; then
+			echo "installing busybox (${BUSYBOX_BIN})..."
+			chroot /install-root "${BUSYBOX_BIN}" --install -s /bin
+		fi
+	fi
+}
+
 _exit() {
 	R=$?
 
@@ -38,28 +64,8 @@ _exit() {
 	exit "${R}"
 }
 
-trap _exit EXIT
-
-if ! [[ -n ${ACTION:-} ]]; then
-	ACTION="install"
-fi
-
-dnf() {
-	echo -e "\e[2m + /usr/bin/dnf --nodocs -y "--releasever="${FEDORA_VERSION}"" --installroot=/install-root $*\e[0m" >&2
-	/usr/bin/dnf --nodocs -y "--releasever=${FEDORA_VERSION}" --installroot=/install-root "$@"
-}
-
-# dnf clean expire-cache
-# dnf makecache
-dnf "${ACTION}" "${@}"
-
-if [[ ${ACTION} == install ]]; then
-	cd /install-root
-
-	BUSYBOX_BIN=$(find bin usr/bin -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
-
-	if [[ -n "${BUSYBOX_BIN}" ]]; then
-		echo "installing busybox (${BUSYBOX_BIN})..."
-		chroot /install-root "${BUSYBOX_BIN}" --install -s /bin
-	fi
+if main "$@"; then
+	_exit
+else
+	_exit
 fi

@@ -9,7 +9,7 @@ function self_journal() {
 declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
 function load_sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
-		echo "[SDNOTIFY] hide socket from podman"
+		echo "[SDNOTIFY] hide socket from podman: $NOTIFY_SOCKET"
 		unset NOTIFY_SOCKET
 
 		function sdnotify() {

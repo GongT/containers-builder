@@ -19,11 +19,16 @@ function image_get_label() {
 	xpodman image inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
 }
 
-function _add_config() {
+function add_build_config() {
 	if ! is_set COMMIT_CONFIGS; then
 		die "wrong call timing"
 	fi
 	COMMIT_CONFIGS+=("$@")
+}
+function add_run_argument() {
+	if ! is_set COMMIT_CONFIGS; then
+		die "wrong call timing"
+	fi
 }
 
 function buildah() {
@@ -60,9 +65,13 @@ function buildah() {
 	from)
 		# TODO: all image ids
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
-		local OUTPUT_ID
-		OUTPUT_ID=$(xbuildah "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}")
-		digist_to_short "${OUTPUT_ID}"
+		xbuildah_capture "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}"
+		local NAME_OR_ID="$(<"${MANAGER_TMP_STDOUT}")"
+		if is_id_digist "$NAME_OR_ID"; then
+			echo "$NAME_OR_ID"
+		else
+			container_get_id "$NAME_OR_ID"
+		fi
 		return
 		;;
 	commit)
@@ -77,6 +86,11 @@ function buildah() {
 				info "rewrite commit image name: ${REWRITE_IMAGE_NAME}"
 				PASSARGS=("${PASSARGS[@]:0:LEN}" "${REWRITE_IMAGE_NAME}")
 			fi
+
+			COMMIT_CONFIGS+=(
+				"--author=${AUTHOR}"
+				"--comment="
+			)
 
 			if is_ci; then
 				local HASH
@@ -95,11 +109,19 @@ function buildah() {
 
 			COMMIT_CONFIGS+=("--annotation=${ANNOID_CACHE_PREV_STAGE}-" "--annotation=${ANNOID_CACHE_HASH}-")
 
-			## healthcheck.sh
-			_healthcheck_config_buildah
+			local BASE_FULL_NAME BASE_DIGIST
+			BASE_FULL_NAME=$(image_find_full_name "${LAST_KNOWN_BASE}")
+			BASE_DIGIST=$(image_get_digist "${BASE_FULL_NAME}")
+			LAST_KNOWN_BASE=
+			if [[ -n ${BASE_FULL_NAME} && -n ${BASE_DIGIST} ]]; then
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_NAME}=${BASE_FULL_NAME}")
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGIST}=${BASE_DIGIST}")
+			else
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_NAME}-")
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGIST}-")
+			fi
 
-			## stop.sh
-			_stopreload_config_buildah
+			call_argument_config
 
 			xbuildah config "${COMMIT_CONFIGS[@]}" "${CID}"
 		else
@@ -107,11 +129,14 @@ function buildah() {
 		fi
 
 		local OUTPUT
-		OUTPUT=$(xbuildah commit --rm --quiet "${PASSARGS[@]}")
+		## Note: current oci not support healthcheck, docker not correct save annotations
+		OUTPUT=$(xbuildah commit "--format=oci" --rm --quiet "${PASSARGS[@]}")
 		info_note "commit: ${OUTPUT}"
 		control_ci "set-env" "LAST_COMMITED_IMAGE" "${OUTPUT}"
-
-		digist_to_short "${OUTPUT}"
+		if ! is_id_digist "${OUTPUT}"; then
+			die "output wrong"
+		fi
+		echo "${OUTPUT}"
 		return
 		;;
 	run)

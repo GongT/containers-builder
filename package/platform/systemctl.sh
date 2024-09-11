@@ -26,3 +26,15 @@ function finalize_daemon_reloaded() {
 }
 
 register_exit_handler finalize_daemon_reloaded
+
+timespan_seconds() {
+	local -i us
+	us=$(systemd-analyze timespan 3min | grep 'μs:' | awk '{print $2}')
+	printf "%.0f" $((us / 1000000))
+}
+seconds_timespan() {
+	local -i sec=$1
+	local h
+	h=$(systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}')
+	printf '%s' "${h}"
+}

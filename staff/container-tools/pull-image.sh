@@ -51,7 +51,7 @@ log "pulling from registry..."
 declare -i TRIES=1 MAX_TRY=5
 while true; do
 	systemd-notify "--status=[${TRIES}/${MAX_TRY}] pull ${IMAGE_TO_PULL}" "EXTEND_TIMEOUT_USEC=$((30 * 1000000))"
-	if podman pull --retry 1 "${IMAGE_TO_PULL}"; then
+	if podman image pull --retry 1 "${IMAGE_TO_PULL}"; then
 		break
 	fi
 

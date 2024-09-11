@@ -43,17 +43,16 @@ function cache_try_pull() {
 	local -r URL=$(cache_create_url "$@")
 	local -r NAME=$(cache_create_name "$@")
 
-	local STDERR_FILE IMAGE
-	STDERR_FILE=$(create_temp_file "cache-pull-output.txt")
-
 	info_log "pull cache image ${URL}"
-	local CMD=(xpodman image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}")
-	info_note " + ${CMD[*]}"
 
-	local O
-	if IMAGE=$("${CMD[@]}" 2>"${STDERR_FILE}"); then
+	local -i ERRNO
+
+	try_call xpodman_capture image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}"
+
+	if [[ $ERRNO -eq 0 ]]; then
+		local IMAGE=$(<"$MANAGER_TMP_STDOUT")
 		if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]] && is_id_digist "${IMAGE}"; then
-			info_note "  - name local image to match cache name."
+			info_log "  - name local image to match cache name."
 			xpodman image tag "${IMAGE}" "${NAME}"
 		fi
 		LAST_CACHE_COMES_FROM=pull
@@ -62,13 +61,13 @@ function cache_try_pull() {
 		info_note "  - success."
 	else
 		LAST_CACHE_COMES_FROM=local
-		if grep -q -- 'manifest unknown' "${STDERR_FILE}" \
-			|| grep -q -- 'name unknown' "${STDERR_FILE}" \
-			|| grep -q -- 'no such file or directory' "${STDERR_FILE}"; then
+		if grep -q -- 'manifest unknown' "${MANAGER_TMP_STDERR}" \
+			|| grep -q -- 'name unknown' "${MANAGER_TMP_STDERR}" \
+			|| grep -q -- 'no such file or directory' "${MANAGER_TMP_STDERR}"; then
 			info_note " - failed: not exists."
 		else
-			info_stream <"${STDERR_FILE}"
-			info_note " - failed, not able to pull."
+			info_stream <"${MANAGER_TMP_STDERR}"
+			info_warn " - failed, not able to pull."
 			die "failed pull cache image!"
 		fi
 	fi
@@ -92,7 +91,9 @@ function cache_push() {
 	fi
 
 	control_ci group "push cache image '${NAME}' (reason: ${LAST_CACHE_COMES_FROM}) to '${URL}'"
-	xpodman image push "${CACHE_REGISTRY_ARGS[@]}" "${NAME}" "${URL}"
+
+	xpodman image push "--format=oci" "${CACHE_REGISTRY_ARGS[@]}" "${NAME}" "${URL}"
+
 	collect_temp_image "${NAME}"
 	control_ci groupEnd
 }

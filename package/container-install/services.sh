@@ -9,43 +9,42 @@ function _copy_common_static_unit() {
 	copy_file "${SERVICES_DIR}/${FILE}" "${SYSTEM_UNITS_DIR}/${NAME}"
 }
 function install_common_system_support() {
-	if is_uninstalling; then
-		: # no reduce method now
-	elif [[ -z ${_COMMON_FILE_INSTALL} ]]; then
-		_COMMON_FILE_INSTALL=yes
+	if [[ -n ${_COMMON_FILE_INSTALL} ]]; then
+		return
+	fi
+	declare -gr _COMMON_FILE_INSTALL=yes
 
-		install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
+	install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
 
-		_copy_common_static_unit services-entertainment.slice
-		_copy_common_static_unit services-infrastructure.slice
-		_copy_common_static_unit services-normal.slice
-		_copy_common_static_unit services.slice
-		install_common_script_service wait-dns-working
-		install_common_script_service cleanup-stopped-containers
-		install_common_script_service containers-ensure-health
-		_copy_common_static_unit containers-ensure-health.timer
+	_copy_common_static_unit services-entertainment.slice
+	_copy_common_static_unit services-infrastructure.slice
+	_copy_common_static_unit services-normal.slice
+	_copy_common_static_unit services.slice
+	install_common_script_service wait-dns-working
+	install_common_script_service cleanup-stopped-containers
+	install_common_script_service containers-ensure-health
+	_copy_common_static_unit containers-ensure-health.timer
 
-		if is_root; then
-			_copy_common_static_unit services.timer
-			_copy_common_static_unit services@root.target services.target
-			_copy_common_static_unit services-pre.target
-			_copy_common_static_unit containers.target
-			_copy_common_static_unit services-spin-up.service
-			install_common_script_service services-boot
-			service_dropin systemd-networkd alias-nameserver.conf
-			edit_system_service dnsmasq create-dnsmasq-config
+	if is_root; then
+		_copy_common_static_unit services.timer
+		_copy_common_static_unit services@root.target services.target
+		_copy_common_static_unit services-pre.target
+		_copy_common_static_unit containers.target
+		_copy_common_static_unit services-spin-up.service
+		install_common_script_service services-boot
+		service_dropin systemd-networkd alias-nameserver.conf
+		edit_system_service dnsmasq create-dnsmasq-config
 
-			if ! systemctl is-enabled --quiet services.timer; then
-				systemctl daemon-reload
-				systemctl enable services.timer
-			fi
-		else
-			_copy_common_static_unit services@user.target services.target
+		if ! systemctl is-enabled --quiet services.timer; then
+			systemctl daemon-reload
+			systemctl enable services.timer
+		fi
+	else
+		_copy_common_static_unit services@user.target services.target
 
-			if ! systemctl is-enabled --quiet services.target; then
-				systemctl daemon-reload
-				systemctl enable services.target
-			fi
+		if ! systemctl is-enabled --quiet services.target; then
+			systemctl daemon-reload
+			systemctl enable services.target
 		fi
 	fi
 }

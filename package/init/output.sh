@@ -3,11 +3,15 @@
 INSIDE_GROUP=
 SAVED_INDENT=
 export _CURRENT_INDENT=""
+PRINT_STACK=yes
 
 function die() {
 	local LASTERR=$?
 	control_ci groupEnd
 	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
+	if [[ ${PRINT_STACK-no} == yes ]]; then
+		callstack 2
+	fi
 	control_ci error "$*"
 	if [[ $LASTERR -gt 0 ]]; then
 		exit $LASTERR
@@ -158,6 +162,9 @@ function info_warn() {
 function info_success() {
 	echo -e "${_CURRENT_INDENT}\e[38;5;10m$*\e[0m" >&2
 }
+function info_error() {
+	echo -e "${_CURRENT_INDENT}\e[38;5;9m$*\e[0m" >&2
+}
 function info_bright() {
 	echo -e "${_CURRENT_INDENT}\e[1m$*\e[0m" >&2
 }
@@ -205,6 +212,14 @@ function x() {
 	"$@"
 }
 
+function try_call() {
+	if "$@"; then
+		ERRNO=0
+	else
+		ERRNO=$?
+	fi
+}
+
 _LINE_LABEL=""
 function branch_split() {
 	if [[ -n ${_LINE_LABEL} ]]; then
@@ -230,4 +245,70 @@ function branch_join() {
 	else
 		echo -e "\e[2m${_LINE_LABEL} -> ${RESULT}\e[0m" >&2
 	fi
+}
+
+declare -a __CURPOS__
+function get_cursor_position() {
+	if ! is_tty || is_ci; then
+		return
+	fi
+	printf "\e[6n"
+	local RESP
+	read -t 1 -r -s -d 'R' RESP
+	RESP="${RESP:2}"
+	__CURPOS__=("${RESP%;*}" "${RESP#*;}")
+
+	# printf '\e[38;5;9m|\e[0m' >&2
+}
+function restore_cursor_position() {
+	if ! is_tty || is_ci || [[ -z ${__CURPOS__[0]} ]]; then
+		return
+	fi
+
+	printf "\e[%d;%dH\e[J" "${__CURPOS__[@]}"
+	__CURPOS__=()
+}
+function move_up_line() {
+	if ! is_tty || is_ci; then
+		return
+	fi
+	printf "\e[%dF" "${1-1}"
+}
+
+function alternative_buffer_execute() {
+	local TITLE="$1" RET
+	shift
+	if ! is_ci && is_tty; then
+		info_warn "$TITLE"
+		printf '\e[?1049h'
+		ALTERNATIVE_BUFFER_ENABLED=yes
+		local TMP_OUT
+		TMP_OUT=$(create_temp_file dnf.out)
+		if "$@" 2>&1 | tee "${TMP_OUT}"; then
+			RET=0
+
+			ALTERNATIVE_BUFFER_ENABLED=no
+			printf '\e[?1049l\e[J'
+
+			move_up_line 1
+			info_log "${TITLE}"
+			info_note "store output to tempfile: $TMP_OUT"
+			return 0
+		else
+			RET=$?
+
+			ALTERNATIVE_BUFFER_ENABLED=no
+			printf '\e[?1049l\e[J'
+
+			move_up_line 1
+			info_error "${TITLE}"
+			cat "${TMP_OUT}"
+			return ${RET}
+		fi
+	else
+		control_ci group "DNF run (worker: ${WORKING_CONTAINER}, dnf worker: ${DNF})"
+		_run_group
+		control_ci groupEnd
+	fi
+	unset _run_group
 }

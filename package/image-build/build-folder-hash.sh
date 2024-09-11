@@ -6,9 +6,9 @@ _HASH_CACHED_AT=""
 function hash_path() {
 	local F=$1
 	if [[ ${F} == /* ]]; then
-		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name -C / ".${F}"
+		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name -C / ".${F}" | hexdump -C
 	else
-		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name "${F}"
+		tar c --owner=0 --group=0 --mtime='UTC 2000-01-01' --sort=name "${F}" | hexdump -C
 	fi
 }
 function fast_hash_path() {

@@ -25,7 +25,7 @@ function _dnf_prep() {
 		control_ci groupEnd
 	fi
 
-	if [[ -n "${http_proxy-}" ]]; then
+	if [[ -n ${http_proxy-} ]]; then
 		info_warn "dnf is using proxy ${http_proxy}."
 		buildah run "${DNF}" sh -c "echo 'proxy=${http_proxy}' >> /etc/dnf/dnf.conf"
 	else
@@ -65,7 +65,9 @@ function make_base_image_by_dnf() {
 
 	_dnf_hash_cb() {
 		cat "${PKG_LIST_FILE}"
+		printf '\n'
 		dnf_list_version "${PKG_LIST_FILE}"
+		printf '\n'
 		echo "${POST_SCRIPT-}"
 	}
 	_dnf_build_cb() {
@@ -98,41 +100,45 @@ function run_dnf() {
 	local DNF # init in _dnf_prep
 	_dnf_prep >&2
 
-	control_ci group "DNF run (worker: ${WORKING_CONTAINER}, dnf worker: ${DNF})"
+	function _run_group() {
+		ROOT=$(buildah mount "${WORKING_CONTAINER}")
+		MNT_DNF=$(buildah mount "${DNF}")
+		mkdir -p "${ROOT}/etc/yum.repos.d"
+		rsync -rv "${MNT_DNF}/etc/yum.repos.d/." "${ROOT}/etc/yum.repos.d"
+		rsync -rv "${COMMON_LIB_ROOT}/staff/extra-repos/." "${ROOT}/etc/yum.repos.d"
+		[[ -n ${TMPREPODIR} ]] && [[ -e ${TMPREPODIR} ]] && rsync -rv "${TMPREPODIR}/." "${ROOT}/etc/yum.repos.d"
+		#
+		info_note "using repos: " $(ls "${ROOT}/etc/yum.repos.d")
+		for D in bin sbin lib lib64; do
+			if [[ ! -e "${ROOT}/${D}" ]]; then
+				mkdir -p "${ROOT}/usr/${D}"
+				ln -s "./usr/${D}" "${ROOT}/${D}"
+			fi
+		done
 
-	ROOT=$(buildah mount "${WORKING_CONTAINER}")
-	MNT_DNF=$(buildah mount "${DNF}")
-	mkdir -p "${ROOT}/etc/yum.repos.d"
-	rsync -rv "${MNT_DNF}/etc/yum.repos.d/." "${ROOT}/etc/yum.repos.d"
-	rsync -rv "${COMMON_LIB_ROOT}/staff/extra-repos/." "${ROOT}/etc/yum.repos.d"
-	[[ -n "${TMPREPODIR}" ]] && [[ -e ${TMPREPODIR} ]] && rsync -rv "${TMPREPODIR}/." "${ROOT}/etc/yum.repos.d"
-	# 
-	info_note "using repos: " $(ls "${ROOT}/etc/yum.repos.d")
-	for D in bin sbin lib lib64; do
-		if [[ ! -e "${ROOT}/${D}" ]]; then
-			mkdir -p "${ROOT}/usr/${D}"
-			ln -s "./usr/${D}" "${ROOT}/${D}"
+		buildah run "--volume=${ROOT}:/install-root" "${DNF_RUN_ARGS[@]}" "${DNF}" \
+			dnf.sh "${PACKAGES[@]}"
+
+		if [[ -n ${POST_SCRIPT-} ]]; then
+			TMPSCRIPT=$(create_temp_file dnf.script.sh)
+			{
+				declare -p PACKAGES FEDORA_VERSION
+				echo "${POST_SCRIPT}"
+			} >"${TMPSCRIPT}"
+			chmod a+x "${TMPSCRIPT}"
+			buildah run "--volume=${TMPSCRIPT}:/tmp/_script" "${WORKING_CONTAINER}" \
+				bash /tmp/_script
 		fi
-	done
+		buildah unmount "${WORKING_CONTAINER}"
+		buildah unmount "${DNF}"
 
-	buildah run "--volume=${ROOT}:/install-root" "${DNF_RUN_ARGS[@]}" "${DNF}" \
-		dnf.sh "${PACKAGES[@]}"
+		echo "DNF run FINISH"
+	}
 
-	if [[ -n ${POST_SCRIPT-} ]]; then
-		TMPSCRIPT=$(create_temp_file dnf.script.sh)
-		{
-			declare -p PACKAGES FEDORA_VERSION
-			echo "${POST_SCRIPT}"
-		} >"${TMPSCRIPT}"
-		chmod a+x "${TMPSCRIPT}"
-		buildah run "--volume=${TMPSCRIPT}:/tmp/_script" "${WORKING_CONTAINER}" \
-			bash /tmp/_script
-	fi
-	buildah unmount "${WORKING_CONTAINER}"
-	buildah unmount "${DNF}"
-
-	echo "DNF run FINISH"
-	control_ci groupEnd
+	alternative_buffer_execute \
+		"run dnf, install ${#PACKAGES[@]} packages, inside container: ${WORKING_CONTAINER}, postscript: ${POST_SCRIPT:+yes}" \
+		_run_group
+	unset _run_group
 }
 function run_dnf_host() {
 	local ACTION="$1" DNF DNF_CMD

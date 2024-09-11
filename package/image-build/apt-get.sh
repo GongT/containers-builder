@@ -1,6 +1,6 @@
 function use_apt_cache() {
 	local -r SYSTEM="$1"
-	info_note "using ${SYSTEM} apt cache: ${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages"
+	info_log "using ${SYSTEM} apt cache: ${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages"
 	mkdir -p "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages" "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/lists"
 	rm -f "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/lists/lock"
 	echo "--volume=${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages:/var/cache/apt"
