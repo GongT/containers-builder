@@ -8,7 +8,7 @@ if echo "$CONTAINER_ID" | grep -q '%i'; then
 	template_id=$1
 	shift
 
-	if ! [[ "$template_id" ]]; then
+	if [[ -z $template_id ]]; then
 		echo "for template (instantiated / ending with @) service, the first argument is the %i value."
 		exit 1
 	fi

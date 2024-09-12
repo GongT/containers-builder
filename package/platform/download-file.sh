@@ -24,7 +24,7 @@ function download_file() {
 	fi
 
 	mkdir -p "${LOCAL_TMP}"
-	if [[ -n "${CI-}" ]]; then
+	if [[ -n ${CI-} ]]; then
 		ARGS+=(--verbose)
 	else
 		ARGS+=(--quiet --show-progress --progress=bar:force:noscroll)
@@ -63,10 +63,10 @@ function download_file() {
 function decompression_file_source() {
 	local SRC_PROJECT_NAME=$1 COMPRESS_FILE=$2 STRIP=${3:-0}
 	local RELPATH="${CURRENT_DIR}/source/${SRC_PROJECT_NAME}"
-	if [[ -n "${CI-}" ]] && [[ -e ${RELPATH} ]]; then
+	if [[ -n ${CI-} ]] && [[ -e ${RELPATH} ]]; then
 		rm -rf "${RELPATH}"
 	fi
-	if ! [[ -f "${CURRENT_DIR}/source/.gitignore" ]] || ! grep -q "^${SRC_PROJECT_NAME}$" "${CURRENT_DIR}/source/.gitignore"; then
+	if [[ ! -f "${CURRENT_DIR}/source/.gitignore" ]] || ! grep -q "^${SRC_PROJECT_NAME}$" "${CURRENT_DIR}/source/.gitignore"; then
 		mkdir -p "${CURRENT_DIR}/source"
 		echo "${SRC_PROJECT_NAME}" >>"${CURRENT_DIR}/source/.gitignore"
 	fi
@@ -146,7 +146,7 @@ function __github_release_json_id() {
 	ID=$(echo "${LAST_GITHUB_RELEASE_JSON}" | filtered_jq '(.id|tostring) + " - " + .target_commitish')
 
 	info_log "       release id = ${ID}"
-	if [[ -n "${ID}" ]]; then
+	if [[ -n ${ID} ]]; then
 		echo "${ID}"
 	else
 		die "failed get ETag"
@@ -178,7 +178,7 @@ function github_release_asset_download_url() {
 	# shellcheck disable=SC2016
 	RESULT=$(echo "${LAST_GITHUB_RELEASE_JSON}" | filtered_jq '.assets[] | select(.name==$name) | .browser_download_url' --arg name "$1")
 
-	if [[ -n "${RESULT}" ]]; then
+	if [[ -n ${RESULT} ]]; then
 		echo "${RESULT}"
 	else
 		die "failed get asset download url"
@@ -190,7 +190,7 @@ function github_release_asset_download_url_regex() {
 	# shellcheck disable=SC2016
 	RESULT=$(echo "${LAST_GITHUB_RELEASE_JSON}" | filtered_jq '.assets[] | select(.name|test($name; "i")) | .browser_download_url' --arg name "$1")
 
-	if [[ -n "${RESULT}" ]]; then
+	if [[ -n ${RESULT} ]]; then
 		echo "${RESULT}"
 	else
 		die "failed get asset download url"
@@ -273,7 +273,7 @@ function download_git_result_copy() {
 	local DIST="$1" NAME=$2 BRANCH="${3}" GIT_DIR
 	GIT_DIR=$(_join_git_path "${NAME}" "${BRANCH}")
 	export GIT_DIR
-	if ! [[ -f "${GIT_DIR}/config" ]]; then
+	if [[ ! -f "${GIT_DIR}/config" ]]; then
 		die "missing downloaded git data: ${GIT_DIR} (from ${NAME})"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
@@ -291,7 +291,7 @@ function http_get_etag() {
 	ETAG=$(curl_proxy -I --retry 5 --location "${URL}" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2
 	info_log "       = ${ETAG}"
-	if [[ -n "${ETAG}" ]]; then
+	if [[ -n ${ETAG} ]]; then
 		echo "${ETAG}"
 	else
 		die "failed get ETag"
@@ -300,7 +300,7 @@ function http_get_etag() {
 
 function curl_proxy() {
 	local PROXY_VAL=()
-	if [[ -n "${HTTP_PROXY-}" ]]; then
+	if [[ -n ${HTTP_PROXY-} ]]; then
 		PROXY_VAL=(--proxy "${HTTP_PROXY}")
 	fi
 	info_note "    + curl ${PROXY_VAL[*]} $*"

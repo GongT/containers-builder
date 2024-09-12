@@ -9,7 +9,7 @@ do_refresh() {
 
 	while read -r CONTAINER IMAGE_ID IMAGE_NAME; do
 		WANT_ID=$(podman image inspect "$IMAGE_NAME" --format='{{.Id}}')
-		if ! [[ $WANT_ID ]]; then
+		if [[ -z $WANT_ID ]]; then
 			echo "$IMAGE_NAME not exists" >&2
 			continue
 		fi

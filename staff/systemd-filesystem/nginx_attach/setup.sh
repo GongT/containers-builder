@@ -2,15 +2,15 @@
 
 set -Eeuo pipefail
 
-if [[ ${nginx_config+found} != found ]]; then
-	nginx_config=/opt/nginx.conf
+if [[ -z ${NGINX_CONFIG-} ]]; then
+	NGINX_CONFIG=/opt/nginx.conf
 fi
 
 mkdir -p /etc/systemd/system/nginx-attach.service.d/
 cat <<EOF >/etc/systemd/system/nginx-attach.service.d/path-config.conf
 [Service]
-Environment=NGINX_CONFIG=$nginx_config
-Environment=PROJECT=$PROJECT
+Environment=NGINX_CONFIG=${NGINX_CONFIG}
+Environment=PROJECT=${PROJECT}
 EOF
 
 if ! command -v curl &>/dev/null; then

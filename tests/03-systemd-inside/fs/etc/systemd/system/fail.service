@@ -1,0 +1,10 @@
+[Unit]
+Description=just fail
+
+[Service]
+Type=exec
+ExecStart=/bin/bash -c "sleep 5s; false"
+Restart=no
+
+[Install]
+WantedBy=default.target

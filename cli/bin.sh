@@ -1,8 +1,3 @@
-#!/usr/bin/env bash
-
-set -Eeuo pipefail
-shopt -s nullglob lastpipe
-
 if [[ $# -ge 1 ]]; then
 	ACTION=${1-}
 	shift
@@ -47,7 +42,7 @@ refresh)
 	do_refresh "$@"
 	;;
 rm)
-	if ! [[ -n "${1-}" ]]; then
+	if [[ -z ${1-} ]]; then
 		usage >&2
 		die "missing 1 argument"
 	fi
@@ -61,7 +56,7 @@ start | restart | stop | reload | reset-failed | status | enable | disable)
 		die "this command is to control ALL enabled service, not some of them"
 	fi
 	do_ls enabled >/dev/null
-	if [[ -n "${#LIST_RESULT[@]}" ]]; then
+	if [[ -n ${#LIST_RESULT[@]} ]]; then
 		systemctl "${ACTION}" "${LIST_RESULT[@]}"
 	fi
 	;;
@@ -75,7 +70,7 @@ abort)
 	systemctl list-units '*.pod@.service' '*.pod.service' --all --no-pager --no-legend | grep activating \
 		| awk '{print $1}' | mapfile -t LIST_RESULT
 
-	if [[ -n "${#LIST_RESULT[@]}" ]]; then
+	if [[ -n ${#LIST_RESULT[@]} ]]; then
 		systemctl stop "${LIST_RESULT[@]}"
 	fi
 	;;

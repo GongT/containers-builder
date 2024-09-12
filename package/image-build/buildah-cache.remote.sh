@@ -45,9 +45,7 @@ function cache_try_pull() {
 
 	info_log "pull cache image ${URL}"
 
-	local -i ERRNO
-
-	try_call xpodman_capture image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}"
+	try_call_function xpodman_capture image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}"
 
 	if [[ $ERRNO -eq 0 ]]; then
 		local IMAGE=$(<"$MANAGER_TMP_STDOUT")

@@ -35,12 +35,12 @@ apply_gateway() {
 	fi
 }
 
-if ! [[ -d /run/nginx/vhost.d/ ]]; then
+if [[ ! -d /run/nginx/vhost.d/ ]]; then
 	echo "missing mount folder: /run/nginx/vhost.d/" >&2
 	exit 66
 fi
 
-if ! [[ -e $NGINX_CONFIG ]]; then
+if [[ ! -e $NGINX_CONFIG ]]; then
 	echo "missing NGINX_CONFIG: $NGINX_CONFIG" >&2
 	exit 66
 fi

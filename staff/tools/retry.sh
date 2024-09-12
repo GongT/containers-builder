@@ -17,7 +17,7 @@ for I in $(seq 1 3); do
 	fi
 done
 
-if ! [[ -n "${PROXY:-}" ]]; then
+if [[ -z "${PROXY:-}" ]]; then
 	echo "::: Failed without proxy, no proxy to try :::" >&2
 	exit "${RET}"
 fi

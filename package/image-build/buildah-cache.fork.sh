@@ -48,7 +48,8 @@ function buildah_cache_fork_script() {
 	}
 	_build_cfs_cb() {
 		{
-			echo "set -Eeuo pipefail"
+			SHELL_SCRIPT_PREFIX
+			SHELL_USE_PROXY
 			echo "declare -rx DIST_FOLDER=/mnt/dist"
 			cat "${BUILD_SCRIPT}"
 		} | buildah run "--volume=${MNT}:/mnt/dist" "${SOURCE}" bash -s - "${BARGS[@]}"

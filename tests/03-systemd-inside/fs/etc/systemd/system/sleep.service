@@ -1,0 +1,9 @@
+[Unit]
+Description=sleep forever
+
+[Service]
+Type=exec
+ExecStart=/bin/bash -c "sleep infinity"
+
+[Install]
+WantedBy=default.target

@@ -27,25 +27,23 @@ function merge_local_fs() {
 	if [[ -z ${STEP-} ]]; then
 		STEP="复制文件"
 	fi
-	_hash_filesystem() {
+	___merge_local_fs_hash() {
 		hash_path fs
 		if [[ -n ${EXTRA_SCRIPT} ]]; then
 			printf "\0\0\0\0"
 			cat "${EXTRA_SCRIPT}"
 		fi
 	}
-	_copy_files() {
+	___merge_local_fs_make() {
 		buildah copy "$1" fs /
+		local SH=bash
 		if [[ -n ${EXTRA_SCRIPT} ]]; then
-			if [[ "$(head -1 "${EXTRA_SCRIPT}")" == *bash* ]]; then
-				buildah run "${ARGS[@]}" "$1" bash <"${EXTRA_SCRIPT}"
-			else
-				buildah run "${ARGS[@]}" "$1" sh <"${EXTRA_SCRIPT}"
-			fi
+			local EXTRA_SCRIPT_ABS=$(realpath "${EXTRA_SCRIPT}")
+			local WHO_AM_I="${EXTRA_SCRIPT}"
+			buildah_run_shell_script "${ARGS[@]}" "$1" "${EXTRA_SCRIPT_ABS}"
 		fi
 	}
-	buildah_cache2 "${CACHE_BRANCH}" _hash_filesystem _copy_files
+	buildah_cache "${CACHE_BRANCH}" ___merge_local_fs_hash ___merge_local_fs_make
 
-	unset _hash_filesystem
-	unset _copy_files
+	unset -f ___merge_local_fs_hash ___merge_local_fs_make
 }

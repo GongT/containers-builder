@@ -4,7 +4,7 @@ function install_script() {
 function install_script_as() {
 	local F BASE=$2
 	F=$(realpath -m "$1")
-	if ! [[ -f ${F} ]]; then
+	if [[ ! -f ${F} ]]; then
 		die "Cannot found script file: ${F}"
 	fi
 

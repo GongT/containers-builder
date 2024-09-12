@@ -41,7 +41,7 @@ function buildah() {
 	case "${ACTION}" in
 	"copy")
 		EXARGS+=(--quiet)
-		if ! [[ ${PASSARGS[*]} == *'--from'* ]]; then
+		if [[ ${PASSARGS[*]} != *'--from'* ]]; then
 			# convert source file to absolute (for debug)
 			local -i I="${LEN} - 1"
 			while [[ ${I} -gt 0 ]]; do

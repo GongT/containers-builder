@@ -21,7 +21,9 @@ function _dnf_prep() {
 		DNF=$(new_container "mdnf" "fedora:${FEDORA_VERSION}")
 		buildah copy "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
 		buildah copy --chmod=0777 "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/bin.sh" /usr/bin/dnf.sh
-		buildah run "${DNF_RUN_ARGS[@]}" "--volume=${COMMON_LIB_ROOT}/staff/mdnf/prepare.sh:/tmp/_script" "${DNF}" bash /tmp/_script
+
+		local WHO_AM_I="dnf:prepare"
+		buildah_run_shell_script "${DNF_RUN_ARGS[@]}" "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/prepare.sh"
 		control_ci groupEnd
 	fi
 
@@ -53,7 +55,7 @@ function dnf_install() {
 		local FORCE_DNF=""
 	fi
 
-	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache2 "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
+	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
 	unset -f _dnf_hash_cb _dnf_build_cb
 }
 
@@ -81,7 +83,7 @@ function make_base_image_by_dnf() {
 
 	BUILDAH_LAST_IMAGE="fedora:${FEDORA_VERSION}"
 
-	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache2 "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
+	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
 	unset -f _dnf_hash_cb _dnf_build_cb
 }
 
@@ -126,8 +128,8 @@ function run_dnf() {
 				echo "${POST_SCRIPT}"
 			} >"${TMPSCRIPT}"
 			chmod a+x "${TMPSCRIPT}"
-			buildah run "--volume=${TMPSCRIPT}:/tmp/_script" "${WORKING_CONTAINER}" \
-				bash /tmp/_script
+			local WHO_AM_I="dnf:postscript"
+			buildah_run_shell_script "${WORKING_CONTAINER}" "${TMPSCRIPT}"
 		fi
 		buildah unmount "${WORKING_CONTAINER}"
 		buildah unmount "${DNF}"
@@ -147,7 +149,7 @@ function run_dnf_host() {
 
 	_dnf_prep >&2
 
-	buildah run "${DNF_RUN_ARGS[@]}" "--env=ACTION=${ACTION}" "${DNF}" \
+	indent_stream buildah run "${DNF_RUN_ARGS[@]}" "--env=ACTION=${ACTION}" "${DNF}" \
 		dnf.sh "${PACKAGES[@]}"
 }
 
@@ -160,11 +162,11 @@ function dnf_list_version() {
 	local FILE=$1 PKGS=()
 
 	mapfile -t PKGS <"${FILE}"
-	RET=$(run_dnf_host --quiet list --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
+	RET=$(run_dnf_host list --quiet --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
 	echo "${RET}"
-	echo "=================================================" >&2
-	echo "${RET}" >&2
-	echo "=================================================" >&2
+	info_log "================================================="
+	indent_multiline "${RET}"
+	info_log "================================================="
 }
 
 function dnf() {

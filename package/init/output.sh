@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 INSIDE_GROUP=
-SAVED_INDENT=
+SAVED_INDENT=()
 export _CURRENT_INDENT=""
 PRINT_STACK=yes
 
@@ -35,22 +35,20 @@ function control_ci() {
 	# info_log "[CI] Action=$ACTION, Args=$*" >&2
 	case "${ACTION}" in
 	set-env)
-		local -r TMPF="$(create_temp_file)"
-		echo "$2" >"${TMPF}"
-		eval "$1=\"\$(< '${TMPF}')\""
-		export "${1?}"
+		local NAME=$1 VALUE=$2
+		export "${NAME}=${VALUE}"
 		if ! is_ci; then
 			return
 		elif [[ -n ${GITHUB_ENV-} ]]; then
 			{
-				echo "$1<<EOF"
-				echo "$2"
+				echo "${NAME}<<EOF"
+				echo "${VALUE}"
 				echo 'EOF'
 			} >>"${GITHUB_ENV}"
 		elif [[ -n ${GITLAB_ENV-} ]]; then
 			{
-				echo "$1=\$( cat <<EOF"
-				echo "$2"
+				echo "${NAME}=\$(cat <<EOF"
+				echo "${VALUE}"
 				echo 'EOF'
 				echo ')'
 			} >>"${GITLAB_ENV}"
@@ -69,8 +67,7 @@ function control_ci() {
 		fi
 		INSIDE_GROUP=yes
 		if [[ -n ${GITHUB_ACTIONS-} ]]; then
-			SAVED_INDENT=${_CURRENT_INDENT}
-			_CURRENT_INDENT=
+			save_indent
 			echo "::group::$*" >&2
 		else
 			info_bright "[Start Group] $*"
@@ -83,8 +80,7 @@ function control_ci() {
 		fi
 		INSIDE_GROUP=
 		if [[ -n ${GITHUB_ACTIONS-} ]]; then
-			_CURRENT_INDENT=${SAVED_INDENT}
-			SAVED_INDENT=
+			restore_indent
 			echo "::endgroup::" >&2
 		else
 			dedent
@@ -97,54 +93,32 @@ function control_ci() {
 	esac
 }
 
-function callstack() {
-	local -i SKIP=${1-1} i
-	local FN
-	if [[ ${#FUNCNAME[@]} -le ${SKIP} ]]; then
-		echo "  * empty callstack *" >&2
-	fi
-	for i in $(seq "${SKIP}" $((${#FUNCNAME[@]} - 1))); do
-		if [[ ${BASH_SOURCE[$((i + 1))]+found} == "found" ]]; then
-			FN="${BASH_SOURCE[$((i + 1))]}"
-			FN="$(try_resolve_file "${FN}")"
-			echo "  ${i}: ${FUNCNAME[${i}]}() at ${FN}:${BASH_LINENO[${i}]}" >&2
-		else
-			echo "  ${i}: ${FUNCNAME[${i}]}()" >&2
-		fi
-	done
+function SHELL_SCRIPT_PREFIX() {
+	echo '#!/usr/bin/env bash'
+	declare -fp use_strict use_normal
+	echo 'use_normal'
 }
 
-function try_resolve_file() {
-	local i PATHS=(
-		"${COMMON_LIB_ROOT}"
-		"${COMMON_LIB_ROOT}/package"
-		"${CURRENT_DIR}"
-	)
-	if [[ -n ${MONO_ROOT_DIR-} ]]; then
-		PATHS+=("${MONO_ROOT_DIR}")
+function SHELL_COMMON_LIBS() {
+	echo '
+declare _CURRENT_INDENT=""
+# function try_resolve_file() {
+# 	echo "[in container] $*"
+# }
+'
+	declare -pf callstack filtered_jq json_array json_array_get_back \
+		die indent dedent x \
+		info info_note info_log info_warn info_success info_error info_bright info_stream \
+		is_set is_tty function_exists \
+		global_error_trap set_error_trap is_bash_function try_call_function
+	declare -p JQ_ARGS
+	if [[ -n ${CI-} ]]; then
+		declare -p CI
+	else
+		echo "unset CI"
 	fi
-	for i in "${PATHS[@]}"; do
-		if [[ -f "${i}/$1" ]]; then
-			realpath -m "${i}/$1"
-			return
-		fi
-	done
-	printf "%s" "$1"
-}
-
-function SHELL_ERROR_HANDLER() {
-	declare -f callstack
-	cat <<'EOF'
-_exit_handle_in_container() {
-	EXIT_CODE=$?
-	set +Eeuo pipefail
-	if [[ $EXIT_CODE -ne 0 ]]; then
-		echo "bash exit with error code $EXIT_CODE" >&2
-		callstack 1
-	fi
-}
-trap _exit_handle_in_container EXIT
-EOF
+	echo 'set_error_trap'
+	cat "${COMMON_LIB_ROOT}/staff/tools/shell-tiny-lib.sh"
 }
 
 function info() {
@@ -169,7 +143,23 @@ function info_bright() {
 	echo -e "${_CURRENT_INDENT}\e[1m$*\e[0m" >&2
 }
 function info_stream() {
+	# deprecated
 	sed -u "s/^/${_CURRENT_INDENT}/" >&2
+}
+function indent_multiline() {
+	echo "$*" | sed -u "s/^/${_CURRENT_INDENT}/" >&2
+}
+function indent_stream() {
+	if [[ -z ${_CURRENT_INDENT} ]]; then
+		"$@"
+	else
+		local _CIDD="${_CURRENT_INDENT}"
+		save_indent
+		{
+			"$@"
+		} > >(sed -u "s/^/${_CIDD}/") 2> >(sed -u "s/^/${_CIDD}/" >&2)
+		restore_indent
+	fi
 }
 
 function indent() {
@@ -177,6 +167,14 @@ function indent() {
 }
 function dedent() {
 	export _CURRENT_INDENT="${_CURRENT_INDENT:4}"
+}
+function save_indent() {
+	SAVED_INDENT=("${_CURRENT_INDENT}" "${SAVED_INDENT[@]}")
+	_CURRENT_INDENT=
+}
+function restore_indent() {
+	_CURRENT_INDENT=${SAVED_INDENT[0]}
+	SAVED_INDENT=("${SAVED_INDENT[@]:1}")
 }
 
 declare -r JQ_ARGS=(--exit-status --compact-output --monochrome-output --raw-output)
@@ -192,6 +190,7 @@ function filtered_jq() {
 function json_array() {
 	if [[ $# -eq 0 ]]; then
 		echo '[]'
+		return
 	fi
 	jq --ascii-output --null-input --compact-output --slurp '$ARGS.positional' --args "$@"
 }
@@ -210,14 +209,6 @@ function json_array_get_back() {
 function x() {
 	info_note " + ${*}"
 	"$@"
-}
-
-function try_call() {
-	if "$@"; then
-		ERRNO=0
-	else
-		ERRNO=$?
-	fi
 }
 
 _LINE_LABEL=""
@@ -268,42 +259,32 @@ function restore_cursor_position() {
 	printf "\e[%d;%dH\e[J" "${__CURPOS__[@]}"
 	__CURPOS__=()
 }
-function move_up_line() {
-	if ! is_tty || is_ci; then
-		return
-	fi
-	printf "\e[%dF" "${1-1}"
-}
 
 function alternative_buffer_execute() {
 	local TITLE="$1" RET
 	shift
-	if ! is_ci && is_tty; then
+	if ! is_ci && is_tty && [[ ${ALTERNATIVE_BUFFER_ENABLED} == no ]]; then
 		info_warn "$TITLE"
 		printf '\e[?1049h'
 		ALTERNATIVE_BUFFER_ENABLED=yes
 		local TMP_OUT
 		TMP_OUT=$(create_temp_file dnf.out)
-		if "$@" 2>&1 | tee "${TMP_OUT}"; then
-			RET=0
+		save_indent
 
-			ALTERNATIVE_BUFFER_ENABLED=no
-			printf '\e[?1049l\e[J'
+		try_call_function "$@" 2>&1 | tee "${TMP_OUT}"
 
-			move_up_line 1
+		restore_indent
+		ALTERNATIVE_BUFFER_ENABLED=no
+		printf '\e[?1049l\e[J\e[1F'
+
+		if [[ ${ERRNO} -eq 0 ]]; then
 			info_log "${TITLE}"
 			info_note "store output to tempfile: $TMP_OUT"
 			return 0
 		else
-			RET=$?
-
-			ALTERNATIVE_BUFFER_ENABLED=no
-			printf '\e[?1049l\e[J'
-
-			move_up_line 1
 			info_error "${TITLE}"
 			cat "${TMP_OUT}"
-			return ${RET}
+			return ${ERRNO}
 		fi
 	else
 		control_ci group "DNF run (worker: ${WORKING_CONTAINER}, dnf worker: ${DNF})"

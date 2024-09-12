@@ -127,7 +127,7 @@ function network_use_veth() {
 	_net_set_type "veth"
 	_record_port_usage "${PORT_FORWARD[@]}"
 
-	if ! [[ -e "${PODMAN_QUADLET_DIR}/${BRIDEG_NAME}.network" ]]; then
+	if [[ ! -e "${PODMAN_QUADLET_DIR}/${BRIDEG_NAME}.network" ]]; then
 		info_warn "bridge network may not exists: ${BRIDEG_NAME}"
 	fi
 

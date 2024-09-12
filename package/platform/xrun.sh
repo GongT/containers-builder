@@ -19,7 +19,7 @@ declare -r MANAGER_TMP_STDERR="/tmp/container.manager.stderr.txt" MANAGER_TMP_ST
 
 function error_with_manager_output() {
 	cat "${MANAGER_TMP_STDERR}" >&2
-	return 1
+	exit 1
 }
 function execute_tip() {
 	local -ri ACT_CNT=$1
@@ -79,7 +79,7 @@ function xbuildah() {
 		X=0
 	else
 		X=$?
-		info_warn "failed with ${X}"
+		info_warn "buildah execute failed with ${X}"
 	fi
 
 	if [[ -n ${SGROUP} ]]; then

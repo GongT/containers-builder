@@ -45,7 +45,7 @@ function collect_dist_root() {
 	done
 }
 function copy_collected_files() {
-	if ! [[ -e ${__INSTALL_LIST_FILE} ]]; then
+	if [[ ! -e ${__INSTALL_LIST_FILE} ]]; then
 		info_log "no collected dependencies..."
 		return
 	fi
@@ -79,7 +79,7 @@ function collect_with_all_links() {
 	local L="$1"
 	collect_system_file "${L}"
 
-	if ! [[ -L ${L} ]]; then
+	if [[ ! -L ${L} ]]; then
 		return
 	fi
 
@@ -107,7 +107,7 @@ function collect_binary_dependencies() {
 
 	for BIN; do
 		BIN=$(realpath "${BIN}")
-		if ! [[ -e ${BIN} ]]; then
+		if [[ ! -e ${BIN} ]]; then
 			echo "missing required binary: ${BIN}"
 			exit 1
 		fi

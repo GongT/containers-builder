@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 # shellcheck disable=SC2312
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 declare -xr PROJECT_NAME="image-builder-cli"
@@ -10,7 +8,10 @@ cd cli
 
 mkdir -p "${SCRIPTS_DIR}"
 rsync --itemize-changes --archive --human-readable "${PWD}/cli-lib" "${SCRIPTS_DIR}" --delete
-rsync --itemize-changes --archive --human-readable bin.sh "${BINARY_DIR}/ms"
+{
+	SHELL_SCRIPT_PREFIX
+	cat bin.sh
+} >"${BINARY_DIR}/ms"
 
 echo "${PWD}" >"${SCRIPTS_DIR}/cli-home"
 

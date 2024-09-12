@@ -25,7 +25,7 @@ function run_compile() {
 	local SCRIPT_FILE
 	SCRIPT_FILE=$(create_temp_file "mcompile.${PROJECT_ID}")
 	{
-		SHELL_ERROR_HANDLER
+		SHELL_COMMON_LIBS
 		echo "export PROJECT_ID='${PROJECT_ID}'"
 		echo "export SYSTEM_COMMON_CACHE='/cache/common'"
 		echo "export SYSTEM_FAST_CACHE='/cache/fast'"
@@ -70,9 +70,8 @@ function run_install() {
 
 	local TMPF=$(create_temp_file install.script)
 	{
-		echo '#!/usr/bin/env bash'
-		echo 'set -Eeuo pipefail'
-		SHELL_ERROR_HANDLER
+		SHELL_SCRIPT_PREFIX
+		SHELL_COMMON_LIBS
 		declare -p PROJECT_ID
 		export_script_variable CI
 		export_script_function is_ci

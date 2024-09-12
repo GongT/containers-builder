@@ -20,7 +20,7 @@ function make_arguments() {
 
 	for i; do
 		if [[ ${i} == "--dns=h.o.s.t" ]]; then
-			if ! [[ -n ${HOST_IP} ]]; then
+			if [[ -z ${HOST_IP} ]]; then
 				critical_die "Try to use h.o.s.t when network type is ${NETWORK_TYPE}, this is currently not supported."
 			fi
 			ARGS+=("--dns=${HOST_IP}")

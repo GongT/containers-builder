@@ -15,7 +15,7 @@ function buildah_config() {
 	__buildah_config_do() {
 		buildah config "${ARGS[@]}" "$1"
 	}
-	buildah_cache2 "${NAME}" __buildah_config_hash __buildah_config_do
+	buildah_cache "${NAME}" __buildah_config_hash __buildah_config_do
 }
 
 function buildah_finalize_image() {

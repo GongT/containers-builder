@@ -15,7 +15,7 @@ function JQ() {
 
 SERVER_LIST=()
 while IFS= read -r LINE; do
-	if ! [[ -n "${LINE}" ]]; then
+	if [[ -z "${LINE}" ]]; then
 		continue
 	fi
 	SERVER_LIST+=("${LINE}")

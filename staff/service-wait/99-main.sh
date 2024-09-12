@@ -29,26 +29,31 @@ function core_switch() {
 }
 
 function service_wait_thread() {
-	trap - EXIT
+	function _wait_exit() {
+		local RET=$?
+		if [[ ${RET} -eq 0 ]]; then
+			startup_done
+		else
+			debug "failed wait container '${CONTAINER_ID}' to stable running."
+
+			sdnotify --stopping "wait fail"
+
+			local PID
+			PID=$(get_service_property "MainPID")
+			if [[ ${PID} -gt 0 ]]; then
+				echo "send signal to podman container ${PID}"
+				kill -s sigterm "${PID}"
+			fi
+		fi
+	}
+	trap _wait_exit EXIT
+
 	debug "wait container ${CONTAINER_ID}, spec ${START_WAIT_DEFINE}."
 
 	local WAIT_TYPE=${START_WAIT_DEFINE%%:*}
 	local WAIT_ARGS=${START_WAIT_DEFINE#*:}
 
-	if core_switch; then
-		startup_done
-	else
-		debug "failed wait container '${CONTAINER_ID}' to stable running."
-
-		sdnotify --stopping "wait fail"
-
-		local PID
-		PID=$(get_service_property "MainPID")
-		if [[ ${PID} -gt 0 ]]; then
-			echo "send signal to podman container ${PID}"
-			kill -s sigterm "${PID}"
-		fi
-	fi
+	core_switch
 }
 
 function main() {

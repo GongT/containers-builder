@@ -36,7 +36,6 @@ function buildah_cache() {
 	_CURRENT_STAGE_STORE[${BUILDAH_NAME_BASE}]="${WORK_STAGE}"
 
 	info "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE}: \e[0;38;5;11m${_STITLE}"
-	indent
 
 	PREV_STEP_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${DONE_STAGE}")
 	STEP_RESULT_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${WORK_STAGE}")
@@ -56,8 +55,15 @@ function buildah_cache() {
 	cache_try_pull "${BUILDAH_NAME_BASE}" "${WORK_STAGE}"
 
 	local WANTED_HASH HASH_TMP="${TMPDIR}/cache.hash.input.step${WORK_STAGE}.dat"
-	"${BUILDAH_HASH_CALLBACK}" >"${HASH_TMP}"
+
+	indent
+	{
+		use_strict
+		echo "last image: ${BUILDAH_LAST_IMAGE}"
+		"${BUILDAH_HASH_CALLBACK}"
+	} >"${HASH_TMP}"
 	WANTED_HASH=$(md5sum "${HASH_TMP}" | awk '{print $1}')
+	dedent
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
@@ -83,14 +89,18 @@ function buildah_cache() {
 		info_success "cache missing: no image: ${STEP_RESULT_IMAGE}"
 	fi
 
+	indent
 	LAST_CACHE_COMES_FROM=build
 	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${DONE_STAGE}_to${WORK_STAGE}"
-	"${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
-	info_note "build callback finish"
-
-	if ! container_exists "${CONTAINER_ID}"; then
-		die "BUILDAH_BUILD_CALLBACK<${BUILDAH_BUILD_CALLBACK}> did not create ${CONTAINER_ID}."
+	new_container "${CONTAINER_ID}" "${BUILDAH_LAST_IMAGE}" >/dev/null
+	try_call_function "${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
+	if [[ $ERRNO -ne 0 ]]; then
+		info_error "build callback<${BUILDAH_BUILD_CALLBACK}> failed to run with $ERRNO"
+		dedent
+		return 1
 	fi
+	info_note "build callback<${BUILDAH_BUILD_CALLBACK}> finish"
+	dedent
 
 	local COMMENT="${BUILDAH_NAME_BASE} layer <${DONE_STAGE}> to <${WORK_STAGE}>"
 	buildah config \
@@ -108,7 +118,6 @@ function buildah_cache() {
 
 _buildah_cache_done() {
 	cache_push "${BUILDAH_NAME_BASE}" "${WORK_STAGE}"
-	dedent
 	if [[ -n ${_STITLE} ]]; then
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} (\e[0;38;5;13m${_STITLE}\e[0;2m) DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
 	else
@@ -119,6 +128,16 @@ _buildah_cache_done() {
 declare LAST_KNOWN_BASE=
 function buildah_cache_start() {
 	local BASE_IMG=$1
+
+	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
+		if [[ ${BASE_IMG} == "fedora" || ${BASE_IMG} == "fedora-minimal" ]]; then
+			BASE_IMG+=":${FEDORA_VERSION}"
+		else
+			info_warn "using Fedora with version tag: ${BASE_IMG}"
+		fi
+		BASE_IMG="registry.fedoraproject.org/${BASE_IMG}"
+	fi
+
 	info "start cache branch"
 	if [[ ${BASE_IMG} == scratch ]]; then
 		LAST_KNOWN_BASE=

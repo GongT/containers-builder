@@ -5,8 +5,6 @@ function get_image_name_from_service_file() {
 }
 
 do_pull_all() {
-	set -Eeuo pipefail
-
 	LIST=()
 	for I; do
 		if [[ $I == "-f" ]]; then

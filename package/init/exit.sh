@@ -14,6 +14,9 @@ function _MAIN_exit_handler() {
 	local -i _EXIT_CODE=$?
 	set +Eeuo pipefail
 
+	_CURRENT_INDENT=''
+	SAVED_INDENT=()
+
 	if [[ $ALTERNATIVE_BUFFER_ENABLED != no ]]; then
 		printf '\e[?1049l\e[J'
 	fi
@@ -29,8 +32,12 @@ function _MAIN_exit_handler() {
 		fi
 	done
 
-	if [[ ${_EXIT_CODE} -eq 0 && ${EXIT_CODE} -ne 0 ]]; then
-		_EXIT_CODE=${EXIT_CODE}
+	if [[ ${_EXIT_CODE} -eq 0 ]]; then
+		if [[ ${EXIT_CODE} -ne 0 ]]; then
+			_EXIT_CODE=${EXIT_CODE}
+		elif [[ ${ERRNO} -ne 0 ]]; then
+			_EXIT_CODE=${ERRNO}
+		fi
 	fi
 
 	if [[ ${_EXIT_CODE} -ne 0 ]]; then
@@ -51,9 +58,15 @@ function _MAIN_exit_handler() {
 trap _MAIN_exit_handler EXIT
 
 function _MAIN_cancel_handler() {
+	_CURRENT_INDENT=''
+	SAVED_INDENT=()
 	EXIT_CODE=$?
 	if [[ ${EXIT_CODE} -eq 0 ]]; then
-		EXIT_CODE=233
+		if [[ ${ERRNO} -ne 0 ]]; then
+			EXIT_CODE=${ERRNO}
+		else
+			EXIT_CODE=233
+		fi
 	fi
 }
 if ! is_ci && is_tty; then

@@ -14,7 +14,7 @@ function JQ() {
 }
 
 function try() {
-	if [[ ! -n ${NOTIFY_SOCKET:-} ]]; then
+	if [[ -z ${NOTIFY_SOCKET:-} ]]; then
 		echo -ne "\e[2m"
 	fi
 	while true; do
@@ -26,7 +26,7 @@ function try() {
 		echo "  - failed"
 		sleep 1
 	done
-	if [[ ! -n ${NOTIFY_SOCKET:-} ]]; then
+	if [[ -z ${NOTIFY_SOCKET:-} ]]; then
 		echo -ne "\e[0m"
 	fi
 }
@@ -50,7 +50,7 @@ done
 
 declare -A DOMAINS=()
 for TARGET in "${TO_RESOLVE[@]}"; do
-	if [[ ! -n ${TARGET} ]]; then
+	if [[ -z ${TARGET} ]]; then
 		continue
 	fi
 	HOST_PART=${TARGET%%:*}

@@ -31,7 +31,7 @@ function make_base_image_by_alpine_pip() {
 			python3 -m "${PIP_CMD[@]}" \
 			--user -r /tmp/requirements.txt
 	}
-	deny_proxy buildah_cache2 "${NAME}-build" _hash_ _build_
+	deny_proxy buildah_cache "${NAME}-build" _hash_ _build_
 	local PIP_SOURCE_IMAGE=${BUILDAH_LAST_IMAGE}
 
 	unset -f _hash_ _build_
@@ -49,7 +49,7 @@ function make_base_image_by_alpine_pip() {
 		buildah copy "--from=${PIP_SOURCE_IMAGE}" "$1" "/root/.local/lib" "/root/.local/lib"
 		buildah run "$1" du -hs /root
 	}
-	buildah_cache2 "${NAME}" _hash_ _build_
+	buildah_cache "${NAME}" _hash_ _build_
 	unset -f _hash_ _build_
 }
 
@@ -91,7 +91,7 @@ function make_base_image_by_fedora_pip() {
 			python3 -m "${PIP_CMD[@]}" \
 			--user -r /tmp/requirements.txt
 	}
-	deny_proxy buildah_cache2 "${NAME}-build" _hash_ _build_
+	deny_proxy buildah_cache "${NAME}-build" _hash_ _build_
 	local PIP_SOURCE_IMAGE=${BUILDAH_LAST_IMAGE}
 
 	unset -f _hash_ _build_
@@ -114,6 +114,6 @@ function make_base_image_by_fedora_pip() {
 		buildah copy "--from=${PIP_SOURCE_IMAGE}" "$1" "/root/.local/lib" "/root/.local/lib"
 		buildah run "$1" du -hs /root
 	}
-	buildah_cache2 "${NAME}" _hash_ _build_
+	buildah_cache "${NAME}" _hash_ _build_
 	unset -f _hash_ _build_
 }

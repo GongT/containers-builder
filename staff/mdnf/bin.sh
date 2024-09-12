@@ -30,7 +30,7 @@ function main() {
 	fi
 
 	dnf() {
-		echo -e "\e[2m + /usr/bin/dnf --nodocs -y "--releasever="${FEDORA_VERSION}"" --installroot=/install-root $*\e[0m" >&2
+		echo -e "\e[2m + /usr/bin/dnf --nodocs -y '--releasever=${FEDORA_VERSION}' --installroot=/install-root $*\e[0m" >&2
 		/usr/bin/dnf --nodocs -y "--releasever=${FEDORA_VERSION}" --installroot=/install-root "$@"
 	}
 
@@ -64,8 +64,5 @@ _exit() {
 	exit "${R}"
 }
 
-if main "$@"; then
-	_exit
-else
-	_exit
-fi
+trap _exit EXIT
+main "$@"

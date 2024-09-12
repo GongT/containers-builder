@@ -30,5 +30,5 @@ function make_base_image_by_pacman() {
 	pacman_install() {
 		buildah run $(use_pacman_cache) "$1" "bash" "-c" "pacman --noconfirm -Syu ${DEPS[*]}"
 	}
-	buildah_cache2 "${NAME}" pacman_hash pacman_install
+	buildah_cache "${NAME}" pacman_hash pacman_install
 }

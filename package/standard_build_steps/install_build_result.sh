@@ -4,10 +4,10 @@ function install_build_result() {
 	shift
 	local -ar PROJECT_IDS=("$@")
 
-	_hash() {
+	_install_build_result_hash() {
 		echo "${SOURCE_IMAGE}"
 	}
-	_copy_files() {
+	_install_build_result_copyfiles() {
 		local PROJECT_ID
 		for PROJECT_ID in "${PROJECT_IDS[@]}"; do
 			local F="scripts/install-${PROJECT_ID}.sh"
@@ -18,5 +18,6 @@ function install_build_result() {
 			fi
 		done
 	}
-	buildah_cache2 "${CACHE_BRANCH}" _hash _copy_files
+	buildah_cache "${CACHE_BRANCH}" _install_build_result_hash _install_build_result_copyfiles
+	unset -f _install_build_result_hash _install_build_result_copyfiles
 }

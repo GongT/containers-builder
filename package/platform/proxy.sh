@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 
-info_note "using HTTP_PROXY=${HTTP_PROXY:-*not set*}"
-info_note "using PROXY=${PROXY:-*not set*}"
+if [[ -z ${PROXY-} ]]; then
+	PROXY=${https_proxy-}
+fi
+if [[ -n ${PROXY} && ${PROXY} != http://* && ${PROXY} != https://* ]]; then
+	PROXY="http://${PROXY}"
+fi
+declare -xr PROXY
+
+info_note "using PROXY="
 
 function SHELL_USE_PROXY() {
 	if [[ ${PROXY+found} == found ]]; then
@@ -11,7 +18,7 @@ function SHELL_USE_PROXY() {
 	fi
 	# shellcheck disable=SC2016
 	echo '
-if [ -n "$PROXY" ]; then
+if [[ -n "$PROXY" ]]; then
 	echo "using proxy: ${PROXY}..." >&2
 	export http_proxy="$PROXY"
 	export https_proxy="$PROXY"
@@ -19,35 +26,7 @@ fi
 '
 }
 
-function remove_proxy_schema() {
-	if [[ ${PROXY+found} != "found" ]]; then
-		return
-	fi
-	if [[ ${PROXY} != *'://'* ]]; then
-		return
-	fi
-	export PROXY="${PROXY//*:///}"
-}
-function add_proxy_http_schema() {
-	if [[ ${PROXY+found} != "found" ]]; then
-		return
-	fi
-	if [[ ${PROXY} == *'://'* ]]; then
-		return
-	fi
-	export PROXY="http://${PROXY}"
-}
-
 function perfer_proxy() {
-	if [[ $1 == --no-schema ]]; then
-		remove_proxy_schema
-		shift
-	else
-		add_proxy_http_schema
-		if [[ $1 == --schema ]]; then
-			shift
-		fi
-	fi
 	if [[ ${PROXY+found} == "found" ]]; then
 		info_note "[proxy] using proxy ${PROXY}"
 		http_proxy="${PROXY}" https_proxy="${PROXY}" HTTP_PROXY="${PROXY}" HTTPS_PROXY="${PROXY}" "$@"

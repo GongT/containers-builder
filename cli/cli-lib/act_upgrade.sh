@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 function do_upgrade() {
-	set -Eeuo pipefail
-
 	mapfile -t DISABLED < <(do_ls disabled)
 
 	cd "$SYSTEM_UNITS_DIR"

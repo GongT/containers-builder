@@ -1,12 +1,7 @@
-declare -r SHELL_SCRIPT_PREFIX=$'#!/usr/bin/env bash
-set -Eeuo pipefail
-shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
-
-'
-
 function _service_executer_write() {
-	local DATA="$SHELL_SCRIPT_PREFIX"
+	local DATA=''
 
+	DATA+=$(SHELL_SCRIPT_PREFIX)
 	DATA+=$(call_script_emit)
 	DATA+=$(__concat_wait_files)
 

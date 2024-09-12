@@ -16,7 +16,7 @@ function download_and_install_x64_init() {
 		buildah run "${TGT}" chmod 0777 "/usr/sbin/init"
 		buildah config --cmd "/usr/sbin/init" --stop-signal SIGINT "${TGT}"
 	}
-	buildah_cache2 "${CACHE_BRANCH}" _hash_init _download_init
+	buildah_cache "${CACHE_BRANCH}" _hash_init _download_init
 
 	unset CACHE_BRANCH STEP REPO RELEASE_URL _hash_init _download_init
 }

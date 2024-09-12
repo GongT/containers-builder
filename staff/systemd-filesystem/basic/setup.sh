@@ -6,6 +6,7 @@ systemctl mask systemd-networkd-wait-online.service
 systemctl disable rpmdb-migrate.service rpmdb-rebuild.service dnf-makecache.timer systemd-logind.service systemd-oomd.service systemd-oomd.socket systemd-networkd.socket || true
 systemctl set-default multi-user.target
 
-if ! [[ -e /etc/localtime ]]; then
+if [[ ! -e /etc/localtime ]]; then
+	rm -f /etc/localtime
 	ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 fi

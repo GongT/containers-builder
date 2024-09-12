@@ -13,7 +13,7 @@ function is_file_ending_newline() {
 }
 function is_file_need_newline() {
 	local FILE="$1"
-	if ! [[ -f ${FILE} ]]; then
+	if [[ ! -f ${FILE} ]]; then
 		return 1
 	fi
 	if [[ $(wc -c <"${FILE}") -eq 0 ]]; then

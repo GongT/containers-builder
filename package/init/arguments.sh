@@ -104,7 +104,7 @@ function arg_finish() {
 
 	local _PROGRAM_ARGS=()
 	local USER_PRIVATE_CONFIG_FILE="${MONO_ROOT_DIR:-not set}/environment"
-	if ! [[ -e ${USER_PRIVATE_CONFIG_FILE} ]]; then
+	if [[ ! -e ${USER_PRIVATE_CONFIG_FILE} ]]; then
 		USER_PRIVATE_CONFIG_FILE="${HOME}/environment"
 	fi
 

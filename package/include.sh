@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
+
+function use_strict() {
+	set -Eeuo pipefail
+	shopt -s shift_verbose
+
+}
+function use_normal() {
+	shopt -s extglob nullglob globstar lastpipe
+	use_strict
+}
+use_normal
 
 # shellcheck disable=SC2155
 declare -r __STARTUP_PWD=$(pwd)
@@ -24,7 +33,8 @@ declare -xr CURRENT_ACTION
 
 pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 
-source "./init/0-lifecycle-decoupling.sh"
+source "./init/lifecycle-decoupling.sh"
+source "./init/bash-error-handler.sh"
 source "./init/output.sh"
 source "./init/basic.sh"
 source "./init/strings.sh"
@@ -45,4 +55,5 @@ source "./platform/xrun.sh"
 
 popd &>/dev/null
 
+set_error_trap
 _check_ci_env
