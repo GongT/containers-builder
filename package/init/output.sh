@@ -116,6 +116,10 @@ declare _CURRENT_INDENT=""
 		info info_note info_log info_warn info_success info_error info_bright info_stream \
 		is_set is_tty function_exists \
 		global_error_trap set_error_trap is_bash_function try_call_function
+
+	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
+	declare -p microsecond_unit
+
 	declare -p JQ_ARGS
 	if [[ -n ${CI-} ]]; then
 		declare -p CI

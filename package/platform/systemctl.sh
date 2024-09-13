@@ -51,3 +51,7 @@ seconds_timespan() {
 }
 
 declare -ri microsecond_unit=1000000
+
+function systemd_service_property() {
+	systemctl show "$1" "--property=$2" --value
+}

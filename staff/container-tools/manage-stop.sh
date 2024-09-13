@@ -2,17 +2,12 @@
 
 declare -xr LABELID_STOP_COMMAND="me.gongt.cmd.stop"
 
+# shellcheck source=../../package/include.sh
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"
+
 get_label() {
 	TMPL=$(printf '{{index .Config.Labels "%s"}}' "$1")
 	podman container inspect -f "$TMPL" "${CONTAINER_ID}"
-}
-die() {
-	echo "$*" >&2
-	exit 1
-}
-x() {
-	echo " + $*" >&2
-	"$@"
 }
 
 OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${CONTAINER_ID}" 2>&1)"
@@ -32,4 +27,6 @@ if [[ -n ${CMD} ]]; then
 	fi
 fi
 
-x podman stop --time=-1 "${CONTAINER_ID}"
+TimeoutStopUSec=$(systemd_service_property "${CURRENT_SYSTEMD_UNIT_NAME}" "TimeoutStopUSec")
+TimeoutStopSec=$(timespan_seconds "${TimeoutStopUSec}")
+x podman stop "--time=$((TimeoutStopSec - 1))" "${CONTAINER_ID}"

@@ -14,8 +14,6 @@ function install_common_system_support() {
 	fi
 	declare -gr _COMMON_FILE_INSTALL=yes
 
-	install_script "${SERVICES_DIR}/common_service_library.sh" >/dev/null
-
 	_copy_common_static_unit services-entertainment.slice
 	_copy_common_static_unit services-infrastructure.slice
 	_copy_common_static_unit services-normal.slice

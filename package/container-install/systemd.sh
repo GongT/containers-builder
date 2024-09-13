@@ -70,12 +70,23 @@ function _create_unit_name() {
 	fi
 }
 
+function _create_common_lib() {
+	local COMMONLIB
+	COMMONLIB=$(
+		SHELL_SCRIPT_PREFIX
+		SHELL_COMMON_LIBS
+		SHELL_USE_PROXY
+	)
+	write_file "${SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
+}
+
 function unit_write() {
 	if [[ -z ${_S_CURRENT_UNIT_FILE} ]]; then
 		die "create unit first."
 	fi
 
 	install_common_system_support
+	_create_common_lib
 
 	local TF
 	TF=$(create_temp_file "${_S_CURRENT_UNIT_FILE}")
