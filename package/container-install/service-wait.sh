@@ -6,6 +6,8 @@ function _service_executer_write() {
 	DATA+="$(call_script_emit)"
 	DATA+=$'\n'
 	DATA+="$(__concat_wait_files)"
+	DATA+=$'\n'
+	DATA+=$'main\n'
 
 	write_file --mode 0755 "${SCRIPTS_DIR}/execute" "${DATA}"
 	echo "${SCRIPTS_DIR}/execute"
@@ -33,16 +35,18 @@ _debugger_file_write() {
 	local I FILE_DATA
 	local -a STARTUP_ARGS=()
 
+	local -r DEFAULT_COMMANDLINE=("${_S_COMMAND_LINE[@]}")
+
 	_create_startup_arguments
 	FILE_DATA=$(
 		SHELL_SCRIPT_PREFIX
 		echo "declare -r CONTAINER_ID='$(unit_get_scopename)'"
 		echo "declare -r NAME='${_S_CURRENT_UNIT_NAME}'"
 		echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
+		declare -p DEFAULT_COMMANDLINE
 		call_script_emit
 		__concat_wait_files
 
-		echo "STARTUP_ARGC=${#_S_COMMAND_LINE[@]}"
 		echo "declare -a STARTUP_ARGS=("
 		printf '\t%q\n' "${STARTUP_ARGS[@]}"
 		echo ")"

@@ -35,7 +35,7 @@ function execute_tip() {
 
 function xpodman() {
 	local TIP
-	TIP=" + $(execute_tip 2 podman "$@") >>"
+	TIP=" + $(execute_tip 2 podman "$@")"
 
 	if [[ $1 == image ]] && [[ $2 == pull || $2 == push ]]; then
 		get_cursor_position

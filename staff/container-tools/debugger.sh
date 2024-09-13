@@ -4,50 +4,12 @@ set -Eeuo pipefail
 
 echo -ne "\ec"
 
-if echo "$CONTAINER_ID" | grep -q '%i'; then
-	template_id=$1
-	shift
-
-	if [[ -z $template_id ]]; then
-		echo "for template (instantiated / ending with @) service, the first argument is the %i value."
-		exit 1
-	fi
-
-	for I in "${!_S_PREP_FOLDER[@]}"; do
-		V="${_S_PREP_FOLDER[$I]}"
-		_S_PREP_FOLDER[$I]="${V//%i/${template_id}}"
-	done
-
-	function X() {
-		local PODMAN_RUN=()
-		for i; do
-			PODMAN_RUN+=($(echo "$i" | sed "s/%i/${template_id}/g"))
-		done
-		XX "${PODMAN_RUN[@]}" "${PARENT_ARGS[@]}"
-	}
-
-else
-
-	function X() {
-		XX "${@}" "${PARENT_ARGS[@]}"
-	}
-
-fi
-
-if [[ ${#} -gt 0 ]]; then
-	E=$((${#STARTUP_ARGS[@]} - STARTUP_ARGC))
-	STARTUP_ARGS=("${STARTUP_ARGS[@]:0:E}")
-	unset E
-
-	PARENT_ARGS=("$@")
-fi
-
-function XX() {
+function x() {
 	local ARGS=("$@")
 	printf "\e[2m"
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	echo
-	echo -n "${ARGS[1]}"
+	echo -n "${ARGS[0]}"
 	printf ' \\\n\t %q' "${ARGS[@]:1}"
 	echo
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
@@ -56,22 +18,73 @@ function XX() {
 	exec "${ARGS[@]}"
 }
 
-echo -ne "\e[2m"
+if [[ ${#DEFAULT_COMMANDLINE[@]} -gt 0 ]]; then
+	E=$((${#STARTUP_ARGS[@]} - ${#DEFAULT_COMMANDLINE[@]}))
+	STARTUP_ARGS=("${STARTUP_ARGS[@]:0:E}")
+	unset E
+fi
+
+STARTUP_ARGS_COPY=("${STARTUP_ARGS[@]}")
+STARTUP_ARGS=()
+for A in "${STARTUP_ARGS_COPY[@]}"; do
+	if [[ $A == "--mac-address="* ]]; then
+		continue
+	fi
+	STARTUP_ARGS+=("$A")
+
+done
+unset STARTUP_ARGS_COPY
+
+if echo "$CONTAINER_ID" | grep -q '%i'; then
+	template_id=${INPUT_ARGUMENTS[0]}
+	INPUT_ARGUMENTS=("${INPUT_ARGUMENTS[@]:1}")
+
+	if [[ -z $template_id ]]; then
+		echo "for template (instantiated / ending with @) service, the first argument is the %i value."
+		exit 1
+	fi
+
+	function xpodman() {
+		local ARG_FILTER=()
+		for i; do
+			ARG_FILTER+=("$(echo "$i" | sed "s/%i/${template_id}/g")")
+		done
+		x podman "${ARG_FILTER[@]}"
+	}
+
+else
+
+	function xpodman() {
+		x podman "$@"
+	}
+
+fi
+
+printf "\e[2m"
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
-systemctl cat "$SERVICE_FILE" --no-pager | sed -E "s/^/\x1B[2m/mg" || true
+printf 'Service File: %s\n' "$SERVICE_FILE"
+printf 'Default Commandline: %s\n' "${DEFAULT_COMMANDLINE[*]}"
+printf 'Options: %s\n' "${STARTUP_ARGS[*]}"
+printf 'Current Commandline: %s\n' "${INPUT_ARGUMENTS[*]}"
+printf 'env:ENTRYPOINT: %s\n' "${ENTRYPOINT-image default}"
+
+ARGS=("${ARGS[@]}" "${STARTUP_ARGS[@]}")
+
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
+
+detect_image_using_systemd
 
 load_sdnotify
 
-ensure_mounts "${_S_PREP_FOLDER[@]}"
-podman volume prune -f &>/dev/null || true
+ensure_mounts
 
-make_arguments "${STARTUP_ARGS[@]}"
+make_arguments
+
 if [[ "${ENTRYPOINT-}" ]]; then
 	echo "force using entrypoint: $ENTRYPOINT"
 	ARGS=("--entrypoint=$ENTRYPOINT" "${ARGS[@]}")
 fi
 
-X podman run -it "${ARGS[@]}"
+xpodman run -it "${ARGS[@]}"

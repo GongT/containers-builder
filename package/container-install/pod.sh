@@ -20,7 +20,7 @@ function network_provide_pod() {
 [Pod]
 PodName=${PODNAME}
 Network=${BRIDGE}
-PodmanArgs=$(emit_bash_arguments "${ARGS[@]}")
+PodmanArgs=--exit-policy=continue $(emit_bash_arguments "${ARGS[@]}")
 
 [Service]
 Slice=services.slice

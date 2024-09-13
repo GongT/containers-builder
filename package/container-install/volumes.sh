@@ -2,7 +2,7 @@ declare -r BIND_RBIND="noexec,nodev,nosuid,rw,rbind"
 
 function unit_fs_tempfs() {
 	local SIZE="$1" PATH="$2"
-	_S_VOLUME_ARG+=("'--mount=type=tmpfs,tmpfs-size=${SIZE},destination=${PATH}'")
+	_S_VOLUME_ARG+=("--mount=type=tmpfs,tmpfs-size=${SIZE},destination=${PATH}")
 }
 function unit_volume() {
 	local NAME="$1" TO="$2" OPTIONS=":noexec,nodev,nosuid"

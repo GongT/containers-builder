@@ -96,9 +96,9 @@ function main() {
 	elif [[ ${WAIT_TYPE} == touch ]]; then
 		add_run_argument "--env=STARTUP_TOUCH_FILE=${WAIT_ARGS}"
 	else
-		wait_for_pid_and_notify
 		add_run_argument "--sdnotify=ignore"
 	fi
+	wait_for_pid_and_notify
 
 	make_arguments
 
@@ -108,5 +108,3 @@ function main() {
 
 	podman_run_container
 }
-
-main

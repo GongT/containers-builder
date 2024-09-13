@@ -131,17 +131,22 @@ function network_use_veth() {
 	_net_set_type "veth"
 	_record_port_usage "${PORT_FORWARD[@]}"
 
-	if [[ ${BRIDEG_NAME} != podman ]] && [[ ! -e "${PODMAN_QUADLET_DIR}/${BRIDEG_NAME}.network" ]]; then
-		info_warn "bridge network may not exists: ${BRIDEG_NAME}"
+	if [[ -e "${PODMAN_QUADLET_DIR}/service-${BRIDEG_NAME}.network" ]]; then
+		unit_depend "service-${BRIDEG_NAME}-network.service"
+	else
+		unit_unit After "service-${BRIDEG_NAME}-network.service"
+		if [[ ${BRIDEG_NAME} != podman ]] && [[ ! -e "${PODMAN_QUADLET_DIR}/service-${BRIDEG_NAME}.network" ]]; then
+			info_warn "bridge network may not exists: ${BRIDEG_NAME}"
+		fi
 	fi
+	unit_podman_arguments "--network=${BRIDEG_NAME}"
 
 	if is_root; then
 		unit_depend "network-online.target" "nameserver.service"
 		unit_unit After "firewalld.service"
+	else
+		unit_podman_arguments --dns=h.o.s.t
 	fi
-
-	unit_unit After "service-${BRIDEG_NAME}-network.service"
-	unit_podman_arguments --dns=h.o.s.t
 
 	local i
 	for i in "${PORT_FORWARD[@]}"; do
@@ -189,10 +194,11 @@ function network_use_pod() {
 	_net_set_type "pod"
 	_record_port_usage "$@"
 
-	if [[ -e "${PODMAN_QUADLET_DIR}/${PODNAME}.pod" ]]; then
+	if [[ -e "${PODMAN_QUADLET_DIR}/service-${PODNAME}.pod" ]]; then
 		unit_depend "service-${PODNAME}-pod.service"
+		unit_unit PartOf "service-${PODNAME}-pod.service"
 	else
-		info_warn "pod may not exists: ${PODMAN_QUADLET_DIR}/${PODNAME}.pod"
+		info_warn "pod may not exists: ${PODMAN_QUADLET_DIR}/service-${PODNAME}.pod"
 
 		local SCRIPT
 		SCRIPT=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/network-wait-pod.sh")

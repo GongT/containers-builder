@@ -4,12 +4,10 @@ set -Eeuo pipefail
 declare -ra INPUT_ARGUMENTS=("$@")
 declare -a ARGS=()
 function add_run_argument() {
-	ARGS+=("$@")
+	ARGS=("$@" "${ARGS[@]}")
 }
 add_run_argument "--log-level=info"
 add_run_argument "--restart=no"
-add_run_argument "--log-driver=none"
-add_run_argument "--attach=stdin,stdout,stderr"
 
 function make_arguments() {
 	detect_host_ip

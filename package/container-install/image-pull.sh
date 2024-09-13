@@ -11,7 +11,7 @@ function unit_podman_image() {
 }
 
 function __reset_image_pull() {
-	declare -g _S_IMAGE_PULL="${DEFAULT_IMAGE_PULL:-always}"
+	declare -g _S_IMAGE_PULL="${DEFAULT_IMAGE_PULL:-missing}"
 	declare -g _S_IMAGE=''
 }
 register_unit_reset __reset_image_pull

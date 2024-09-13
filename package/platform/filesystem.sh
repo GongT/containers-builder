@@ -54,7 +54,8 @@ function is_project_file() {
 	file_in_folder "$1" "${CURRENT_DIR}" || file_in_folder "$1" "${COMMON_LIB_ROOT}" || file_in_folder "$1" "${TMPDIR}"
 }
 function delete_file() {
-	local MKDIR=$1 FILE=$2 PARENT
+	local -r MKDIR=$1 TARGET=$2
+	local PARENT
 
 	if [[ -e ${TARGET} ]]; then
 		info_note "  * remove file: ${TARGET}"

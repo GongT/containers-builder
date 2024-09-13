@@ -29,4 +29,8 @@ fi
 
 TimeoutStopUSec=$(systemd_service_property "${CURRENT_SYSTEMD_UNIT_NAME}" "TimeoutStopUSec")
 TimeoutStopSec=$(timespan_seconds "${TimeoutStopUSec}")
-x podman stop "--time=$((TimeoutStopSec - 1))" "${CONTAINER_ID}"
+TO=$((TimeoutStopSec - 10))
+if [[ ${TO} -lt 0 ]]; then
+	TO='-1'
+fi
+x podman stop "--time=${TO}" "${CONTAINER_ID}"

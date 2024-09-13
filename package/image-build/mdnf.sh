@@ -81,7 +81,7 @@ function make_base_image_by_dnf() {
 		local FORCE_DNF=""
 	fi
 
-	BUILDAH_LAST_IMAGE="fedora:${FEDORA_VERSION}"
+	buildah_cache_start "fedora:${FEDORA_VERSION}"
 
 	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
 	unset -f _dnf_hash_cb _dnf_build_cb

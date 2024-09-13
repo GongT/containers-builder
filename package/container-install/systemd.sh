@@ -94,8 +94,10 @@ function unit_write() {
 	if [[ -e "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}" ]]; then
 		delete_file 0 "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}"
 	fi
-	info_log "verify unit: ${TF}"
-	printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"
+	if is_installing; then
+		info_log "verify unit: ${TF}"
+		printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"
+	fi
 	copy_file "${TF}" "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 }
 
@@ -281,7 +283,6 @@ function unit_depend() {
 	if [[ -n $* ]]; then
 		unit_unit After "$*"
 		unit_unit Requires "$*"
-		# unit_unit PartOf "$*"
 	fi
 }
 function unit_unit() {

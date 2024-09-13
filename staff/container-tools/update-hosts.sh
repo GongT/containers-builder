@@ -2,8 +2,6 @@
 
 set -Eeuo pipefail
 
-MACHINE=$2
-
 declare -r HOSTFILE=/etc/hosts
 
 function info() {
@@ -48,7 +46,7 @@ function append_text_file_line() {
 	fi
 }
 
-TAG="auto:${MACHINE}"
+TAG="auto:${CONTAINER_ID}"
 OLD_VALUE=$(grep --fixed-strings " ### ${TAG}" "${HOSTFILE}" | grep -Eo '^\S+' || echo '')
 
 function signal_dnsmasq() {
@@ -63,8 +61,8 @@ function signal_dnsmasq() {
 }
 
 function add() {
-	local IP=$(podman container inspect "${MACHINE}" --format '{{.NetworkSettings.IPAddress}}' || echo '')
-	info "bind ip address ${IP} with ${MACHINE}"
+	local IP=$(podman container inspect "${CONTAINER_ID}" --format '{{.NetworkSettings.IPAddress}}' || echo '')
+	info "bind ip address ${IP} with ${CONTAINER_ID}"
 	if [[ ${IP} == "${OLD_VALUE}" ]]; then
 		info 'ip is same.'
 		return
@@ -72,13 +70,13 @@ function add() {
 		IP='# ip not found'
 	fi
 
-	append_text_file_line "${HOSTFILE}" '#' "${TAG}" "${IP} ${MACHINE} ${MY_HOSTNAME-}"
+	append_text_file_line "${HOSTFILE}" '#' "${TAG}" "${IP} ${CONTAINER_ID} ${MY_HOSTNAME-}"
 	info 'ok.'
 	signal_dnsmasq
 }
 
 function del() {
-	info "remove ip address of ${MACHINE}"
+	info "remove ip address of ${CONTAINER_ID}"
 	append_text_file_line "${HOSTFILE}" '#' "${TAG}" ""
 	info 'ok.'
 	signal_dnsmasq

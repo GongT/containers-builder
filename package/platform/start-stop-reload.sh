@@ -40,9 +40,9 @@ function unit_data() {
 		PODMAN_TIMEOUT_TO_KILL=100
 		ALLOW_FORCE_KILL=no
 
-		_S_UNIT_CONFIG[TimeoutAbortSec]=120s
-		_S_UNIT_CONFIG[TimeoutStartFailureMode]=abort
-		_S_UNIT_CONFIG[TimeoutStopFailureMode]=abort
+		_S_BODY_CONFIG[TimeoutAbortSec]=120s
+		_S_BODY_CONFIG[TimeoutStartFailureMode]=abort
+		_S_BODY_CONFIG[TimeoutStopFailureMode]=abort
 	else
 		die "unit_data <safe|danger>"
 	fi

@@ -11,7 +11,7 @@ function detect_host_ip() {
 		HOST_IP="127.0.0.1"
 	elif [[ ${NETWORK_TYPE} == "nat" ]]; then
 		HOST_IP=$(find_podman0_ip)
-		if [[ -z "${HOST_IP}" ]]; then
+		if [[ -z ${HOST_IP} ]]; then
 			critical_die "Can not get information about default podman network (podman0), podman configure failed."
 		fi
 	else
@@ -19,5 +19,5 @@ function detect_host_ip() {
 	fi
 
 	debug "Local host access address: ${HOST_IP}"
-	ARGS+=("--env=HOSTIP=${HOST_IP}")
+	add_run_argument "--env=HOSTIP=${HOST_IP}"
 }

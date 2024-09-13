@@ -36,7 +36,7 @@ function startup_done() {
 	sleep 10
 	exit 0
 }
-debug "XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}"
+debug "XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR-*missing*}"
 function systemctl() {
 	if [[ -z ${XDG_RUNTIME_DIR-} ]] || [[ $XDG_RUNTIME_DIR == */0 ]]; then
 		/usr/bin/systemctl "$@"

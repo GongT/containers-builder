@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+# shellcheck source=../../package/include.sh
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"
 
 declare -r NAME="$1"
 
