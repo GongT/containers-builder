@@ -21,13 +21,13 @@ function image_get_label() {
 
 function add_build_config() {
 	if ! is_set COMMIT_CONFIGS; then
-		die "wrong call timing"
+		print_failure "wrong call timing add_build_config()"
 	fi
 	COMMIT_CONFIGS+=("$@")
 }
 function add_run_argument() {
 	if ! is_set COMMIT_CONFIGS; then
-		die "wrong call timing"
+		print_failure "wrong call timing add_run_argument()"
 	fi
 }
 
@@ -98,13 +98,6 @@ function buildah() {
 				COMMIT_CONFIGS+=("--label=${LABELID_RESULT_HASH}=${HASH}")
 			else
 				COMMIT_CONFIGS+=("--unsetlabel=${LABELID_RESULT_HASH}")
-			fi
-
-			if [[ -n ${GITHUB_SERVER_URL-} ]] && [[ -n ${GITHUB_REPOSITORY-} ]]; then
-				COMMIT_CONFIGS+=("--annotation=org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}")
-			fi
-			if [[ -n ${GITHUB_SHA-} ]]; then
-				COMMIT_CONFIGS+=("--annotation=org.opencontainers.image.version=${GITHUB_SHA}")
 			fi
 
 			COMMIT_CONFIGS+=("--annotation=${ANNOID_CACHE_PREV_STAGE}-" "--annotation=${ANNOID_CACHE_HASH}-")

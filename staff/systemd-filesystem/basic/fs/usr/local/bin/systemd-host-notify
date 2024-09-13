@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+	if [[ -e /run/.userenvironments ]]; then
+		source /run/.userenvironments
+	fi
+	if [[ -e /etc/environment ]]; then
+		source /run/.userenvironments
+	fi
+fi
+if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+	echo "Failed to notify init system: missing __NOTIFY_SOCKET__" >&2
+	exit 1
+fi
+
+export NOTIFY_SOCKET="${__NOTIFY_SOCKET__}"
+systemd-notify "$@"

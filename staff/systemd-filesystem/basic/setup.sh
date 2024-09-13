@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+shopt -s nullglob
 
+rm -f /etc/machine-id
+rm -rf /usr/lib/systemd/system/local-fs.target.wants /usr/lib/systemd/system/graphical.target.wants /usr/lib/systemd/system/multi-user.target.wants
+rm -rf /etc/systemd/system/*.target.wants
+
+cd /usr/lib/systemd/system/sysinit.target.wants
+rm -f ./*.mount ./*.path ./systemd-firstboot.service ./systemd-machine-id-commit.service ./systemd-sysusers.service ./systemd-tpm2-* ./systemd-update-*
+
+systemctl enable console-getty || true
 systemctl mask systemd-networkd-wait-online.service
-systemctl disable rpmdb-migrate.service rpmdb-rebuild.service dnf-makecache.timer systemd-logind.service systemd-oomd.service systemd-oomd.socket systemd-networkd.socket || true
-systemctl set-default multi-user.target
+
+systemctl enable success.service
+systemctl set-default multi-user.target 
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime

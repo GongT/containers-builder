@@ -36,11 +36,12 @@ function merge_local_fs() {
 	}
 	___merge_local_fs_make() {
 		buildah copy "$1" fs /
-		local SH=bash
 		if [[ -n ${EXTRA_SCRIPT} ]]; then
-			local EXTRA_SCRIPT_ABS=$(realpath "${EXTRA_SCRIPT}")
+			local EXTRA_SCRIPT_ABS=$(realpath -m "${EXTRA_SCRIPT}")
 			local WHO_AM_I="${EXTRA_SCRIPT}"
 			buildah_run_shell_script "${ARGS[@]}" "$1" "${EXTRA_SCRIPT_ABS}"
+		else
+			return 0
 		fi
 	}
 	buildah_cache "${CACHE_BRANCH}" ___merge_local_fs_hash ___merge_local_fs_make

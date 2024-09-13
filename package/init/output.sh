@@ -22,6 +22,11 @@ function die() {
 	fi
 }
 
+function print_failure() {
+	info_error "$@"
+	return 66
+}
+
 function export_script_variable() {
 	declare -p "$@" 2>/dev/null || true
 }

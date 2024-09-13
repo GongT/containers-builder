@@ -20,15 +20,26 @@ if [[ ${OUTPUT} == "running" ]]; then
 fi
 
 if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
-	echo "clearing dirty state."
-	x podman rm --ignore --force "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
+	sleep 3s
+	if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
+		echo "clearing dirty state."
+		x podman rm --ignore --force "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
+	else
+		exit 0
+	fi
+else
+	exit 0
 fi
 
 if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
 	echo "clearing dirty state (tree)."
 	x podman rm --ignore --force --depend "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
+else
+	exit 0
 fi
 
 if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
 	die "still not able to remove container"
+else
+	exit 0
 fi

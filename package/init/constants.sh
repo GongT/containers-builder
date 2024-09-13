@@ -1,6 +1,6 @@
 declare -xr ANNOID_CACHE_PREV_STAGE="me.gongt.cache.prevstage"
 declare -xr ANNOID_CACHE_HASH="me.gongt.cache.hash"
-declare -xr LABELID_RESULT_HASH="me.gongt.hash"
+declare -xr LABELID_RESULT_HASH="me.gongt.result"
 declare -xr LABELID_STOP_COMMAND="me.gongt.cmd.stop"
 declare -xr LABELID_RELOAD_COMMAND="me.gongt.cmd.reload"
 declare -xr LABELID_SYSTEMD="me.gongt.using.systemd"

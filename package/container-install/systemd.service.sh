@@ -26,7 +26,7 @@ function unit_body() {
 		# multiple directive, is command
 		local COMMAND=$1 PREFIX=''
 		shift
-		split_exec_command_prefix "${COMMAND}"
+		split_exec_command_prefix "${COMMAND}" PREFIX COMMAND
 
 		if [[ ${K} == ExecStopPre ]]; then
 			K=ExecStop

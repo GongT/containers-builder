@@ -18,8 +18,8 @@ function core_switch() {
 	touch)
 		wait_by_create_file "$WAIT_ARGS"
 		;;
-	healthy) ;; # do nothing
-	pass) ;;    # do nothing
+	healthy) exit 251 ;; # do nothing
+	pass) exit 251 ;;    # do nothing
 	*)
 		sdnotify "--status=startup timeout"
 		echo "invalid wait type: ${WAIT_TYPE}" >&2
@@ -33,6 +33,8 @@ function service_wait_thread() {
 		local RET=$?
 		if [[ ${RET} -eq 0 ]]; then
 			startup_done
+		elif [[ ${RET} -eq 251 ]]; then
+			exit 0
 		else
 			debug "failed wait container '${CONTAINER_ID}' to stable running."
 
@@ -71,10 +73,12 @@ function main() {
 		else
 			START_WAIT_DEFINE=sleep:10
 		fi
+		debug "auto detect wait: ${START_WAIT_DEFINE}"
 	fi
 
 	if [[ $START_WAIT_DEFINE == touch ]]; then
 		declare -gxr FILE_TO_CHECK="/startup.$RANDOM.signal"
+		debug "wait touch file: ${FILE_TO_CHECK}"
 		add_run_argument "--env=STARTUP_TOUCH_FILE=$FILE_TO_CHECK"
 	fi
 
@@ -86,9 +90,6 @@ function main() {
 		wait_for_pid_and_notify
 		add_run_argument "--sdnotify=ignore"
 	fi
-
-	# echo "[SDNOTIFY] hide socket from podman: $NOTIFY_SOCKET"
-	# unset NOTIFY_SOCKET
 
 	make_arguments "$@"
 

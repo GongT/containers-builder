@@ -154,7 +154,7 @@ function apply_systemd_service() {
 ###
 function unit_get_scopename() {
 	if [[ -z $_S_CURRENT_UNIT_FILE ]]; then
-		die "wrong call timing"
+		print_failure "wrong call timing"
 	fi
 	local NAME="${_S_CURRENT_UNIT_NAME}"
 	if [[ -n ${_S_AT_} ]]; then
@@ -230,19 +230,19 @@ NotifyAccess=all"
 
 function add_run_argument() {
 	if ! is_set _PODMAN_RUN_ARGS; then
-		die "wrong call timing"
+		print_failure "wrong call timing add_run_argument()"
 	fi
 	_PODMAN_RUN_ARGS+=("$@")
 }
 function add_build_config() {
 	if ! is_set _PODMAN_RUN_ARGS; then
-		die "wrong call timing"
+		print_failure "wrong call timing add_build_config()"
 	fi
 }
 
 function _create_startup_arguments() {
 	if ! is_set STARTUP_ARGS; then
-		die "wrong call timing"
+		print_failure "wrong call timing _create_startup_arguments()"
 	fi
 
 	local _PODMAN_RUN_ARGS=() CAP_LIST

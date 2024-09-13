@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 MACHINE=$2
 
+declare -r HOSTFILE=/etc/hosts
+
 function info() {
 	echo "{update-hosts} $*" >&2
 }
@@ -47,16 +49,16 @@ function append_text_file_line() {
 }
 
 TAG="auto:${MACHINE}"
-OLD_VALUE=$(grep --fixed-strings " ### ${TAG}" /etc/hosts | grep -Eo '^\S+' || echo '')
+OLD_VALUE=$(grep --fixed-strings " ### ${TAG}" "${HOSTFILE}" | grep -Eo '^\S+' || echo '')
 
 function signal_dnsmasq() {
 	info "send SIGHUP to dnsmasq..."
 	PID_DNS=$(systemctl show --property MainPID --value dnsmasq)
 	if [[ ${PID_DNS} -gt 0 ]]; then
 		kill -s SIGHUP "${PID_DNS}" || true
-		info 'ok.'
+		info 'sent SIGHUP to dnsmasq.'
 	else
-		info "not running..."
+		info "dnsmasq not running."
 	fi
 }
 
@@ -70,14 +72,14 @@ function add() {
 		IP='# ip not found'
 	fi
 
-	append_text_file_line /etc/hosts '#' "${TAG}" "${IP} ${MACHINE} ${MY_HOSTNAME-}"
+	append_text_file_line "${HOSTFILE}" '#' "${TAG}" "${IP} ${MACHINE} ${MY_HOSTNAME-}"
 	info 'ok.'
 	signal_dnsmasq
 }
 
 function del() {
 	info "remove ip address of ${MACHINE}"
-	append_text_file_line /etc/hosts '#' "${TAG}" ""
+	append_text_file_line "${HOSTFILE}" '#' "${TAG}" ""
 	info 'ok.'
 	signal_dnsmasq
 }

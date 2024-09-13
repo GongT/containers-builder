@@ -11,6 +11,7 @@ function register_exit_handler() {
 }
 
 function _MAIN_exit_handler() {
+	set +x
 	local -i _EXIT_CODE=$?
 	set +Eeuo pipefail
 
@@ -58,6 +59,7 @@ function _MAIN_exit_handler() {
 trap _MAIN_exit_handler EXIT
 
 function _MAIN_cancel_handler() {
+	set +x
 	_CURRENT_INDENT=''
 	SAVED_INDENT=()
 	EXIT_CODE=$?

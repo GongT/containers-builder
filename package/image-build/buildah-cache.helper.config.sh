@@ -26,6 +26,7 @@ function buildah_finalize_image() {
 	info "[${NAME}] STEP ${WORK_STAGE}: \e[0mFinalize"
 
 	RESULT=$(create_if_not "${NAME}" "${BUILDAH_LAST_IMAGE}")
+
 	buildah commit "${RESULT}" "${IMAGE_OUT}" >/dev/null
 
 	register_exit_handler info_success "success build image\n  - IMAGE = ${LAST_COMMITED_IMAGE}\n  - NAME = ${IMAGE_OUT}\n$(xpodman image history "${LAST_COMMITED_IMAGE}" || true)"

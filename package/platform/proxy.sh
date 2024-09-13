@@ -19,7 +19,6 @@ function SHELL_USE_PROXY() {
 	# shellcheck disable=SC2016
 	echo '
 if [[ -n "$PROXY" ]]; then
-	echo "using proxy: ${PROXY}..." >&2
 	export http_proxy="$PROXY"
 	export https_proxy="$PROXY"
 fi

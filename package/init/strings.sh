@@ -65,8 +65,14 @@ function escape_argument_list_continue() {
 }
 
 function split_exec_command_prefix() {
-	while [[ ${COMMAND} =~ ^[-@:+!] ]]; do
-		PREFIX+=${COMMAND#0:1}
-		COMMAND=${COMMAND:1}
+	local __COMMAND=$1 VAR_PREFIX=$2 VAR_COMMAND=$3
+	local __PREFIX=''
+
+	while [[ ${__COMMAND} =~ ^[-@:+!] ]]; do
+		__PREFIX+=${__COMMAND:0:1}
+		__COMMAND=${__COMMAND:1}
 	done
+
+	printf -v "$VAR_PREFIX" '%s' "$__PREFIX"
+	printf -v "$VAR_COMMAND" '%s' "$__COMMAND"
 }

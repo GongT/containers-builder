@@ -63,6 +63,7 @@ function buildah_cache() {
 		"${BUILDAH_HASH_CALLBACK}"
 	} >"${HASH_TMP}"
 	WANTED_HASH=$(md5sum "${HASH_TMP}" | awk '{print $1}')
+	info_note "current hash: ${WANTED_HASH}"
 	dedent
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
@@ -95,11 +96,11 @@ function buildah_cache() {
 	new_container "${CONTAINER_ID}" "${BUILDAH_LAST_IMAGE}" >/dev/null
 	try_call_function "${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
 	if [[ $ERRNO -ne 0 ]]; then
-		info_error "build callback<${BUILDAH_BUILD_CALLBACK}> failed to run with $ERRNO"
+		info_error "build callback '${BUILDAH_BUILD_CALLBACK}' failed to run with $ERRNO ($ERRLOCATION)"
 		dedent
 		return 1
 	fi
-	info_note "build callback<${BUILDAH_BUILD_CALLBACK}> finish"
+	info_note "build callback '${BUILDAH_BUILD_CALLBACK}' finish"
 	dedent
 
 	local COMMENT="${BUILDAH_NAME_BASE} layer <${DONE_STAGE}> to <${WORK_STAGE}>"

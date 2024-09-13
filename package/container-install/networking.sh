@@ -18,6 +18,8 @@ function _set_network_if_not() {
 	if [[ -z ${_N_TYPE} ]]; then
 		network_use_default
 	fi
+	local HN=${_N_HOST:-$(unit_get_scopename)}
+	unit_body "Environment" "MY_HOSTNAME=$HN"
 }
 register_unit_emit _set_network_if_not
 
@@ -38,14 +40,13 @@ function _append_network_args() {
 		add_run_argument "--hostname=${_N_HOST:-$(unit_get_scopename)}"
 	fi
 }
-register_script_emit _append_network_args
+register_argument_config _append_network_args
 
 function unit_podman_hostname() {
 	if [[ -n ${_N_HOST} ]]; then
 		die "hostname already set to ${_N_HOST}"
 	fi
 	_N_HOST=$1
-	unit_body "Environment" "MY_HOSTNAME=${_N_HOST}"
 }
 
 function _record_port_usage() {
@@ -136,7 +137,7 @@ function network_use_veth() {
 		unit_unit After "firewalld.service"
 	fi
 
-	unit_unit After "${BRIDEG_NAME}"
+	unit_unit After "service-${BRIDEG_NAME}-network.service"
 	unit_podman_arguments --dns=h.o.s.t
 
 	local i
@@ -158,9 +159,11 @@ function network_use_veth() {
 		fi
 	done
 
-	SCRIPT=$(install_script "${COMMON_LIB_ROOT}/tools/update-hosts.sh")
-	unit_hook_poststart "/usr/bin/flock /etc/hosts ${SCRIPT} add \"$(unit_get_scopename)\" \"${_N_HOST}\""
-	unit_hook_stop "/usr/bin/flock /etc/hosts ${SCRIPT} del \"$(unit_get_scopename)\""
+	if is_root; then
+		SCRIPT=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/update-hosts.sh")
+		unit_hook_poststart '+-/usr/bin/flock' /etc/hosts "${SCRIPT}" add
+		unit_hook_stop '+-/usr/bin/flock' /etc/hosts "${SCRIPT}" del
+	fi
 }
 function network_use_container() {
 	# join another container's network namespace

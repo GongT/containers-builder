@@ -2,14 +2,19 @@ declare -a _HANDLERS_RESET=() _HANDLERS_EMIT_UNIT=() _HANDLERS_EMIT_SRC=() _HAND
 
 function __call_array() {
 	local handler
+	# info_note "$(caller):"
 	for handler; do
 		if [[ ${pre_eval+def} ]]; then
 			"${pre_eval}" "${handler}"
 		fi
-		if ! eval "${handler}"; then
-			die "while execute function: ${handler}"
+		# info_note "    call ${handler}"
+		try_call_function "${handler}"
+		if [[ ${ERRNO} -ne 0 ]]; then
+			info_warn "while execute function: ${handler} around ${ERRLOCATION}"
+			return ${ERRNO}
 		fi
 	done
+	return 0
 }
 function register_unit_reset() {
 	_HANDLERS_RESET+=("$*")

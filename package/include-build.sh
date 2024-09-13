@@ -22,6 +22,7 @@ source "./image-build/apt-get.sh"
 source "./image-build/archlinux.sh"
 source "./image-build/python.sh"
 source "./image-build/mount-script-run.sh"
+source "./image-build/oci-labels.sh"
 
 source "./standard_build_steps/container-systemd.sh"
 source "./standard_build_steps/download_and_build_github.sh"

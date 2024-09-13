@@ -1,3 +1,7 @@
+declare -a CATCH_ERROR_HERE=()
+declare -i ERRNO=0 RETURN_TIMES=0
+declare ERRLOCATION=''
+
 function callstack() {
 	local -i SKIP=${1-1} i
 	local FN RESOLVE_ENABLED=no
@@ -49,13 +53,14 @@ function global_error_trap() {
 
 	if [[ ${RETURN_TIMES} -gt 0 ]]; then
 		RETURN_TIMES=$((RETURN_TIMES - 1))
-		println "   -> return $RETURN_TIMES times."
+		# println "   -> return $RETURN_TIMES times."
 		if [[ $RETURN_TIMES -eq 0 ]]; then
 			return 0
 		fi
 		return $ERRNO
 	fi
 	ERRNO=${_ERRNO}
+	ERRLOCATION="$(caller)"
 
 	if [[ ${#CATCH_ERROR_HERE[@]} -gt 0 ]]; then
 		if [[ ${FUNCNAME[1]} == "try_call_function" ]]; then
@@ -80,14 +85,14 @@ function global_error_trap() {
 	die "Unhandle Script Error: $ERRNO"
 }
 function set_error_trap() {
-	info_note "install global error trap."
+	# info_note "install global error trap."
 	if [[ -n "$(trap -p ERR)" ]]; then
 		die "already set ERR trap"
 	fi
 
 	declare -ga CATCH_ERROR_HERE=()
 	declare -gi ERRNO=0 RETURN_TIMES=0
-	trap 'global_error_trap $LINENO ; return $?' ERR
+	trap 'global_error_trap "$LINENO" ; return $?' ERR
 }
 function is_bash_function() {
 	declare -fp "$1" &>/dev/null
@@ -97,7 +102,7 @@ function try_call_function() {
 	if ! is_bash_function "$FN"; then
 		die "missing bash function: $FN"
 	fi
-
+	ERRNO=0
 	CATCH_ERROR_HERE=("$1" "${CATCH_ERROR_HERE[@]}")
 	"$@"
 	CATCH_ERROR_HERE=("${CATCH_ERROR_HERE[@]:1}")
