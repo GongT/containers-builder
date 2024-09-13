@@ -38,7 +38,7 @@ timespan_seconds() {
 	if [[ $span == infinity ]]; then
 		printf '-1'
 	elif us=$(systemd-analyze timespan "${span}" | grep 'μs:' | awk '{print $2}'); then
-		printf "%.0f" $((us / 1000000))
+		printf "%.0f" $((us / microsecond_unit))
 	else
 		printf '-1'
 	fi
@@ -49,3 +49,5 @@ seconds_timespan() {
 
 	systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}'
 }
+
+declare -ri microsecond_unit=1000000

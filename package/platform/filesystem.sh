@@ -92,10 +92,12 @@ function copy_file() {
 
 	ensure_parent "${MKDIR}" "${TARGET}"
 	info_note "  * copy file: ${TARGET}"
-	cp -pT "${FILE}" "${TARGET}"
+	cp -fpT "${FILE}" "${TARGET}"
 
 	if [[ -n ${MODE-} ]]; then
-		chmod "${MODE}" "${TARGET}"
+		chmod "$(bit_mask "${MODE}")" "${TARGET}"
+	else
+		chmod a-w "${TARGET}"
 	fi
 }
 function write_file() {
@@ -119,12 +121,20 @@ function write_file() {
 	if [[ -e ${TARGET} ]] && [[ ${DATA} == "$(<"${TARGET}")" ]]; then
 		info_note "  * write file: ${TARGET} - same"
 	else
+		if [[ -e ${TARGET} ]]; then
+			rm -f "${TARGET}"
+		fi
 		echo "${DATA}" >"${TARGET}"
 		info_note "  * write file: ${TARGET} - ok"
 	fi
 	if [[ -n ${MODE-} ]]; then
-		chmod "${MODE}" "${TARGET}"
+		chmod "$(bit_mask "${MODE}")" "${TARGET}"
+	else
+		chmod a-w "${TARGET}"
 	fi
+}
+function bit_mask() {
+	printf '0%o\n' $(($1 & (~0227)))
 }
 function find_command() {
 	env -i "PATH=${PATH}" "${SHELL}" --noprofile --norc -c "command -v '$1'"

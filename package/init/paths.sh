@@ -85,12 +85,20 @@ else
 fi
 
 if is_root; then
-	declare -xr SCRIPTS_DIR="/usr/local/libexec/${PROJECT_NAME}"
+	declare -x SCRIPTS_DIR="/usr/local/libexec/${PROJECT_NAME}"
 	declare -xr BINARY_DIR="/usr/local/bin"
 else
-	declare -xr SCRIPTS_DIR="${HOME}/.local/libexec/${PROJECT_NAME}"
+	declare -x SCRIPTS_DIR="${HOME}/.local/libexec/${PROJECT_NAME}"
 	declare -xr BINARY_DIR="${HOME}/.local/bin"
 fi
+
+function set_script_root() {
+	if is_root; then
+		declare -gx SCRIPTS_DIR="/usr/local/libexec/$1"
+	else
+		declare -gx SCRIPTS_DIR="${HOME}/.local/libexec/$1"
+	fi
+}
 
 if is_root; then
 	if [[ ${TEST_MODE-} == yes ]]; then

@@ -26,7 +26,6 @@ function unit_fs_bind() {
 	_S_VOLUME_ARG+=("--volume=${FROM}:${TO}${OPTIONS}")
 }
 function _pass_socket_path_env() {
-	controller_environment_variable "SHARED_SOCKET_PATH=${SHARED_SOCKET_PATH}"
 	environment_variable "SHARED_SOCKET_PATH=/run/sockets"
 }
 function shared_sockets_use() {
@@ -40,18 +39,21 @@ function shared_sockets_provide() {
 	if ! echo "${_S_VOLUME_ARG[*]}" | grep "${SHARED_SOCKET_PATH}"; then
 		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/sockets
 	fi
-	local -a FULLPATH=()
+	local -a FULLPATH=() ARGS=()
+	local i
 	for i; do
-		FULLPATH+=("'${SHARED_SOCKET_PATH}/${i}.sock'")
+		if ! [[ $i == *.sock || $i == *.socket ]]; then
+			i+='.sock'
+		fi
+		ARGS+=("$i")
+		FULLPATH+=("${SHARED_SOCKET_PATH}/${i}")
 	done
-	__provide_sockets_for_wait "$@"
-
-	unit_hook_start "/usr/bin/rm -f ${FULLPATH[*]}"
-	unit_hook_stop "/usr/bin/rm -f ${FULLPATH[*]}"
+	_S_PROVIDE_SOCKETS+=("$@")
 }
 
 function __reset_volumes() {
 	declare -ga _S_PREP_FOLDER=()
+	declare -ga _S_PROVIDE_SOCKETS=()
 }
 register_unit_reset __reset_volumes
 
@@ -60,7 +62,11 @@ function __export_volumes() {
 	if [[ ${#_S_PREP_FOLDER[@]} -gt 0 ]]; then
 		PREPARE_FOLDERS+=("${_S_PREP_FOLDER[@]}")
 	fi
+	local -ra PROVIDED_SOCKETS=("${_S_PROVIDE_SOCKETS[@]}")
+	declare -p PROVIDED_SOCKETS
+
 	local -r PREPARE_FOLDERS
+	printf "declare -xr SHARED_SOCKET_PATH=%q\n" "${SHARED_SOCKET_PATH}"
 	declare -p PREPARE_FOLDERS
 }
 register_script_emit __export_volumes

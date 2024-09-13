@@ -54,6 +54,8 @@ function __create_unit__() {
 
 	_S_CURRENT_UNIT_NAME="${NAME}"
 
+	set_script_root "${NAME}"
+
 	_S_CURRENT_UNIT_FILE="$(_create_unit_name)"
 	echo "creating unit file ${_S_CURRENT_UNIT_FILE}"
 }

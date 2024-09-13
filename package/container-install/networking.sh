@@ -119,7 +119,10 @@ function network_use_interface() {
 }
 
 function network_use_veth() {
-	# use "podman" network
+	# use the most common network type
+	if [[ $# -eq 0 ]]; then
+		set -- 'podman'
+	fi
 	local BRIDEG_NAME=$1
 	shift
 	local PORT_FORWARD=("$@")
@@ -128,7 +131,7 @@ function network_use_veth() {
 	_net_set_type "veth"
 	_record_port_usage "${PORT_FORWARD[@]}"
 
-	if [[ ! -e "${PODMAN_QUADLET_DIR}/${BRIDEG_NAME}.network" ]]; then
+	if [[ ${BRIDEG_NAME} != podman ]] && [[ ! -e "${PODMAN_QUADLET_DIR}/${BRIDEG_NAME}.network" ]]; then
 		info_warn "bridge network may not exists: ${BRIDEG_NAME}"
 	fi
 

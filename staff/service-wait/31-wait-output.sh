@@ -2,11 +2,17 @@
 set -Eeuo pipefail
 
 function wait_by_output() {
+	local WAIT_OUTPUT=$1
+
 	self_journal | while read -r line; do
-		expand_timeout_seconds "5"
-		if echo "${line}" | grep -qE "${WAIT_OUTPUT}"; then
+		if [[ ${line} == *SDNOTIFY* ]]; then
+			continue
+		elif echo "${line}" | grep -qE "${WAIT_OUTPUT}"; then
 			debug "== ---- output found ---- =="
-			break
+			service_wait_success
+			return 0
 		fi
+
+		# expand_timeout_seconds "5"
 	done
 }

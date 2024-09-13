@@ -16,7 +16,8 @@ __concat_wait_files() {
 	local FILE_PATH
 
 	printf '\n## HELPERS: \n'
-	declare -fp callstack json_array json_array_get_back uptime_sec timespan_seconds seconds_timespan
+	declare -fp callstack is_bash_function json_array json_array_get_back uptime_sec timespan_seconds seconds_timespan
+	declare -p microsecond_unit
 	printf '\n'
 
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
@@ -63,13 +64,13 @@ function start_notify() {
 		if [[ -n ${ARG} ]]; then
 			die "touch method do not allow argument"
 		fi
-		_S_START_WAIT="sockets"
+		_S_START_WAIT="socket"
 		;;
 	port)
-		if [[ ${ARG} != tcp:* && ${ARG} != udp:* ]]; then
-			die "start notify port must use tcp:xxx or udp:xxx"
+		if [[ ${ARG} != */tcp && ${ARG} != */udp ]]; then
+			die "start notify port must use xxx/tcp or xxx/udp"
 		fi
-		_S_START_WAIT="net:${ARG}"
+		_S_START_WAIT="port:${ARG}"
 		;;
 	sleep)
 		_S_START_WAIT="sleep:${ARG}"
@@ -78,7 +79,7 @@ function start_notify() {
 		_S_START_WAIT="output:${ARG}"
 		;;
 	touch)
-		_S_START_WAIT="file"
+		_S_START_WAIT="touch:${ARG}"
 		;;
 	pass)
 		_S_START_WAIT="pass"
@@ -94,14 +95,8 @@ function start_notify() {
 		;;
 	esac
 }
-
-function __provide_sockets_for_wait() {
-	_S_WAIT_SOCKETS+=("$@")
-}
-
 function __reset_start_notify() {
 	declare -g _S_START_WAIT=
-	declare -ga _S_WAIT_SOCKETS=()
 }
 
 register_unit_reset __reset_start_notify
@@ -109,15 +104,12 @@ register_unit_reset __reset_start_notify
 function __emit_start_helpers() {
 	if [[ -z $_S_START_WAIT ]]; then
 		_S_START_WAIT="auto"
-	elif [[ $_S_START_WAIT == sockets ]]; then
-		if [[ ${#_S_WAIT_SOCKETS[@]} -eq 0 ]]; then
+	elif [[ $_S_START_WAIT == socket ]]; then
+		if [[ ${#_S_PROVIDE_SOCKETS[@]} -eq 0 ]]; then
 			die "unit wait for socket but not provide any."
 		fi
-		_S_START_WAIT+=":${_S_WAIT_SOCKETS[0]}"
-		printf "declare -xr SHARED_SOCKET_PATH=%q" "${SHARED_SOCKET_PATH}"
 	fi
-
-	printf "declare START_WAIT_DEFINE=%q" "${_S_START_WAIT}"
+	printf "declare START_WAIT_DEFINE=%q\n" "${_S_START_WAIT}"
 }
 
 register_script_emit __emit_start_helpers

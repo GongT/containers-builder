@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+declare -i WAIT_ERROR=66
 function core_switch() {
 	case "${WAIT_TYPE}" in
 	socket)
-		wait_by_socket "$WAIT_ARGS"
+		wait_by_socket
 		;;
 	port)
 		wait_by_port "${WAIT_ARGS%:*}" "${WAIT_ARGS#*:}"
@@ -28,32 +29,33 @@ function core_switch() {
 	esac
 }
 
+function service_wait_success() {
+	WAIT_ERROR=0
+}
+
 function service_wait_thread() {
 	function _wait_exit() {
 		local RET=$?
-		if [[ ${RET} -eq 0 ]]; then
+		if [[ ${WAIT_ERROR} -eq 0 && ${RET} -eq 0 ]]; then
 			startup_done
 		elif [[ ${RET} -eq 251 ]]; then
-			exit 0
+			exit 0 # no need wait
 		else
 			debug "failed wait container '${CONTAINER_ID}' to stable running."
 
 			sdnotify --stopping "wait fail"
 
-			local PID
-			PID=$(get_service_property "MainPID")
-			if [[ ${PID} -gt 0 ]]; then
-				echo "send signal to podman container ${PID}"
-				kill -s sigterm "${PID}"
+			local SPID
+			SPID=$(get_service_property "MainPID")
+			if [[ ${SPID} -gt 0 ]]; then
+				echo "send signal to podman container ${SPID}"
+				kill -s sigterm "${SPID}"
 			fi
 		fi
 	}
 	trap _wait_exit EXIT
 
-	debug "wait container ${CONTAINER_ID}, spec ${START_WAIT_DEFINE}."
-
-	local WAIT_TYPE=${START_WAIT_DEFINE%%:*}
-	local WAIT_ARGS=${START_WAIT_DEFINE#*:}
+	debug "wait container ${CONTAINER_ID}, type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
 
 	core_switch
 }
@@ -63,9 +65,10 @@ function main() {
 	load_sdnotify
 
 	add_run_argument "--name=${CONTAINER_ID}"
-	ensure_mounts "${PREPARE_FOLDERS[@]}"
+	ensure_mounts
+	remove_old_socks
 
-	if [[ $START_WAIT_DEFINE == auto ]]; then
+	if [[ ${START_WAIT_DEFINE} == auto ]]; then
 		if is_image_has_healthcheck; then
 			START_WAIT_DEFINE=healthy
 		elif is_image_using_systemd; then
@@ -75,23 +78,29 @@ function main() {
 		fi
 		debug "auto detect wait: ${START_WAIT_DEFINE}"
 	fi
-
-	if [[ $START_WAIT_DEFINE == touch ]]; then
-		declare -gxr FILE_TO_CHECK="/startup.$RANDOM.signal"
-		debug "wait touch file: ${FILE_TO_CHECK}"
-		add_run_argument "--env=STARTUP_TOUCH_FILE=$FILE_TO_CHECK"
+	if [[ ${START_WAIT_DEFINE} == touch || ${START_WAIT_DEFINE} == touch: ]]; then
+		START_WAIT_DEFINE="touch:/startup.${RANDOM}.signal"
 	fi
 
-	if [[ $START_WAIT_DEFINE == pass ]]; then
+	local -r WAIT_TYPE=${START_WAIT_DEFINE%%:*}
+	if [[ ${START_WAIT_DEFINE} == *:* ]]; then
+		local -r WAIT_ARGS=${START_WAIT_DEFINE#*:}
+	else
+		local -r WAIT_ARGS=''
+	fi
+
+	if [[ ${WAIT_TYPE} == pass ]]; then
 		add_run_argument "--sdnotify=container"
-	elif [[ $START_WAIT_DEFINE == healthy ]]; then
+	elif [[ ${WAIT_TYPE} == healthy ]]; then
 		add_run_argument "--sdnotify=healthy"
+	elif [[ ${WAIT_TYPE} == touch ]]; then
+		add_run_argument "--env=STARTUP_TOUCH_FILE=${WAIT_ARGS}"
 	else
 		wait_for_pid_and_notify
 		add_run_argument "--sdnotify=ignore"
 	fi
 
-	make_arguments "$@"
+	make_arguments
 
 	ensure_container_not_running
 
@@ -100,4 +109,4 @@ function main() {
 	podman_run_container
 }
 
-main "$@"
+main

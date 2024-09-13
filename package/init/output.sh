@@ -197,7 +197,7 @@ function json_array() {
 		echo '[]'
 		return
 	fi
-	jq --ascii-output --null-input --compact-output --slurp '$ARGS.positional' --args "$@"
+	jq --ascii-output --null-input --compact-output --slurp '$ARGS.positional' --args -- "$@"
 }
 
 function json_array_get_back() {

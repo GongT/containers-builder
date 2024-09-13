@@ -10,7 +10,7 @@ dnf_install "$PROJECT_NAME" scripts/requirements.lst
 
 merge_local_fs "$PROJECT_NAME"
 
-buildah_config "$PROJECT_NAME" --entrypoint=/opt/entrypoint.sh --cmd '[]'
+buildah_config "$PROJECT_NAME" '--entrypoint=["/opt/entrypoint.sh"]' --cmd '[]' --stop-signal=sigint
 
 healthcheck /opt/healthcheck.sh
 healthcheck_retry 5

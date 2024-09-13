@@ -4,7 +4,7 @@ declare -xr LABELID_RELOAD_COMMAND="me.gongt.cmd.reload"
 
 get_label() {
 	TMPL=$(printf '{{index .Config.Labels "%s"}}' "$1")
-	podman container inspect -f "$TMPL" simple-build
+	podman container inspect -f "$TMPL" "${CONTAINER_ID}"
 }
 die() {
 	echo "$*" >&2

@@ -21,4 +21,5 @@ function wait_by_sleep() {
 		fi
 		return 1
 	fi
+	service_wait_success
 }

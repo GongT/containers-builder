@@ -50,33 +50,33 @@ function __healthcheck_config() {
 	local HEALTHCHECK_DATA=()
 
 	# add_build_config "--healthcheck=CMD-SHELL $(escape_argument_list_continue "${HEALTHCHECK_CMD[@]}")"
-	HEALTHCHECK_DATA+=("--healthcheck=$(json_array "${HEALTHCHECK_CMD[@]}")")
+	HEALTHCHECK_DATA+=("--health-cmd=$(json_array "${HEALTHCHECK_CMD[@]}")")
 	add_run_argument "--health-cmd=$(json_array "${HEALTHCHECK_CMD[@]}")"
 
 	if [[ $HEALTHCHECK_INTERVAL -gt 0 ]]; then
 		# add_build_config "--healthcheck-interval=${HEALTHCHECK_INTERVAL}s"
-		HEALTHCHECK_DATA+=("--healthcheck-interval=${HEALTHCHECK_INTERVAL}s")
+		HEALTHCHECK_DATA+=("--health-interval=${HEALTHCHECK_INTERVAL}s")
 		add_run_argument "--health-interval=${HEALTHCHECK_INTERVAL}s"
 	fi
 	if [[ $HEALTHCHECK_RETRY -gt 0 ]]; then
 		# add_build_config "--healthcheck-retries=${HEALTHCHECK_RETRY}"
-		HEALTHCHECK_DATA+=("--healthcheck-retries=${HEALTHCHECK_RETRY}")
+		HEALTHCHECK_DATA+=("--health-retries=${HEALTHCHECK_RETRY}")
 		add_run_argument "--health-retries=${HEALTHCHECK_RETRY}"
 	fi
 	if [[ ${HEALTHCHECK_START_INTERVAL} -gt 0 ]]; then
 		# add_build_config "--healthcheck-start-interval=${HEALTHCHECK_START_INTERVAL}"
-		HEALTHCHECK_DATA+=("--healthcheck-start-interval=${HEALTHCHECK_START_INTERVAL}")
-		add_run_argument "--health-startup-interval=${HEALTHCHECK_START_INTERVAL}"
+		HEALTHCHECK_DATA+=("--health-startup-interval=${HEALTHCHECK_START_INTERVAL}s")
+		add_run_argument "--health-startup-interval=${HEALTHCHECK_START_INTERVAL}s"
 	fi
 	if [[ ${HEALTHCHECK_START_PERIOD} -gt 0 ]]; then
 		# add_build_config "--healthcheck-start-period=${HEALTHCHECK_START_PERIOD}"
-		HEALTHCHECK_DATA+=("--healthcheck-start-period=${HEALTHCHECK_START_PERIOD}")
-		add_run_argument "--health-start-period=${HEALTHCHECK_START_PERIOD}"
+		HEALTHCHECK_DATA+=("--health-start-period=${HEALTHCHECK_START_PERIOD}s")
+		add_run_argument "--health-start-period=${HEALTHCHECK_START_PERIOD}s"
 	fi
 	if [[ ${HEALTHCHECK_TIMEOUT} -gt 0 ]]; then
 		# add_build_config "--healthcheck-timeout=${HEALTHCHECK_TIMEOUT}"
-		HEALTHCHECK_DATA+=("--healthcheck-timeout=${HEALTHCHECK_TIMEOUT}")
-		add_run_argument "--health-timeout=${HEALTHCHECK_TIMEOUT}"
+		HEALTHCHECK_DATA+=("--health-timeout=${HEALTHCHECK_TIMEOUT}s")
+		add_run_argument "--health-timeout=${HEALTHCHECK_TIMEOUT}s"
 	fi
 
 	add_build_config "--annotation=healthcheck=$(json_array "${HEALTHCHECK_DATA[@]}")"

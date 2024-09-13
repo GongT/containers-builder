@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+declare -ra INPUT_ARGUMENTS=("$@")
 declare -a ARGS=()
 function add_run_argument() {
-	ARGS=("$@" "${ARGS[@]}")
+	ARGS+=("$@")
 }
 add_run_argument "--log-level=info"
 add_run_argument "--restart=no"
@@ -18,7 +19,8 @@ function make_arguments() {
 		add_run_argument "--annotation=systemd.service.invocation_id=${INVOCATION_ID}"
 	fi
 
-	for i; do
+	local i
+	for i in "${INPUT_ARGUMENTS[@]}"; do
 		if [[ ${i} == "--dns=h.o.s.t" ]]; then
 			if [[ -z ${HOST_IP} ]]; then
 				critical_die "Try to use h.o.s.t when network type is ${NETWORK_TYPE}, this is currently not supported."

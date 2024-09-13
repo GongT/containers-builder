@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-declare -i SERVICE_START_TIMEOUT=0
+declare -i SERVICE_START_TIMEOUT_SEC=0
 function get_service_timeout() {
-	if [[ ${SERVICE_START_TIMEOUT} -ne 0 ]]; then
+	if [[ ${SERVICE_START_TIMEOUT_SEC} -ne 0 ]]; then
 		return
 	fi
 
 	local SPAN
 	SPAN=$(get_service_property TimeoutStartUSec)
-	SERVICE_START_TIMEOUT=$(timespan_seconds "${SPAN}")
+	SERVICE_START_TIMEOUT_SEC=$(timespan_seconds "${SPAN}")
 }
 
 function podman_run_container() {
@@ -21,7 +21,7 @@ function podman_run_container() {
 
 	get_service_timeout
 
-	sdnotify "--status=run main process" "EXTEND_TIMEOUT_USEC=${SERVICE_START_TIMEOUT}"
+	sdnotify "--status=run main process" "EXTEND_TIMEOUT_USEC=$((SERVICE_START_TIMEOUT_SEC * microsecond_unit))"
 	trap - EXIT
 	exec podman run "${ARGS[@]}"
 }
