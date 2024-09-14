@@ -26,9 +26,9 @@ function setup_systemd() {
 
 	local PLUGIN_LIST=()
 	local PARAMS_LIST=()
-	local INPUT_ARGS=("$@")
+	local -a INPUT_ARGS=("$@")
 
-	if [[ ${#INPUT_ARGS} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
+	if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
 		INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
 	fi
 

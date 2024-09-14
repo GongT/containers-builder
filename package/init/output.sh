@@ -111,11 +111,11 @@ declare _CURRENT_INDENT=""
 # 	echo "[in container] $*"
 # }
 '
-	declare -pf callstack filtered_jq json_array json_array_get_back \
-		die indent dedent x \
+	declare -pf callstack filtered_jq json_array json_array_get_back json_map json_map_get_back \
+		die indent dedent x trim \
 		info info_note info_log info_warn info_success info_error info_bright info_stream \
-		is_set is_tty function_exists \
-		global_error_trap set_error_trap is_bash_function try_call_function
+		variable_is_array variable_is_map variable_exists is_tty function_exists \
+		global_error_trap set_error_trap function_exists try_call_function
 
 	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
 	declare -p microsecond_unit
@@ -191,11 +191,39 @@ function filtered_jq() {
 	local INPUT
 	INPUT=$(jq "${JQ_ARGS[@]}" "$@")
 	if [[ ${INPUT} == "null" ]]; then
-		die "failed query $1"
+		echo "failed query $1" >&2
+		return 1
 	fi
 	echo "${INPUT}"
 }
 
+function json_map() {
+	local -nr VARREF=$1
+	if ! variable_is_map "$1"; then
+		echo "variable is not a map: $1" >&2
+		return 1
+	fi
+	local ARGS=()
+	for KEY in "${!VARREF[@]}"; do
+		ARGS+=("--arg" "${KEY}" "${VARREF[${KEY}]}")
+	done
+	jq --raw-output --ascii-output --null-input --compact-output --slurp '$ARGS.named' "${ARGS[@]}"
+}
+function json_map_get_back() {
+	local -r VARNAME="$1" JSON="$2"
+	if ! variable_is_map "${VARNAME}"; then
+		echo "variable is not a map: ${VARNAME}" >&2
+		return 1
+	fi
+
+	local SRC
+	SRC=$(
+		echo "${VARNAME}=("
+		echo "${JSON}" | jq --raw-output --compact-output 'to_entries[] | "  [" + (.key|@sh) + "]=" + (.value|@sh)'
+		echo ")"
+	)
+	eval "${SRC}"
+}
 function json_array() {
 	if [[ $# -eq 0 ]]; then
 		echo '[]'
@@ -205,14 +233,16 @@ function json_array() {
 }
 
 function json_array_get_back() {
+	local -r _VARNAME="$1" JSON="$2"
+
+	if ! variable_is_map "${_VARNAME}"; then
+		die "variable is not array: ${VARNAME}"
+	fi
+
 	local -i SIZE i
-	local VARNAME="$1" JSON="$2"
-	local -a ARR=()
-	SIZE=$(echo "${JSON}" | jq --compact-output '.|length')
-	for ((i = 0; i < SIZE; i++)); do
-		ARR+=("$(echo "${JSON}" | jq --compact-output --raw-output ".[${i}]")")
-	done
-	eval "${VARNAME}=(\"\${ARR[@]}\")"
+	local CODE
+	CODE=$(jq --null-input --compact-output --raw-output '$ARGS.positional[0]|@sh' --jsonargs "$JSON")
+	eval "${_VARNAME}=(${CODE})"
 }
 
 function x() {
@@ -247,26 +277,30 @@ function branch_join() {
 	fi
 }
 
-declare -a __CURPOS__
-function get_cursor_position() {
-	if ! is_tty || is_ci; then
-		return
-	fi
-	printf "\e[6n"
-	local RESP
-	read -t 1 -r -s -d 'R' RESP
-	RESP="${RESP:2}"
-	__CURPOS__=("${RESP%;*}" "${RESP#*;}")
+function get_cursor_line() {
+	is_tty 2 || return 1
+	local RESP _ COL
+	declare -gi CURSOR_LINE=0
 
-	# printf '\e[38;5;9m|\e[0m' >&2
+	IFS='[;' read -t 1 -r -s -d 'R' -p $'\e[6n' _ CURSOR_LINE COL
+}
+
+function save_cursor_position() {
+	is_tty 2 || return 0
+	printf '\e[s' >&2
 }
 function restore_cursor_position() {
-	if ! is_tty || is_ci || [[ -z ${__CURPOS__[0]} ]]; then
-		return
+	is_tty 2 || return 0
+	if ! get_cursor_line; then
+		return 0
 	fi
-
-	printf "\e[%d;%dH\e[J" "${__CURPOS__[@]}"
-	__CURPOS__=()
+	local -i SAVED=${CURSOR_LINE}
+	printf '\e[u' >&2
+	if get_cursor_line && [[ $CURSOR_LINE -gt 1 ]]; then
+		printf '\e[J' >&2
+	else
+		printf '\e[%d;1H\e[K' ${SAVED} ${SAVED} >&2
+	fi
 }
 
 function alternative_buffer_execute() {

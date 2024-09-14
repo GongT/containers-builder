@@ -22,8 +22,13 @@ function buildah_finalize_image() {
 	local NAME=$1 IMAGE_OUT=$2 RESULT
 
 	local -i DONE_STAGE WORK_STAGE
-	buildah_cache_increament_count "${NAME}"
+	buildah_cache_increament_count "${NAME}" "Finalize"
 	info "[${NAME}] STEP ${WORK_STAGE}: \e[0mFinalize"
+
+	if skip_this_step "${NAME}"; then
+		commit_step_section "${NAME}" "Finalize" "${BUILDAH_LAST_IMAGE}" "${IMAGE_OUT}"
+		return
+	fi
 
 	RESULT=$(create_if_not "${NAME}" "${BUILDAH_LAST_IMAGE}")
 

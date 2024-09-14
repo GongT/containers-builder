@@ -5,6 +5,7 @@ declare LAST_CACHE_COMES_FROM=build # or pull
 
 function buildah_cache_increament_count() {
 	local NAME=$1
+	local TITLE=$2
 	if [[ ${_CURRENT_STAGE_STORE[${NAME}]+found} == 'found' ]]; then
 		DONE_STAGE="${_CURRENT_STAGE_STORE[${NAME}]}"
 		WORK_STAGE="${DONE_STAGE} + 1"
@@ -12,6 +13,7 @@ function buildah_cache_increament_count() {
 		DONE_STAGE=0
 		WORK_STAGE=1
 	fi
+	_CURRENT_STAGE_STORE[${NAME}]=${WORK_STAGE}
 }
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
@@ -32,13 +34,18 @@ function buildah_cache() {
 	local STEP_RESULT_IMAGE PREV_STEP_IMAGE
 
 	local -i DONE_STAGE WORK_STAGE
-	buildah_cache_increament_count "${BUILDAH_NAME_BASE}"
-	_CURRENT_STAGE_STORE[${BUILDAH_NAME_BASE}]="${WORK_STAGE}"
+	buildah_cache_increament_count "${BUILDAH_NAME_BASE}" "${_STITLE}"
 
 	info "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE}: \e[0;38;5;11m${_STITLE}"
 
 	PREV_STEP_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${DONE_STAGE}")
 	STEP_RESULT_IMAGE=$(cache_create_name "${BUILDAH_NAME_BASE}" "${WORK_STAGE}")
+
+	if skip_this_step "${BUILDAH_NAME_BASE}"; then
+		BUILDAH_LAST_IMAGE="${STEP_RESULT_IMAGE}"
+		commit_step_section "${BUILDAH_NAME_BASE}" "${_STITLE}" "${PREV_STEP_IMAGE}" "${STEP_RESULT_IMAGE}"
+		return
+	fi
 
 	if [[ ${DONE_STAGE} -gt 0 ]]; then
 		if ! image_exists "${PREV_STEP_IMAGE}"; then
@@ -51,7 +58,6 @@ function buildah_cache() {
 	else
 		local -r PREVIOUS_ID="none"
 	fi
-
 	cache_try_pull "${BUILDAH_NAME_BASE}" "${WORK_STAGE}"
 
 	local WANTED_HASH HASH_TMP="${TMPDIR}/cache.hash.input.step${WORK_STAGE}.dat"
@@ -123,41 +129,5 @@ _buildah_cache_done() {
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} (\e[0;38;5;13m${_STITLE}\e[0;2m) DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
 	else
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
-	fi
-}
-
-declare LAST_KNOWN_BASE=
-function buildah_cache_start() {
-	local BASE_IMG=$1
-
-	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
-		if [[ ${BASE_IMG} == "fedora" || ${BASE_IMG} == "fedora-minimal" ]]; then
-			BASE_IMG+=":${FEDORA_VERSION}"
-		else
-			info_warn "using Fedora with version tag: ${BASE_IMG}"
-		fi
-		BASE_IMG="registry.fedoraproject.org/${BASE_IMG}"
-	fi
-
-	info "start cache branch"
-	if [[ ${BASE_IMG} == scratch ]]; then
-		LAST_KNOWN_BASE=
-		info_note "  - using empty base"
-		BUILDAH_LAST_IMAGE="scratch"
-		return
-	fi
-
-	LAST_KNOWN_BASE="${BASE_IMG}"
-	if [[ -n ${NO_PULL_BASE-} ]]; then
-		info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE} (${BASE_IMG})"
-	elif is_ci; then
-		control_ci group "[cache start] pull base image: ${BASE_IMG}"
-		buildah pull "${BASE_IMG}" >/dev/null
-		control_ci groupEnd
-	elif BUILDAH_LAST_IMAGE=$(image_find_id "${BASE_IMG}") && [[ -n ${BUILDAH_LAST_IMAGE} ]]; then
-		info_note "  - using exists base: ${BASE_IMG}"
-	else
-		info_note "  - using base not exists, pull it: ${BASE_IMG}"
-		buildah pull "${BASE_IMG}" >/dev/null
 	fi
 }

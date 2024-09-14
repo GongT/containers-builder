@@ -5,7 +5,7 @@ export PROJECT_NAME="test-wait-logic"
 source ../../functions-build.sh
 guard_no_root
 
-buildah_cache_start fedora:latest
+buildah_cache_start "fedora-minimal"
 dnf_install "$PROJECT_NAME" scripts/requirements.lst
 
 merge_local_fs "$PROJECT_NAME"

@@ -14,6 +14,16 @@ function use_pacman_cache() {
 	)
 }
 
+pacman_prepare_environment() {
+	use_pacman_cache "archlinux_${ARCHLINUX_VERSION}"
+
+	info "update pacman cache"
+	local ARCH_PACMAN_CID
+	ARCH_PACMAN_CID=$(create_if_not "pacman" "archlinux_${ARCHLINUX_VERSION}")
+	buildah run "${PACMAN_CACHE_ARGS[@]}" "${ARCH_PACMAN_CID}" bash -c \
+		"rm -f /var/lib/pacman/db.lck ; echo 'Server = http://mirrors.aliyun.com/archlinux/\$repo/os/\$arch' > /etc/pacman.d/mirrorlist ; pacman --noconfirm -Syy"
+}
+
 function fork_archlinux() {
 	local NAME=$1 STEP=() DEPS=()
 	shift
@@ -24,29 +34,24 @@ function fork_archlinux() {
 	else
 		DEPS=("$@")
 	fi
-
-	buildah_cache_start "archlinux:${ARCHLINUX_VERSION}"
-	use_pacman_cache "archlinux_${ARCHLINUX_VERSION}"
-
-	info "update pacman cache"
-	local ARCH_PACMAN_CID
-	ARCH_PACMAN_CID=$(create_if_not "pacman" "${BUILDAH_LAST_IMAGE}")
-	buildah run "${PACMAN_CACHE_ARGS[@]}" "${ARCH_PACMAN_CID}" bash -c \
-		"rm -f /var/lib/pacman/db.lck ; echo 'Server = http://mirrors.aliyun.com/archlinux/\$repo/os/\$arch' > /etc/pacman.d/mirrorlist ; pacman --noconfirm -Syy"
-
 	local SEARCH RES
 	SEARCH=$(printf '|%s' "${DEPS[@]}")
 	SEARCH="^(${SEARCH:1})$"
 	SEARCH=$(printf 'pacman --noconfirm -Ss %q' "${SEARCH}")
-	RES=$(buildah "${PACMAN_CACHE_ARGS[@]}" run "${ARCH_PACMAN_CID}" "bash" "-cx" "${SEARCH}")
-	RES=$(echo "${RES}" | grep -vE '^\s' | sed -E 's/\s+\[.+$//g')
 
-	info_log "================================================="
-	indent_multiline "${RES}"
-	info_log "================================================="
+	buildah_cache_start "archlinux:${ARCHLINUX_VERSION}"
 
 	STEP="安装系统依赖:"
 	___pacman_hash() {
+		use_pacman_cache >&2
+
+		RES=$(buildah "${PACMAN_CACHE_ARGS[@]}" run "${ARCH_PACMAN_CID}" "bash" "-cx" "${SEARCH}")
+		RES=$(echo "${RES}" | grep -vE '^\s' | sed -E 's/\s+\[.+$//g')
+
+		info_log "================================================="
+		indent_multiline "${RES}"
+		info_log "================================================="
+
 		echo "${RES}"
 	}
 	___pacman_install() {

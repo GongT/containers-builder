@@ -20,13 +20,13 @@ function image_get_label() {
 }
 
 function add_build_config() {
-	if ! is_set COMMIT_CONFIGS; then
+	if ! variable_exists COMMIT_CONFIGS; then
 		print_failure "wrong call timing add_build_config()"
 	fi
 	COMMIT_CONFIGS+=("$@")
 }
 function add_run_argument() {
-	if ! is_set COMMIT_CONFIGS; then
+	if ! variable_exists COMMIT_CONFIGS; then
 		print_failure "wrong call timing add_run_argument()"
 	fi
 }

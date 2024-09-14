@@ -14,7 +14,6 @@ _unit_reset() {
 	declare -ga _S_PODMAN_ARGS=()
 	declare -ga _S_COMMAND_LINE=()
 	declare -ga _S_NETWORK_ARGS=()
-	declare -gA _S_ENVIRONMENTS=()
 	declare -ga _S_COMMENTS=()
 
 	declare -gA _S_UNIT_CONFIG=()
@@ -244,19 +243,19 @@ NotifyAccess=all"
 }
 
 function add_run_argument() {
-	if ! is_set _PODMAN_RUN_ARGS; then
+	if ! variable_exists _PODMAN_RUN_ARGS; then
 		print_failure "wrong call timing add_run_argument()"
 	fi
 	_PODMAN_RUN_ARGS+=("$@")
 }
 function add_build_config() {
-	if ! is_set _PODMAN_RUN_ARGS; then
+	if ! variable_exists _PODMAN_RUN_ARGS; then
 		print_failure "wrong call timing add_build_config()"
 	fi
 }
 
 function _create_startup_arguments() {
-	if ! is_set STARTUP_ARGS; then
+	if ! variable_exists STARTUP_ARGS; then
 		print_failure "wrong call timing _create_startup_arguments()"
 	fi
 

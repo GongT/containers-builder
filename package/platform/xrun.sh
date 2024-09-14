@@ -37,15 +37,15 @@ function xpodman() {
 	local TIP
 	TIP=" + $(execute_tip 2 podman "$@")"
 
-	if [[ $1 == image ]] && [[ $2 == pull || $2 == push ]]; then
-		get_cursor_position
+	if [[ $1 == image ]] && is_tty && [[ $2 == pull || $2 == push ]]; then
+		save_cursor_position
 		info_warn "${TIP}"
 	else
 		info_note "${TIP}"
 	fi
 	"${PODMAN}" "$@"
 
-	if [[ $1 == image ]] && [[ $2 == pull || $2 == push ]]; then
+	if [[ $1 == image ]] && is_tty && [[ $2 == pull || $2 == push ]]; then
 		restore_cursor_position
 		info_note "${TIP}"
 	fi

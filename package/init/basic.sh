@@ -7,14 +7,28 @@ fi
 function is_root() {
 	return "${UID}"
 }
-function is_set() {
-	declare -p "$1" &>/dev/null
-}
 function is_tty() {
 	[[ -t ${1:-2} ]]
 }
 function function_exists() {
-	declare -F "${PREFIX_FN}" >/dev/null
+	declare -fp "$1" &>/dev/null
+}
+function variable_is_array() {
+	[[ $(declare -p "$1" 2>&1) == "declare -"a* ]]
+}
+function variable_is_map() {
+	[[ $(declare -p "$1" 2>&1) == "declare -"A* ]]
+}
+function variable_exists() {
+	declare -p "$1" &>/dev/null
+}
+function trim() {
+	local var="$*"
+	# remove leading whitespace characters
+	var="${var#"${var%%[![:space:]]*}"}"
+	# remove trailing whitespace characters
+	var="${var%"${var##*[![:space:]]}"}"
+	printf '%s' "$var"
 }
 
 function is_ci() {

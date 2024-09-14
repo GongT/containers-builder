@@ -100,9 +100,10 @@ function run_dnf() {
 	local TMPSCRIPT ROOT
 
 	local DNF # init in _dnf_prep
-	_dnf_prep >&2
 
 	function _run_group() {
+		_dnf_prep >&2
+
 		ROOT=$(buildah mount "${WORKING_CONTAINER}")
 		MNT_DNF=$(buildah mount "${DNF}")
 		mkdir -p "${ROOT}/etc/yum.repos.d"

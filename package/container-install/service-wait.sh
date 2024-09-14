@@ -18,7 +18,7 @@ __concat_wait_files() {
 	local FILE_PATH
 
 	printf '\n## HELPERS: \n'
-	declare -fp callstack is_bash_function json_array json_array_get_back uptime_sec timespan_seconds seconds_timespan systemd_service_property
+	declare -fp trim callstack function_exists variable_exists function_exists variable_is_array variable_is_map json_array json_array_get_back json_map json_map_get_back uptime_sec timespan_seconds seconds_timespan systemd_service_property
 	declare -p microsecond_unit
 	printf '\n'
 

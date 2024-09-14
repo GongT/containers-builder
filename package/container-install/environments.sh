@@ -78,6 +78,7 @@ register_unit_emit __commit_environment
 
 __reset_env_container() {
 	declare -gA _S_CONTROL_ENVS=()
+	declare -gA _S_ENVIRONMENTS=()
 	_S_CONTROL_ENVS[REGISTRY_AUTH_FILE]="/etc/containers/auth.json"
 }
 register_unit_reset __reset_env_container

@@ -4,6 +4,10 @@
 	"terminal.integrated.defaultProfile.linux": "test",
 	"bashIde.shfmt.languageDialect": "bash",
 	"bashIde.shfmt.simplifyCode": true,
+	"search.exclude": {
+		"**/local-history": true,
+		"**/*.bak/**": true,
+	},
 	"terminal.integrated.profiles.linux": {
 		"test": {
 			"args": ["test@localhost", "-t"],

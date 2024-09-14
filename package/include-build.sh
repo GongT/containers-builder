@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ ${__PRAGMA_ONCE_FUNCTIONS_BUILD_SH+found} == found ]]; then
+	return
+fi
+declare -r __PRAGMA_ONCE_FUNCTIONS_BUILD_SH=yes
+
 # shellcheck source=package/include.sh disable=SC2312
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/include.sh"
 
@@ -7,13 +12,15 @@ source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/include.sh"
 
 pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 
-source "./image-build/buildah.helper.sh"
+source "./image-build/base-image.sh"
+source "./image-build/container-helpers.sh"
+source "./image-build/container-create.sh"
 source "./image-build/mdnf.sh"
 source "./image-build/mcompile.sh"
 source "./image-build/buildah-cache.sh"
 source "./image-build/build-folder-hash.sh"
 source "./image-build/buildah-cache.fork.sh"
-source "./image-build/buildah-cache.helper.config.sh"
+source "./image-build/final-config-helper.sh"
 source "./image-build/buildah-cache.helper.run.sh"
 source "./image-build/buildah-cache.remote.sh"
 source "./image-build/buildah.hooks.sh"
@@ -23,6 +30,7 @@ source "./image-build/archlinux.sh"
 source "./image-build/python.sh"
 source "./image-build/mount-script-run.sh"
 source "./image-build/oci-labels.sh"
+source "./image-build/make-steps.sh"
 
 source "./standard_build_steps/container-systemd.sh"
 source "./standard_build_steps/download_and_build_github.sh"

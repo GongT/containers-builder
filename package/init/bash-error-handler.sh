@@ -8,7 +8,7 @@ function callstack() {
 	if [[ ${#FUNCNAME[@]} -le ${SKIP} ]]; then
 		echo "  * empty callstack *" >&2
 	fi
-	if is_bash_function try_resolve_file; then
+	if function_exists try_resolve_file; then
 		RESOLVE_ENABLED=yes
 	fi
 	local -i stack_index
@@ -94,12 +94,9 @@ function set_error_trap() {
 	declare -gi ERRNO=0 RETURN_TIMES=0
 	trap 'global_error_trap "$LINENO" ; return $?' ERR
 }
-function is_bash_function() {
-	declare -fp "$1" &>/dev/null
-}
 function try_call_function() {
 	local FN=$1
-	if ! is_bash_function "$FN"; then
+	if ! function_exists "$FN"; then
 		die "missing bash function: $FN"
 	fi
 	ERRNO=0
