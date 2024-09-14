@@ -20,21 +20,21 @@ function buildah_cache_start() {
 	fi
 
 	BUILDAH_LAST_IMAGE=$(image_find_id "${BASE_IMG}")
-	# if [[ -n ${BUILDAH_LAST_IMAGE} ]]; then
-	# 	if is_ci; then
-	# 		if [[ ${NO_PULL_BASE-no} != yes ]]; then
-	# 			info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE}"
-	# 		else
-	# 			control_ci group "[cache start] pull base image: ${BASE_IMG}"
-	# 			xpodman image pull "${BASE_IMG}"
-	# 			control_ci groupEnd
-	# 		fi
-	# 	fi
+	if [[ -n ${BUILDAH_LAST_IMAGE} ]]; then
+		if is_ci; then
+			if [[ ${NO_PULL_BASE-no} != yes ]]; then
+				info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE}"
+			else
+				control_ci group "[cache start] pull base image: ${BASE_IMG}"
+				xpodman image pull "${BASE_IMG}"
+				control_ci groupEnd
+			fi
+		fi
 
-	# 	LAST_KNOWN_BASE=$(image_find_full_name "${BASE_IMG}")
-	# 	info_note "  - using exists base: ${LAST_KNOWN_BASE} ($BUILDAH_LAST_IMAGE)"
-	# 	return
-	# fi
+		LAST_KNOWN_BASE=$(image_find_full_name "${BASE_IMG}")
+		info_note "  - using exists base: ${LAST_KNOWN_BASE} ($BUILDAH_LAST_IMAGE)"
+		return
+	fi
 
 	info_note "  - using base not exists, pull it: ${BASE_IMG}"
 	BUILDAH_LAST_IMAGE=$(xpodman image pull "${BASE_IMG}")

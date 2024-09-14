@@ -17,10 +17,6 @@ declare -rx BUILDAH
 # shellcheck disable=SC2155
 declare -r MANAGER_TMP_STDERR="/tmp/container.manager.stderr.txt" MANAGER_TMP_STDOUT="/tmp/container.manager.stdout.txt"
 
-function error_with_manager_output() {
-	cat "${MANAGER_TMP_STDERR}" >&2
-	exit 1
-}
 function execute_tip() {
 	local -ri ACT_CNT=$1
 	shift
@@ -56,7 +52,10 @@ function xpodman_capture() {
 	info_note "${TIP}"
 	"${PODMAN}" "$@" 1>"${MANAGER_TMP_STDOUT}" 2>"${MANAGER_TMP_STDERR}"
 }
-
+function error_with_manager_output() {
+	cat "${MANAGER_TMP_STDERR}" >&2
+	exit 1
+}
 function xbuildah_capture() {
 	info_note " + $(execute_tip 1 buildah "$@") >>"
 	"${BUILDAH}" "$@" 1>"${MANAGER_TMP_STDOUT}" 2>"${MANAGER_TMP_STDERR}"
