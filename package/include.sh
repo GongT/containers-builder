@@ -7,9 +7,11 @@ COMMON_LIB_ROOT="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
 declare -xr COMMON_LIB_ROOT
 
 export __BASH_ARGV=("$@")
-CURRENT_FILE="${BASH_SOURCE[-1]}"
-if [[ ${CURRENT_FILE} == */bashdb ]]; then
-	CURRENT_FILE="${BASH_SOURCE[-2]}"
+if [[ -z ${CURRENT_FILE-} ]]; then
+	CURRENT_FILE="${BASH_SOURCE[-1]}"
+	if [[ ${CURRENT_FILE} == */bashdb ]]; then
+		CURRENT_FILE="${BASH_SOURCE[-2]}"
+	fi
 fi
 if [[ ${BASH_SOURCE[-1]} == */bashdb ]]; then
 	# shellcheck disable=SC2312
@@ -19,7 +21,6 @@ else
 	CURRENT_ACTION="$(basename "$(realpath -m "${BASH_SOURCE[-1]}")" .sh)"
 fi
 declare -xr CURRENT_ACTION
-
 
 source "${COMMON_LIB_ROOT}/package/init/lifecycle-decoupling.sh"
 source "${COMMON_LIB_ROOT}/package/init/basic.sh"

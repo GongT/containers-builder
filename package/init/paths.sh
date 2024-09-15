@@ -74,7 +74,7 @@ fi
 declare -xr PROJECT_NAME
 
 MONO_ROOT_DIR=${GITHUB_WORKSPACE-"$(dirname "${COMMON_LIB_ROOT}")"}
-if [[ "$(dirname "${CURRENT_DIR}")" == "${MONO_ROOT_DIR}" ]]; then
+if [[ -e "${MONO_ROOT_DIR}/.git" ]]; then
 	declare -xr MONO_ROOT_DIR
 	if [[ -e "${MONO_ROOT_DIR}/.env" ]]; then
 		set -a
