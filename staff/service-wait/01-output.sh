@@ -4,10 +4,6 @@ function critical_die() {
 	info_error "$*"
 	exit 233
 }
-function die() {
-	info_error "$*"
-	exit 1
-}
 
 function try_resolve_file() {
 	local i PATHS=(

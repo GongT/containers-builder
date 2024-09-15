@@ -56,7 +56,7 @@ function install_common_script_service() {
 		SRV_FILE="${SRV}.service"
 	fi
 
-	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
+	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh" global)
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#${SCRIPT}#g" \
@@ -108,7 +108,7 @@ function edit_system_service() {
 	local SRV="$1" OVERWRITE="${2}" SCRIPT_FILE
 
 	install_common_system_support
-	SCRIPT_FILE=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
+	SCRIPT_FILE=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh" global)
 
 	if [[ ${SRV} != *".service" ]]; then
 		SRV="${SRV}.service"

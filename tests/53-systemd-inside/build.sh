@@ -5,8 +5,10 @@ export PROJECT_NAME="systemd-inside"
 source ../../functions-build.sh
 guard_no_root
 
+dnf_use_environment
+
 buildah_cache_start "fedora-minimal"
-dnf_install "$PROJECT_NAME" scripts/requirements.lst
+dnf_install_step "$PROJECT_NAME" scripts/requirements.lst
 
 merge_local_fs "$PROJECT_NAME" scripts/prepare-fs.sh
 

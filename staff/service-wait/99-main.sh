@@ -95,6 +95,8 @@ function main() {
 	else
 		push_engine_param "--sdnotify=ignore"
 	fi
+	apply_container_healthcheck
+
 	wait_for_pid_and_notify
 
 	make_arguments

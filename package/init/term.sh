@@ -57,7 +57,7 @@ function alternative_buffer_execute() {
 			tput smcup
 			tput home
 			tput ed
-		}
+		} >&2
 		info_log "$TITLE"
 
 		try "$@" &> >(tee "${TMP_OUT}")

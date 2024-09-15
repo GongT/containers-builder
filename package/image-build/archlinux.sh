@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 declare -a PACMAN_CACHE_ARGS
+declare ARCH_PACMAN_CID
 
 function use_pacman_cache() {
 	local -r SYSTEM="$1"
@@ -15,7 +16,6 @@ function use_pacman_cache() {
 
 pacman_prepare_environment() {
 	info "update pacman cache"
-	local ARCH_PACMAN_CID
 	ARCH_PACMAN_CID=$(create_if_not "pacman" "docker.io/library/archlinux")
 	local TMP_SCRIPT=$(create_temp_file "pacman.install.sh")
 

@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source "./common_service_library.sh"
+# shellcheck source=../../package/include.sh
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"
+
+load_sdnotify
 
 mapfile -t IDS < <(podman ps --format '{{.ID}}')
 
 for ID in "${IDS[@]}"; do
-	sdnotify "inspect ${ID}..."
-	STATUS=$(podman container inspect "${ID}" --format='{{.State.Healthcheck.Status}}')
+	sdnotify "--status=inspect ${ID}..."
+	STATUS=$(podman container inspect "${ID}" | filtered_jq '.[0].State.Health.Status' || true)
 	if [[ ${STATUS} == healthy ]]; then
-		debug "[**] it is healthy"
+		info_log "[**] it is healthy"
 	elif [[ ${STATUS} == unhealthy ]]; then
-		sdnotify "[!!] kill container ${ID}"
+		sdnotify "--status=[!!] kill container ${ID}"
 		if podman stop "${ID}" -t 30; then
-			debug "    success!"
+			info_log "    success!"
 		else
-			debug "    not quit in 30s!"
+			info_log "    not quit in 30s!"
 		fi
+	elif [[ -n ${STATUS} ]]; then
+		info_log "    state: ${STATUS}"
 	else
-		debug "[**] health check is disabled. ${STATUS-}"
+		info_log "[**] health check is disabled. ${STATUS-}"
 	fi
 done
 
-startup_done
+sdnotify --ready

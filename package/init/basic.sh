@@ -70,6 +70,8 @@ function export_array() {
 	local NAME=$1 I
 	shift
 	printf 'declare -%sa %s=(\n' "${R}" "${NAME}"
-	printf '\t%q\n' "$@"
+	if [[ $# -gt 0 ]]; then
+		printf '\t%q\n' "$@"
+	fi
 	printf ')\n'
 }

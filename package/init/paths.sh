@@ -88,9 +88,11 @@ fi
 
 if is_root; then
 	declare -x SCRIPTS_DIR="/usr/local/libexec/${PROJECT_NAME}"
+	declare -x SHARED_SCRIPTS_DIR="/usr/local/libexec/image-build-shared"
 	declare -xr BINARY_DIR="/usr/local/bin"
 else
 	declare -x SCRIPTS_DIR="${HOME}/.local/libexec/${PROJECT_NAME}"
+	declare -x SHARED_SCRIPTS_DIR="${HOME}/.local/libexec/image-build-shared"
 	declare -xr BINARY_DIR="${HOME}/.local/bin"
 fi
 

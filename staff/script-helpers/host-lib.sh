@@ -8,7 +8,6 @@ function load_sdnotify() {
 			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
 		}
 	else
-		echo "[SDNOTIFY] disabled" >&2
 		function sdnotify() {
 			echo "[SDNOTIFY] (disabled) $*" >&2
 		}

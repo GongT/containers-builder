@@ -20,4 +20,4 @@ function ___pass_cap_privilege_param() {
 		add_run_argument "--cap-add=${CAP_LIST:1}"
 	fi
 }
-register_unit_emit ___pass_cap_privilege_param
+register_argument_config ___pass_cap_privilege_param

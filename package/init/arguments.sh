@@ -100,7 +100,7 @@ function arg_finish() {
 	else
 		ARGS+=(--options "")
 	fi
-	# echo "${ARGS[@]} -- $@"
+	# println "${ARGS[@]} -- $@"
 
 	local _PROGRAM_ARGS=()
 	local USER_PRIVATE_CONFIG_FILE="${MONO_ROOT_DIR:-not set}/environment"
@@ -135,8 +135,8 @@ function arg_finish() {
 	if [[ -n ${E} ]]; then
 		die "${E}"
 	fi
-	# echo "ARGS=${ARGS[*]}"
-	# echo "_PROGRAM_ARGS=${_PROGRAM_ARGS[*]}"
+	# println "ARGS=${ARGS[*]}"
+	# println "_PROGRAM_ARGS=${_PROGRAM_ARGS[*]}"
 	eval "_arg_set $(getopt "${ARGS[@]}" -- "${_PROGRAM_ARGS[@]}")"
 
 	if [[ ${_ACTION_HELP} == "yes" ]]; then
@@ -149,13 +149,13 @@ function arg_print_usage() {
 	exit 1
 }
 function arg_get_usage() {
-	echo -e "\e[38;5;14mUsage: $0 <options>\e[0m"
+	info "Usage: $0 <options>"
 	local K
 	{
 		for K in "${!_ARG_INPUT[@]}"; do
 			echo -e "  \e[2m${_ARG_INPUT[${K}]}\e[0m|${_ARG_COMMENT[${K}]}"
 		done
-	} | column -t -c "${COLUMNS-80}" -s '|'
+	} | column -t -c "${COLUMNS-80}" -s '|' >&2
 }
 function _arg_parse_name() {
 	local NAME=$1
@@ -216,11 +216,13 @@ function _arg_set() {
 			unset "${VAR_NAME}"
 		fi
 	done
-	echo -ne "\e[2m"
-	for VAR_NAME in "${!_ARG_INPUT[@]}"; do
-		echo -e "${VAR_NAME}=${!VAR_NAME:-*unset*}" >&2
-	done
-	echo -ne "\e[0m"
+	{
+		printf "\e[2m"
+		for VAR_NAME in "${!_ARG_INPUT[@]}"; do
+			printf "%s=%s" "${VAR_NAME}" "${!VAR_NAME:-*unset*}"
+		done
+		printf "\e[0m"
+	} >&2
 }
 function split_assign_argument_value() {
 	printf '%s' "${1#*=}"

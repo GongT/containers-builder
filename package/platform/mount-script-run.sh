@@ -30,12 +30,7 @@ function buildah_run_shell_script() {
 }
 
 function export_common_libs() {
-	echo '
-function try_resolve_file() {
-	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"
-}
-declare -a EXIT_HANDLERS=()
-'
+	echo 'declare -a EXIT_HANDLERS=()'
 
 	declare -fp filtered_jq json_array json_array_get_back json_map json_map_get_back
 	declare -p JQ_ARGS
@@ -66,6 +61,11 @@ function export_guest_libs() {
 	fi
 	declare -fp is_ci control_ci
 	declare -p _CURRENT_INDENT
+	echo '
+function try_resolve_file() {
+	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"
+}
+'
 }
 
 function construct_child_shell_script() {
@@ -101,7 +101,7 @@ function construct_child_shell_script() {
 		declare -p COMMON_LIB_ROOT
 	fi
 	if [[ ${SCRIPT_FILE} != '-' ]]; then
-		printf 'declare -xr SOURCE_SCRIPT_FILE=%q' "${SCRIPT_FILE}"
+		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
 	fi
 	export_common_libs
 	SHELL_USE_PROXY

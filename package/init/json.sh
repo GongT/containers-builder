@@ -31,7 +31,6 @@ function json_map_get_back() {
 
 	local CODE
 	CODE=$(jq "${JQ_ARGS[@]}" --null-input '$ARGS.named.DATA | to_entries[] | "  [" + (.key|@sh) + "]=" + (.value|@sh)' --argjson DATA "$JSON")
-	echo "$CODE"
 	if [[ ${CODE} == null ]]; then
 		return
 	fi

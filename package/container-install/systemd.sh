@@ -66,8 +66,9 @@ function _create_unit_name() {
 
 function _create_common_lib() {
 	local COMMONLIB
-	COMMONLIB=$(construct_child_shell_script host "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh")
+	COMMONLIB=$(construct_child_shell_script host - "$(<"${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh")")
 	write_file "${SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
+	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
 }
 
 function unit_write() {
@@ -88,7 +89,7 @@ function unit_write() {
 		info_log "verify unit: ${TF}"
 		printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"
 	fi
-	copy_file "${TF}" "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
+	copy_file --mode 0644 "${TF}" "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 }
 
 function unit_finish() {

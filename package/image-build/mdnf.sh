@@ -40,6 +40,11 @@ declare -a DNF_ENVIRONMENT_ENABLES=()
 declare -a DNF_ENVIRONMENT_REPOS=()
 declare DNF_ENVIRONMENT_RPMDB=keep
 function dnf_use_environment() {
+	if is_recording_steps; then
+		_DNF_ENVIRONMENT_CID=fake
+		return
+	fi
+
 	DNF_ENVIRONMENT_ENABLES=()
 	DNF_ENVIRONMENT_REPOS=()
 	DNF_ENVIRONMENT_RPMDB=remove
