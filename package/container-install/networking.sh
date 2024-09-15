@@ -14,19 +14,24 @@ else
 	die "Environment variable DEFAULT_USED_NETWORK is not set, please set to 'veth[:*]' or 'pod[:*]' or 'host'."
 fi
 
-function _set_network_if_not() {
+function _unit_podman_network_arg() {
+	_N_NETWORK_ARG=("$@")
+}
+
+function __network_settings_emit() {
 	if [[ -z ${_N_TYPE} ]]; then
 		network_use_default
 	fi
 	local HN=${_N_HOST:-$(unit_get_scopename)}
 	unit_body "Environment" "MY_HOSTNAME=$HN"
 }
-register_unit_emit _set_network_if_not
+register_unit_emit __network_settings_emit
 
 function _network_reset() {
 	declare -g _N_TYPE=''
 	declare -g _N_HOST=''
 	declare -ga _N_PORTS=()
+	declare -ga _N_NETWORK_ARG=()
 }
 register_unit_reset _network_reset
 
@@ -34,6 +39,11 @@ function _export_network_envs() {
 	printf 'declare -r NETWORK_TYPE=%q\n' "${_N_TYPE}"
 }
 register_script_emit _export_network_envs
+
+function ___push_network_args() {
+	add_run_argument "${_N_NETWORK_ARG[@]}"
+}
+register_argument_config ___push_network_args
 
 function _append_network_args() {
 	if [[ ${_N_TYPE} != 'pod' ]]; then
@@ -61,6 +71,7 @@ function _net_set_type() {
 
 function network_use_auto() {
 	info_warn "network_use_auto is renamed to network_use_default, please update your script."
+	callstack
 	network_use_default "$@"
 }
 
@@ -71,9 +82,9 @@ function network_use_default() {
 	elif [[ ${DEFAULT_USED_NETWORK} == "pod" ]]; then
 		network_use_pod default "$@"
 	elif [[ ${DEFAULT_USED_NETWORK} == "pod:"* ]]; then
-		network_use_pod "${DEFAULT_USED_NETWORK# pod:}" "$@"
+		network_use_pod "${DEFAULT_USED_NETWORK#pod:}" "$@"
 	elif [[ ${DEFAULT_USED_NETWORK} == "veth:"* ]]; then
-		network_use_veth "${DEFAULT_USED_NETWORK# veth:}" "$@"
+		network_use_veth "${DEFAULT_USED_NETWORK#veth:}" "$@"
 	else
 		network_use_veth podman "$@"
 	fi
@@ -112,9 +123,9 @@ function network_use_interface() {
 	add_network_privilege
 
 	if [[ -n ${DIST_NAME} ]]; then
-		unit_podman_arguments --env="INTERFACE_NAME=${DIST_NAME}"
+		podman_engine_params --env="INTERFACE_NAME=${DIST_NAME}"
 	else
-		unit_podman_arguments --env="INTERFACE_NAME=${INTERFACE_NAME}"
+		podman_engine_params --env="INTERFACE_NAME=${INTERFACE_NAME}"
 	fi
 }
 
@@ -139,13 +150,13 @@ function network_use_veth() {
 			info_warn "bridge network may not exists: ${BRIDEG_NAME}"
 		fi
 	fi
-	unit_podman_arguments "--network=${BRIDEG_NAME}"
+	podman_engine_params "--network=${BRIDEG_NAME}"
 
 	if is_root; then
 		unit_depend "network-online.target" "nameserver.service"
 		unit_unit After "firewalld.service"
 	else
-		unit_podman_arguments --dns=h.o.s.t
+		podman_engine_params --dns=h.o.s.t
 	fi
 
 	local i
@@ -163,7 +174,7 @@ function network_use_veth() {
 			proto="${i##*/}"
 			_unit_podman_network_arg "--publish=${from}:${to}/${proto}"
 		else
-			_unit_podman_network_arg "--publish=${from}:${to}/tcp --publish=${from}:${to}/udp"
+			_unit_podman_network_arg "--publish=${from}:${to}/tcp" "--publish=${from}:${to}/udp"
 		fi
 	done
 

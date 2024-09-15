@@ -52,9 +52,9 @@ function __commit_environment() {
 
 	OUTPUT=$(echo "${OUTPUT}" | sed -E 's#\s+$##g')
 
-	write_file --mode 0600 "${F}" "${OUTPUT}"
+	write_file --mode 0644 "${F}" "${OUTPUT}"
 
-	unit_podman_arguments "--env-file=${F}"
+	podman_engine_params "--env-file=${F}"
 
 	local VAR_NAME OUTPUT=''
 	if [[ ${#_S_CONTROL_ENVS[@]} -eq 0 ]]; then
@@ -70,7 +70,7 @@ function __commit_environment() {
 
 	OUTPUT=$(echo "${OUTPUT}" | sed -E 's#\s+$##g')
 
-	write_file --mode 0600 "${F}" "${OUTPUT}"
+	write_file --mode 0644 "${F}" "${OUTPUT}"
 
 	unit_body "EnvironmentFile=${F}"
 }

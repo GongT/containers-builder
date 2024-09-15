@@ -8,7 +8,7 @@ function install_script_as() {
 		die "Cannot found script file: ${F}"
 	fi
 
-	copy_file --mode 0700 "${F}" "${SCRIPTS_DIR}/${BASE}"
+	copy_file --mode 0755 "${F}" "${SCRIPTS_DIR}/${BASE}"
 	echo "${SCRIPTS_DIR}/${BASE}"
 }
 function install_binary() {

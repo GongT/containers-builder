@@ -135,7 +135,7 @@ function write_file() {
 	fi
 }
 function bit_mask() {
-	printf '0%o\n' $(($1 & (~0227)))
+	printf '0%o\n' $(($1 & (~0022)))
 }
 function find_command() {
 	env -i "PATH=${PATH}" "${SHELL}" --noprofile --norc -c "command -v '$1'"

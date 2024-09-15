@@ -69,23 +69,27 @@ function export_guest_libs() {
 }
 
 function construct_child_shell_script() {
-	local -r KIND="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
-	local -r RANDOM_MAIN="__wrap_script_main_${RANDOM}" RANDOM_PRAGMA="__file_sourced_${RANDOM}"
+	local KIND="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
+	local RANDOM_MAIN="__wrap_script_main_${RANDOM}" RANDOM_PRAGMA="__file_sourced_${RANDOM}"
 
 	local FIRST_LINE DATA
-	read -r FIRST_LINE <"${SCRIPT_FILE}"
-	if [[ ${FIRST_LINE} == '#!'* ]]; then
-		DATA=$(tail -n+2 "${SCRIPT_FILE}")
+	if [[ ${SCRIPT_FILE} == '-' ]]; then
+		echo '#!/usr/bin/bash'
 	else
-		info_warn "missing shebang in file ${FIRST_LINE}"
-		DATA=$(<"${SCRIPT_FILE}")
-		FIRST_LINE='#!/usr/bin/bash'
-	fi
+		read -r FIRST_LINE <"${SCRIPT_FILE}"
+		if [[ ${FIRST_LINE} == '#!'* ]]; then
+			DATA=$(tail -n+2 "${SCRIPT_FILE}")
+		else
+			info_warn "missing shebang in file ${SCRIPT_FILE}"
+			DATA=$(<"${SCRIPT_FILE}")
+			FIRST_LINE='#!/usr/bin/bash'
+		fi
 
-	printf '%s\n' "${FIRST_LINE}"
-	printf 'function %s {' "${RANDOM_MAIN}"
-	printf '%s\n' "${DATA}"
-	printf '}\n'
+		printf '%s\n' "${FIRST_LINE}"
+		printf 'function %s {' "${RANDOM_MAIN}"
+		echo "${DATA}" | sed 's/^/\t/g'
+		printf '}\n'
+	fi
 
 	cat <<-'EOF'
 		if [[ -n ${RANDOM_PRAGMA-} ]]; then
@@ -93,11 +97,18 @@ function construct_child_shell_script() {
 		fi
 	EOF
 
-	printf 'declare -xr SOURCE_SCRIPT_FILE=%q' "${SCRIPT_FILE}"
+	if [[ ${KIND} == 'host' ]]; then
+		declare -p COMMON_LIB_ROOT
+	fi
+	if [[ ${SCRIPT_FILE} != '-' ]]; then
+		printf 'declare -xr SOURCE_SCRIPT_FILE=%q' "${SCRIPT_FILE}"
+	fi
 	export_common_libs
 	SHELL_USE_PROXY
 
-	printf '%s\n' "${EXTRA_CONTENT}"
+	if [[ ${SCRIPT_FILE} != '-' ]]; then
+		printf '%s\n' "${EXTRA_CONTENT}"
+	fi
 	if [[ ${KIND} == 'host' ]]; then
 		export_host_libs
 	elif [[ ${KIND} == 'guest' ]]; then
@@ -108,5 +119,9 @@ function construct_child_shell_script() {
 
 	declare -p RANDOM_PRAGMA
 
-	printf 'use_normal\n%s\n' "${RANDOM_MAIN}"
+	if [[ ${SCRIPT_FILE} == '-' ]]; then
+		printf 'use_normal\n%s\n' "${EXTRA_CONTENT}"
+	else
+		printf 'use_normal\n%s "$@"\n' "${RANDOM_MAIN}"
+	fi
 }

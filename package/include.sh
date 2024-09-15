@@ -25,6 +25,8 @@ source "${COMMON_LIB_ROOT}/package/init/lifecycle-decoupling.sh"
 source "${COMMON_LIB_ROOT}/package/init/basic.sh"
 source "${COMMON_LIB_ROOT}/package/init/bash-error-handler.sh"
 source "${COMMON_LIB_ROOT}/package/init/output.sh"
+source "${COMMON_LIB_ROOT}/package/init/term.sh"
+source "${COMMON_LIB_ROOT}/package/init/json.sh"
 source "${COMMON_LIB_ROOT}/package/init/exit.sh"
 source "${COMMON_LIB_ROOT}/package/init/strings.sh"
 source "${COMMON_LIB_ROOT}/package/init/constants.sh"
@@ -39,6 +41,7 @@ source "${COMMON_LIB_ROOT}/package/platform/download-file.sh"
 source "${COMMON_LIB_ROOT}/package/platform/healthcheck.sh"
 source "${COMMON_LIB_ROOT}/package/platform/start-stop-reload.sh"
 source "${COMMON_LIB_ROOT}/package/platform/xrun.sh"
+source "${COMMON_LIB_ROOT}/package/platform/mount-script-run.sh"
 
 _check_ci_env
 use_normal

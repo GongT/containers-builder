@@ -64,7 +64,6 @@ function buildah_cache() {
 
 	indent
 	{
-		use_strict
 		echo "last image: ${BUILDAH_LAST_IMAGE}"
 		"${BUILDAH_HASH_CALLBACK}"
 	} >"${HASH_TMP}"

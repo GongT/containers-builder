@@ -5,7 +5,7 @@ function wait_by_output() {
 		if [[ ${line} == *SDNOTIFY* ]]; then
 			continue
 		elif echo "${line}" | grep -qE "${WAIT_OUTPUT}"; then
-			debug "== ---- output found ---- =="
+			info_log "== ---- output found ---- =="
 			service_wait_success
 			return 0
 		fi

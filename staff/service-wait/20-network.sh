@@ -15,6 +15,6 @@ function detect_host_ip() {
 		HOST_IP=$(ip route get 1.1.1.1 | grep -oP 'src \K\S+')
 	fi
 
-	debug "Local host access address: ${HOST_IP}"
-	add_run_argument "--env=HOSTIP=${HOST_IP}"
+	info_log "Local host access address: ${HOST_IP}"
+	push_engine_param "--env=HOSTIP=${HOST_IP}"
 }

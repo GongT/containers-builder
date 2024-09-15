@@ -6,11 +6,11 @@ function wait_by_port() {
 		sleep 2
 	done
 
-	debug "container init pid is ${INNER_PID}"
+	info_log "container init pid is ${INNER_PID}"
 
 	while ! nsenter --user --net --target "${INNER_PID}" ss --listening "--$PROTOCOL" --numeric | grep -q ":${PORT} "; do
 		sleep 2
 	done
-	debug "${PROTOCOL} port ${PORT} has opened for listening"
+	info_log "${PROTOCOL} port ${PORT} has opened for listening"
 	service_wait_success
 }

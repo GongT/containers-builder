@@ -1,21 +1,6 @@
 function self_journal() {
 	journalctl "_SYSTEMD_INVOCATION_ID=${INVOCATION_ID}" -f 2>&1
 }
-
-declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
-function load_sdnotify() {
-	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
-		function sdnotify() {
-			echo "[SDNOTIFY] $*" >&2
-			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
-		}
-	else
-		echo "[SDNOTIFY] disabled" >&2
-		function sdnotify() {
-			echo "[SDNOTIFY] (disabled) $*" >&2
-		}
-	fi
-}
 function expand_timeout() {
 	if [[ $1 -gt 0 ]]; then
 		sdnotify "EXTEND_TIMEOUT_USEC=$1"
@@ -29,11 +14,11 @@ function expand_timeout_seconds() {
 
 function startup_done() {
 	sdnotify --ready --status=ok
-	debug "Finish, Ok."
+	info_log "Finish, Ok."
 	sleep 10
 	exit 0
 }
-debug "XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR-*missing*}"
+info_log "XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR-*missing*}"
 function systemctl() {
 	if [[ -z ${XDG_RUNTIME_DIR-} ]] || [[ $XDG_RUNTIME_DIR == */0 ]]; then
 		/usr/bin/systemctl "$@"
@@ -51,5 +36,5 @@ function journalctl() {
 
 declare -i SERVICE_START_TIMEOUT_SEC=0
 function get_service_property() {
-	systemctl show "${CURRENT_SYSTEMD_UNIT_NAME}" "--property=$1" --value
+	systemctl show "${UNIT_NAME}" "--property=$1" --value
 }

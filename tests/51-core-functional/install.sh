@@ -11,8 +11,9 @@ arg_finish "$@"
 
 create_pod_service_unit simple-build
 unit_unit Description this is basic test
-network_use_auto 6666
+network_use_default 6666
 systemd_slice_type normal
+unit_podman_cmdline arg1 arg2 arg3 "wow, such doge"
 
 environment_variable \
 	"USERNAME=foo"

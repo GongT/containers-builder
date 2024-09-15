@@ -15,14 +15,14 @@ function dns_resolve() {
 	local -r METHOD="$1" HOSTN="$2"
 	local RESOLVE_ARR RESOLVE_STR
 	local -i I=5
-	debug "Resolve host for dns: <${HOSTN}>"
+	info_log "Resolve host for dns: <${HOSTN}>"
 	while true; do
 		RESOLVE_STR=$(_nslookup "${HOSTN}" || :)
-		if [[ -n "${RESOLVE_STR}" ]]; then
+		if [[ -n ${RESOLVE_STR} ]]; then
 			break
 		fi
 		if [[ ${I} -gt 0 ]]; then
-			debug "retry... (${I})"
+			info_log "retry... (${I})"
 			sleep 2
 			I="${I} - 1"
 			continue
@@ -34,7 +34,7 @@ function dns_resolve() {
 
 	local ADDR
 	for ADDR in "${RESOLVE_ARR[@]}"; do
-		debug " - verify dns server: ${ADDR}"
+		info_log " - verify dns server: ${ADDR}"
 		if _nslookup -timeout=2 -retry=1 z.cn "${ADDR}" &>/dev/null; then
 			dns_append "${METHOD}" "${ADDR}"
 		fi
@@ -42,19 +42,19 @@ function dns_resolve() {
 }
 
 function dns_pass() {
-	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1:-}"
+	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1-}"
 	mapfile -t RESOLVE_OPTIONS < <(grep '^options ' /etc/resolv.conf | sed 's/^options //g')
-	if [[ -n "${RESOLVE_OPTIONS[*]}" ]]; then
+	if [[ -n ${RESOLVE_OPTIONS[*]} ]]; then
 		if [[ ${METHOD} == 'env' ]]; then
-			ARGS+=("--env=RESOLVE_OPTIONS=${RESOLVE_OPTIONS[*]}")
+			push_engine_param "--env=RESOLVE_OPTIONS=${RESOLVE_OPTIONS[*]}"
 		else
-			ARGS+=("--dns-opt=${RESOLVE_OPTIONS[*]}")
+			push_engine_param "--dns-opt=${RESOLVE_OPTIONS[*]}"
 		fi
 	fi
 
 	if [[ ${METHOD} == 'env' ]]; then
 		mapfile -t RESOLVE_SEARCH < <(grep '^search ' /etc/resolv.conf | sed 's/^search //g')
-		ARGS+=("--env=RESOLVE_SEARCH=${RESOLVE_SEARCH[*]}")
+		push_engine_param "--env=RESOLVE_SEARCH=${RESOLVE_SEARCH[*]}"
 	fi
 
 	mapfile -t RESOLVE_NS < <(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //g' | grep -v 127.0.0.1)
@@ -69,13 +69,13 @@ function dns_append() {
 	else
 		local NS
 		for NS in "${@}"; do
-			ARGS+=("--dns=${NS}")
+			push_engine_param "--dns=${NS}"
 		done
 	fi
 }
 
 function dns_finalize() {
 	if [[ ${#NSS[@]} -gt 0 ]]; then
-		add_run_argument "--env=NSS=${NSS[*]}"
+		push_engine_param "--env=NSS=${NSS[*]}"
 	fi
 }

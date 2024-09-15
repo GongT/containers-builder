@@ -111,10 +111,10 @@ function call_dnf_install() {
 	local -a PKGS=()
 	read_list_file "${PACKAGE_FILE}" PKGS
 
-	call_dnf_with "${WORKING_CONTAINER}" "${POST_SCRIPT}" install "${PKGS[@]}"
+	call_dnf_with_guest "${WORKING_CONTAINER}" "${POST_SCRIPT}" install "${PKGS[@]}"
 }
 
-function call_dnf_with() {
+function call_dnf_with_guest() {
 	local -r WORKING_CONTAINER="$1" POST_SCRIPT="$2"
 	local -a CONTAINER_ARGS=() DNF_ARGS=("${@:3}")
 
@@ -146,103 +146,71 @@ function call_dnf_with() {
 		_run_group
 	unset -f _run_group
 }
-function call_dnf_direct() {
+
+function call_dnf_without_guest() {
 	if ! variable_bounded _DNF_ENVIRONMENT_CID; then
 		die "no call to dnf_use_environment"
 	fi
 
 	local -a CONTAINER_ARGS=()
 	create_dnf_arguments CONTAINER_ARGS
-
-	indent_stream buildah run "${CONTAINER_ARGS[@]}" "--env=ACTION=${ACTION}" "${_DNF_ENVIRONMENT_CID}" \
-		/usr/local/bin/dnf "$@"
-}
-
-function dnf_install() {
-	local CACHE_NAME="$1"
-	local PKG_LIST_FILE="$2"
-
-	info_log "dnf install (list file: ${PKG_LIST_FILE})..."
-
-	_dnf_hash_cb() {
-		cat "${PKG_LIST_FILE}"
-		dnf_list_version "${PKG_LIST_FILE}"
-		echo "${POST_SCRIPT-}"
-	}
-	_dnf_build_cb() {
-		local CONTAINER="$1"
-		run_dnf_with_list_file "${CONTAINER}" "${PKG_LIST_FILE}"
-	}
-
-	if [[ ${FORCE_DNF+found} != found ]]; then
-		local FORCE_DNF=""
-	fi
-
-	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
-	unset -f _dnf_hash_cb _dnf_build_cb
-}
-
-function make_base_image_by_dnf() {
-	local CACHE_NAME="$1"
-	local PKG_LIST_FILE="$2"
-
-	if [[ -z ${STEP-} ]]; then
-		STEP="复制文件"
-	fi
-	_dnf_hash_cb() {
-		info_log "package list file: ${PKG_LIST_FILE}"
-		cat "${PKG_LIST_FILE}"
-		printf '\n'
-		dnf_list_version "${PKG_LIST_FILE}"
-		printf '\n'
-		info_log "use script file: ${POST_SCRIPT-*not use*}"
-		echo "${POST_SCRIPT-}"
-	}
-	_dnf_build_cb() {
-		local CONTAINER="$1"
-		run_dnf_with_list_file "${CONTAINER}" "${PKG_LIST_FILE}"
-	}
-
-	if [[ ${FORCE_DNF+found} != found ]]; then
-		local FORCE_DNF=""
-	fi
-
-	buildah_cache_start "fedora:${FEDORA_VERSION}"
-
-	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
-	unset -f _dnf_hash_cb _dnf_build_cb
-}
-
-function run_dnf_with_list_file() {
-	local WORKER="$1" LST_FILE="$2" PKGS
-	mapfile -t PKGS <"${LST_FILE}"
-	run_dnf "${WORKER}" "${PKGS[@]}"
+	buildah run "${CONTAINER_ARGS[@]}" "${_DNF_ENVIRONMENT_CID}" \
+		"/usr/local/bin/dnf" "$@" </dev/null
 }
 
 function dnf_list_version() {
-	local FILE=$1 PKGS=()
+	local FILE=$1 PKGS=() TMPF
 
+	TMPF=$(create_temp_file "dnf.list.output.txt")
 	mapfile -t PKGS <"${FILE}"
-	RET=$(run_dnf_host list --quiet --color never "${PKGS[@]}" | grep -v --fixed-strings i686 | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
-	echo "${RET}"
+
+	try call_dnf_without_guest list --quiet "${PKGS[@]}" >"${TMPF}"
+	if [[ $ERRNO -ne 0 ]]; then
+		info_error "[dnf:${ERRNO}] failed list package versions"
+		cat "${TMPF}"
+		info_error "[dnf:${ERRNO}] failed list package versions"
+		return 1
+	fi
+	RET=$(grep -v --fixed-strings i686 "${TMPF}" | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
 	info_log "================================================="
 	indent_multiline "${RET}"
 	info_log "================================================="
+
+	echo "${RET}"
+}
+
+function dnf_install_step() {
+	local CACHE_NAME="$1"
+	local PKG_LIST_FILE="$2"
+
+	if [[ ! -e ${PKG_LIST_FILE} ]]; then
+		die "missing install list file: ${PKG_LIST_FILE}"
+	fi
+
+	_dnf_hash_cb() {
+		info_log "dnf install (list file: ${PKG_LIST_FILE})..."
+		cat "${PKG_LIST_FILE}"
+		info_note "   listing versions..."
+		dnf_list_version "${PKG_LIST_FILE}"
+		echo "${POST_SCRIPT-}"
+	}
+	_dnf_build_cb() {
+		local CONTAINER="$1"
+		call_dnf_install "${CONTAINER}" "${PKG_LIST_FILE}"
+	}
+
+	if [[ ${FORCE_DNF+found} != found ]]; then
+		local FORCE_DNF=""
+	fi
+
+	if [[ -z ${STEP-} ]]; then
+		STEP="安装系统依赖"
+	fi
+
+	BUILDAH_FORCE="${FORCE_DNF}" buildah_cache "${CACHE_NAME}" _dnf_hash_cb _dnf_build_cb
+	unset -f _dnf_hash_cb _dnf_build_cb
 }
 
 function dnf() {
 	die "deny run dnf on host!"
-}
-
-function dnf_add_preinstall_package() {
-	download_file
-	echo "${CONTENT}" >"${TMPREPODIR}/${TITLE}.repo"
-}
-function dnf_add_repo_string() {
-	local TITLE=$1 CONTENT=$2
-	if [[ -z ${TMPREPODIR} ]]; then
-		TMPREPODIR=$(create_temp_dir yum.repos.d)
-		mkdir -p "${TMPREPODIR}"
-	fi
-	echo "${CONTENT}" >"${TMPREPODIR}/${TITLE}.repo"
 }

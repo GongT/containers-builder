@@ -1,26 +1,22 @@
 function _service_executer_write() {
-	local DATA=''
+	local DATA='' TMPF
+	TMPF=$(create_temp_file)
 
-	DATA+="$(SHELL_SCRIPT_PREFIX)"
-	DATA+=$'\n'
-	DATA+="$(call_script_emit)"
-	DATA+=$'\n'
-	DATA+="$(__concat_wait_files)"
-	DATA+=$'\n'
-	DATA+=$'main\n'
+	DATA=$(
+		call_script_emit
+		__concat_wait_files
+		echo main
+	)
 
-	write_file --mode 0755 "${SCRIPTS_DIR}/execute" "${DATA}"
+	construct_child_shell_script host - "${DATA}" >"${TMPF}"
+
+	copy_file --mode 0744 "${TMPF}" "${SCRIPTS_DIR}/execute"
 	echo "${SCRIPTS_DIR}/execute"
 }
 
 __concat_wait_files() {
 	printf '\n\n'
 	local FILE_PATH
-
-	printf '\n## HELPERS: \n'
-	declare -fp trim callstack function_exists variable_exists function_exists variable_is_array variable_is_map json_array json_array_get_back json_map json_map_get_back uptime_sec timespan_seconds seconds_timespan systemd_service_property
-	declare -p microsecond_unit
-	printf '\n'
 
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
 		printf '\n## FILE: %s\n' "$(basename "${FILE_PATH}")"
@@ -32,28 +28,20 @@ get_debugger_script() {
 	echo "${SCRIPTS_DIR}/debug-startup.sh"
 }
 _debugger_file_write() {
-	local I FILE_DATA
-	local -a STARTUP_ARGS=()
+	local I EX_SRC TMPF
 
-	local -r DEFAULT_COMMANDLINE=("${_S_COMMAND_LINE[@]}")
+	TMPF=$(create_temp_file "debugger.script.file.sh")
 
-	_create_startup_arguments
-	FILE_DATA=$(
-		SHELL_SCRIPT_PREFIX
+	EX_SRC=$(
 		echo "declare -r CONTAINER_ID='$(unit_get_scopename)'"
 		echo "declare -r NAME='${_S_CURRENT_UNIT_NAME}'"
 		echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
-		declare -p DEFAULT_COMMANDLINE
 		call_script_emit
 		__concat_wait_files
+	)
+	construct_child_shell_script host "${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh" "${EX_SRC}" >"${TMPF}"
 
-		echo "declare -a STARTUP_ARGS=("
-		printf '\t%q\n' "${STARTUP_ARGS[@]}"
-		echo ")"
-
-		cat "${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh"
-	) || die "failed construct execute file"
-	write_file --mode 0755 "$(get_debugger_script)" "${FILE_DATA}"
+	copy_file --mode 0755 "${TMPF}" "$(get_debugger_script)"
 }
 
 function unit_start_notify() {

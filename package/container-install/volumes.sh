@@ -54,8 +54,14 @@ function shared_sockets_provide() {
 function __reset_volumes() {
 	declare -ga _S_PREP_FOLDER=()
 	declare -ga _S_PROVIDE_SOCKETS=()
+	declare -ga _S_VOLUME_ARG=()
 }
 register_unit_reset __reset_volumes
+
+function __pass_volume_arguments() {
+	add_run_argument "${_S_VOLUME_ARG[@]}"
+}
+register_argument_config __pass_volume_arguments
 
 function __export_volumes() {
 	local PREPARE_FOLDERS=()

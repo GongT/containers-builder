@@ -9,11 +9,6 @@ _unit_reset() {
 	declare -g _S_CURRENT_UNIT_FILE=''
 	declare -g _S_INSTALL=services.target
 
-	declare -ga _S_LINUX_CAP=()
-	declare -ga _S_VOLUME_ARG=()
-	declare -ga _S_PODMAN_ARGS=()
-	declare -ga _S_COMMAND_LINE=()
-	declare -ga _S_NETWORK_ARGS=()
 	declare -ga _S_COMMENTS=()
 
 	declare -gA _S_UNIT_CONFIG=()
@@ -177,7 +172,7 @@ function unit_get_scopename() {
 function _export_base_envs() {
 	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
-	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE:-"${NAME}"}"
+	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
 }
 register_script_emit _export_base_envs
 
@@ -207,17 +202,14 @@ Type=notify
 NotifyAccess=all"
 
 	## exec start
-	echo "ExecStart=$(escape_argument "$(_service_executer_write)") \\"
-	local -a STARTUP_ARGS=('--replace=true')
-	_create_startup_arguments
-	escape_argument_list_continue "${STARTUP_ARGS[@]}"
-	echo ""
+	printf_command_direction ExecStart= "$(_service_executer_write)"
 	echo "# debug script: $(get_debugger_script)"
 
 	_print_unit_service_section
 
 	echo "Environment=CONTAINER_ID=$(unit_get_scopename)"
-	echo "Environment=CURRENT_SYSTEMD_UNIT_NAME=%n"
+	echo "Environment=UNIT_NAME=%n"
+	echo "Environment=CURRENT_SYSTEMD_UNIT_PARAM=%i"
 
 	if [[ -n ${_S_INSTALL} ]]; then
 		echo ""
@@ -236,37 +228,6 @@ NotifyAccess=all"
 	echo "PROJECT_NAME=${PROJECT_NAME}"
 	echo "SYSTEM_COMMON_CACHE=${SYSTEM_COMMON_CACHE}"
 	echo "SYSTEM_FAST_CACHE=${SYSTEM_FAST_CACHE}"
-}
-
-function add_run_argument() {
-	if ! variable_exists _PODMAN_RUN_ARGS; then
-		print_failure "wrong call timing add_run_argument()"
-	fi
-	_PODMAN_RUN_ARGS+=("$@")
-}
-function add_build_config() {
-	if ! variable_exists _PODMAN_RUN_ARGS; then
-		print_failure "wrong call timing add_build_config()"
-	fi
-}
-
-function _create_startup_arguments() {
-	if ! variable_exists STARTUP_ARGS; then
-		print_failure "wrong call timing _create_startup_arguments()"
-	fi
-
-	local _PODMAN_RUN_ARGS=() CAP_LIST
-
-	call_argument_config
-
-	STARTUP_ARGS+=("${_PODMAN_RUN_ARGS[@]}")
-	STARTUP_ARGS+=("${_S_NETWORK_ARGS[@]}" "${_S_PODMAN_ARGS[@]}" "${_S_VOLUME_ARG[@]}")
-	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
-		CAP_LIST=$(printf ",%s" "${_S_LINUX_CAP[@]}")
-		STARTUP_ARGS+=("--cap-add=${CAP_LIST:1}")
-	fi
-	STARTUP_ARGS+=("--pull=never" "--rm" "${_S_IMAGE:-"${NAME}"}")
-	STARTUP_ARGS+=("${_S_COMMAND_LINE[@]}")
 }
 
 function unit_using_systemd() {
@@ -294,24 +255,6 @@ function unit_unit() {
 }
 function unit_comment() {
 	_S_COMMENTS+=("$*")
-}
-function _unit_podman_network_arg() {
-	_S_NETWORK_ARGS+=("$*")
-}
-function unit_podman_arguments() {
-	local I
-	if [[ $# -eq 0 ]]; then
-		return
-	fi
-	for I; do
-		_S_PODMAN_ARGS+=("${I}")
-	done
-}
-function unit_podman_cmdline() {
-	if [[ ${#_S_COMMAND_LINE[@]} -gt 0 ]]; then
-		info_warn "duplicate set commandline, last one will used"
-	fi
-	_S_COMMAND_LINE=("$@")
 }
 
 function unit_hook_start() {

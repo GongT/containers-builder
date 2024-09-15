@@ -93,7 +93,7 @@ function set_error_trap() {
 
 	local try_symbol=${1-try}
 
-	eval "function ${try_symbol}() { \"\$@\"; }"
+	eval "function ${try_symbol}() { ERRNO=0; \"\$@\"; }"
 
 	function ___to_string_global_trap_code() {
 		ERRNO=$?

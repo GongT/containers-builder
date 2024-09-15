@@ -29,6 +29,7 @@ function add_run_argument() {
 	if ! variable_exists COMMIT_CONFIGS; then
 		print_failure "wrong call timing add_run_argument()"
 	fi
+	# noop
 }
 
 function buildah() {

@@ -1,12 +1,11 @@
-function debug() {
-	echo "{wait-run} $*" >&2
-}
+_CURRENT_INDENT='{srv-wait} '
+
 function critical_die() {
-	debug "$*"
+	info_error "$*"
 	exit 233
 }
 function die() {
-	debug "$*"
+	info_error "$*"
 	exit 1
 }
 
@@ -24,12 +23,10 @@ function try_resolve_file() {
 	printf "%s" "$1"
 }
 
-function _exit() {
+function _on_exit_notify_service_manager() {
 	local EXIT_CODE=$?
 	set +Eeuo pipefail
 	sdnotify --stopping "--status=control process $$ exit"
 	callstack 2
-	critical_die "startup script exit with error code ${EXIT_CODE}"
+	critical_die "startup script died with error code ${EXIT_CODE}"
 }
-
-trap _exit EXIT

@@ -27,7 +27,7 @@ if [[ -n ${CMD} ]]; then
 	fi
 fi
 
-TimeoutStopUSec=$(systemd_service_property "${CURRENT_SYSTEMD_UNIT_NAME}" "TimeoutStopUSec")
+TimeoutStopUSec=$(systemd_service_property "${UNIT_NAME}" "TimeoutStopUSec")
 TimeoutStopSec=$(timespan_seconds "${TimeoutStopUSec}")
 TO=$((TimeoutStopSec - 10))
 if [[ ${TO} -lt 0 ]]; then

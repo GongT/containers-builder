@@ -12,17 +12,17 @@ function get_container() {
 function ensure_container_not_running() {
 	get_container
 	if [[ -z ${LCID} ]]; then
-		debug "good, no old container"
+		info_log "good, no old container"
 		return
 	fi
-	debug "-- old container exists --" >&2
+	info_log "-- old container exists --" >&2
 	sdnotify "--status=killing old container"
 	expand_timeout_seconds "30"
 
 	while true; do
-		debug "Conmon PID: ${LPID}" >&2
-		debug "Container ID: ${LCID}" >&2
-		debug "State: ${LSTAT}" >&2
+		info_log "Conmon PID: ${LPID}" >&2
+		info_log "Container ID: ${LCID}" >&2
+		info_log "State: ${LSTAT}" >&2
 		if [[ ${LSTAT} == "running" ]]; then
 			if [[ ${ALLOW_FORCE_KILL} == yes ]]; then
 				podman stop "${CONTAINER_ID}" || true
@@ -38,11 +38,11 @@ function ensure_container_not_running() {
 
 		get_container
 		if [[ -z ${LCID} ]]; then
-			debug "good, old container removed."
+			info_log "good, old container removed."
 			return
 		fi
 
-		debug "-- old container still exists --" >&2
+		info_log "-- old container still exists --" >&2
 	done
 
 	critical_die "failed delete old container"

@@ -38,7 +38,7 @@ function service_wait_thread() {
 		elif [[ ${RET} -eq 251 ]]; then
 			exit 0 # no need wait
 		else
-			debug "failed wait container '${CONTAINER_ID}' to stable running."
+			info_log "failed wait container '${CONTAINER_ID}' to stable running."
 
 			sdnotify --stopping "wait fail"
 
@@ -52,7 +52,7 @@ function service_wait_thread() {
 	}
 	trap _wait_exit EXIT
 
-	debug "wait container ${CONTAINER_ID}, type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
+	info_log "wait container ${CONTAINER_ID}, type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
 
 	core_switch
 }
@@ -61,7 +61,7 @@ function main() {
 	detect_image_using_systemd
 	load_sdnotify
 
-	add_run_argument "--name=${CONTAINER_ID}"
+	push_engine_param "--name=${CONTAINER_ID}" "--replace=true"
 	ensure_mounts
 	remove_old_socks
 
@@ -73,7 +73,7 @@ function main() {
 		else
 			START_WAIT_DEFINE=sleep:10
 		fi
-		debug "auto detect wait: ${START_WAIT_DEFINE}"
+		info_log "auto detect wait: ${START_WAIT_DEFINE}"
 	fi
 	if [[ ${START_WAIT_DEFINE} == touch || ${START_WAIT_DEFINE} == touch: ]]; then
 		START_WAIT_DEFINE="touch:/startup.${RANDOM}.signal"
@@ -87,13 +87,13 @@ function main() {
 	fi
 
 	if [[ ${WAIT_TYPE} == pass ]]; then
-		add_run_argument "--sdnotify=container"
+		push_engine_param "--sdnotify=container"
 	elif [[ ${WAIT_TYPE} == healthy ]]; then
-		add_run_argument "--sdnotify=healthy"
+		push_engine_param "--sdnotify=healthy"
 	elif [[ ${WAIT_TYPE} == touch ]]; then
-		add_run_argument "--env=STARTUP_TOUCH_FILE=${WAIT_ARGS}"
+		push_engine_param "--env=STARTUP_TOUCH_FILE=${WAIT_ARGS}"
 	else
-		add_run_argument "--sdnotify=ignore"
+		push_engine_param "--sdnotify=ignore"
 	fi
 	wait_for_pid_and_notify
 

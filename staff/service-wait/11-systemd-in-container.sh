@@ -1,13 +1,13 @@
 function detect_image_using_systemd() {
-	# add_run_argument "--log-driver=passthrough"
-	add_run_argument "--attach=stdin,stdout,stderr"
-	add_run_argument "--log-driver=none"
-	add_run_argument "--tty"
+	# push_engine_param "--log-driver=passthrough"
+	push_engine_param "--attach=stdin,stdout,stderr"
+	push_engine_param "--log-driver=none"
+	push_engine_param "--tty"
 
 	if [[ ${FORCE_SYSTEMD-} == "true" ]] || is_image_using_systemd; then
-		debug "image is systemd: forced=${FORCE_SYSTEMD-false}, label=$(get_image_label "${LABELID_SYSTEMD}")"
-		add_run_argument '--systemd=always' '--privileged=true'
+		info_log "image is systemd: forced=${FORCE_SYSTEMD-false}, label=$(get_image_label "${LABELID_SYSTEMD}")"
+		push_engine_param '--systemd=always' '--privileged=true'
 	else
-		add_run_argument '--systemd=false'
+		push_engine_param '--systemd=false'
 	fi
 }

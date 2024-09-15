@@ -2,7 +2,7 @@ function ensure_mounts() {
 	local I
 	for I in "${PREPARE_FOLDERS[@]}"; do
 		if [[ ! -e ${I} ]]; then
-			debug "create missing folder: ${I}"
+			info_log "create missing folder: ${I}"
 			/usr/bin/mkdir -p "${I}" || critical_die "can not ensure exists: ${I}"
 		fi
 	done

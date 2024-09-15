@@ -59,3 +59,17 @@ function guard_no_root() {
 		die "This action can not run by root."
 	fi
 }
+
+function export_array() {
+	local R=''
+	if [[ $1 == -r ]]; then
+		R='r'
+		shift
+	fi
+
+	local NAME=$1 I
+	shift
+	printf 'declare -%sa %s=(\n' "${R}" "${NAME}"
+	printf '\t%q\n' "$@"
+	printf ')\n'
+}

@@ -26,7 +26,6 @@ source "${COMMON_LIB_ROOT}/package/image-build/alpine.sh"
 source "${COMMON_LIB_ROOT}/package/image-build/apt-get.sh"
 source "${COMMON_LIB_ROOT}/package/image-build/archlinux.sh"
 source "${COMMON_LIB_ROOT}/package/image-build/python.sh"
-source "${COMMON_LIB_ROOT}/package/image-build/mount-script-run.sh"
 source "${COMMON_LIB_ROOT}/package/image-build/oci-labels.sh"
 source "${COMMON_LIB_ROOT}/package/image-build/make-steps.sh"
 

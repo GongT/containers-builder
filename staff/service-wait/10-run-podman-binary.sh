@@ -10,22 +10,22 @@ function get_service_timeout() {
 }
 
 function podman_run_container() {
-	debug " + podman run$(printf ' %q' "${ARGS[@]}")"
+	info_log " + podman run$(printf ' %q' "${PODMAN_EXEC_ARGS[@]}")"
 	local I
-	for I in "${ARGS[@]}"; do
-		debug "  :: ${I}"
+	for I in "${PODMAN_EXEC_ARGS[@]}"; do
+		info_log "  :: ${I}"
 	done
 
 	get_service_timeout
 
 	sdnotify "--status=run main process" "EXTEND_TIMEOUT_USEC=$((SERVICE_START_TIMEOUT_SEC * microsecond_unit))"
 	trap - EXIT
-	exec podman run "${ARGS[@]}"
+	exec podman run "${PODMAN_EXEC_ARGS[@]}"
 }
 
 function wait_for_pid_and_notify() {
 	local -r PIDFile="$(mktemp --dry-run --tmpdir "${CONTAINER_ID}.conmon.XXXXX.pid")"
-	add_run_argument "--conmon-pidfile=${PIDFile}"
+	push_engine_param "--conmon-pidfile=${PIDFile}"
 
 	rm -f "${PIDFile}"
 	__pid_waiter_thread &
