@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 function die() {
 	if [[ ${NET_NAMESPACE+found} != found ]]; then
 		ip netns delete "${NET_NAMESPACE}" &>/dev/null || true

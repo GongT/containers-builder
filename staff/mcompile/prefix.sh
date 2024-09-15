@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 declare -xr SOURCE="/opt/projects/${PROJECT_ID}"
 declare -xr ARTIFACT_PREFIX="/opt/dist"
 declare -xr PREFIX="${ARTIFACT_PREFIX}"
@@ -29,22 +27,3 @@ if command -v ccache &>/dev/null; then
 else
 	echo "NOT using CCACHE."
 fi
-
-function group() {
-	if is_ci; then
-		echo "::group::$*"
-	else
-		echo -e "\e[38;5;14m$*\e[0m"
-	fi
-}
-
-function groupEnd() {
-	if is_ci; then
-		echo "::endgroup::"
-	fi
-}
-
-function x() {
-	echo -e " + $*" >&2
-	"$@"
-}

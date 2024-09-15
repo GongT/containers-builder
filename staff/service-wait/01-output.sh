@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function debug() {
 	echo "{wait-run} $*" >&2
 }

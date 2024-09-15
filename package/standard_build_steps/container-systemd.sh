@@ -116,10 +116,9 @@ function setup_systemd() {
 				local I TMPF
 				TMPF=$(create_temp_file "setup.systemd.${PLUGIN}.sh")
 
-				{
-					SHELL_SCRIPT_PREFIX
-					SHELL_COMMON_LIBS
-					SHELL_USE_PROXY
+				local EXTRA
+				EXTRA=$(
+						printf 'declare -xr WHO_AM_I=%q\n' "${SETUP_SRC}"
 					if [[ ${PROJECT_NAME} == "${CACHE_BRANCH}" ]]; then
 						printf 'declare -xr PROJECT=%q\n' "${PROJECT_NAME}"
 					else
@@ -128,10 +127,9 @@ function setup_systemd() {
 					if [[ ${#PARAMS[@]} -gt 0 ]]; then
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi
-					cat "${SETUP_SRC}"
-				} >"${TMPF}"
+				)
+				construct_child_shell_script guest "${SETUP_SRC}" "${EXTRA}" >"${TMPF}"
 
-				local WHO_AM_I="${SETUP_SRC}"
 				buildah_run_shell_script \
 					"${SETUP_ARGS[@]}" \
 					"${CONTAINER}" "${TMPF}"

@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function detect_image_using_systemd() {
 	# add_run_argument "--log-driver=passthrough"
 	add_run_argument "--attach=stdin,stdout,stderr"

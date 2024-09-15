@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-env
+# shellcheck source=package/include.sh
+source /usr/lib/lib.sh
 
-set -xEeuo pipefail
+dnf install dnf-plugins-core jq util-linux-core curl
 
-dnf --version
-dnf makecache
+if [[ -e /opt/repos ]]; then
+	find /opt/repos -name '*.repo' -print0 | xargs -0 --no-run-if-empty cp -vt /etc/yum.repos.d
+	find /opt/repos -name '*.rpm' -print0 | xargs -0 --no-run-if-empty dnf install -y
+fi
 
-dnf install -y dnf-plugins-core \
-	"https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${FEDORA_VERSION}.noarch.rpm" \
-	"https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${FEDORA_VERSION}.noarch.rpm"
-
-dnf config-manager --set-enabled rpmfusion-free rpmfusion-nonfree
-dnf install jq util-linux-core curl
+if [[ ${#DNF_ENVIRONMENT_ENABLES[@]} -gt 0 ]]; then
+	dnf config-manager --set-enabled "${DNF_ENVIRONMENT_ENABLES[@]}"
+fi

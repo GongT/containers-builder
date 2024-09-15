@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 
-function use_strict() {
-	set -Eeuo pipefail
-	shopt -s shift_verbose
-
-}
-function use_normal() {
-	shopt -s extglob nullglob globstar lastpipe
-	use_strict
-}
-use_normal
-
 # shellcheck disable=SC2155
 declare -r __STARTUP_PWD=$(pwd)
 # shellcheck disable=SC2312
@@ -31,29 +20,25 @@ else
 fi
 declare -xr CURRENT_ACTION
 
-pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 
-source "./init/lifecycle-decoupling.sh"
-source "./init/bash-error-handler.sh"
-source "./init/output.sh"
-source "./init/basic.sh"
-source "./init/strings.sh"
-source "./init/constants.sh"
-source "./init/paths.sh"
-source "./init/exit.sh"
-source "./init/arguments.sh"
-source "./init/author-detect.sh"
+source "${COMMON_LIB_ROOT}/package/init/lifecycle-decoupling.sh"
+source "${COMMON_LIB_ROOT}/package/init/basic.sh"
+source "${COMMON_LIB_ROOT}/package/init/bash-error-handler.sh"
+source "${COMMON_LIB_ROOT}/package/init/output.sh"
+source "${COMMON_LIB_ROOT}/package/init/exit.sh"
+source "${COMMON_LIB_ROOT}/package/init/strings.sh"
+source "${COMMON_LIB_ROOT}/package/init/constants.sh"
+source "${COMMON_LIB_ROOT}/package/init/paths.sh"
+source "${COMMON_LIB_ROOT}/package/init/arguments.sh"
+source "${COMMON_LIB_ROOT}/package/init/author-detect.sh"
+source "${COMMON_LIB_ROOT}/package/platform/proxy.sh"
+source "${COMMON_LIB_ROOT}/package/platform/systemctl.sh"
+source "${COMMON_LIB_ROOT}/package/platform/temp.sh"
+source "${COMMON_LIB_ROOT}/package/platform/filesystem.sh"
+source "${COMMON_LIB_ROOT}/package/platform/download-file.sh"
+source "${COMMON_LIB_ROOT}/package/platform/healthcheck.sh"
+source "${COMMON_LIB_ROOT}/package/platform/start-stop-reload.sh"
+source "${COMMON_LIB_ROOT}/package/platform/xrun.sh"
 
-source "./platform/proxy.sh"
-source "./platform/systemctl.sh"
-source "./platform/temp.sh"
-source "./platform/filesystem.sh"
-source "./platform/download-file.sh"
-source "./platform/healthcheck.sh"
-source "./platform/start-stop-reload.sh"
-source "./platform/xrun.sh"
-
-popd &>/dev/null
-
-set_error_trap
 _check_ci_env
+use_normal

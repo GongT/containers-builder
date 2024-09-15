@@ -1,4 +1,4 @@
-declare -r _BUILDSCRIPT_RUN_STEP_
+declare _BUILDSCRIPT_RUN_STEP_
 declare __SOME_STEP_RUN=no
 declare -a STEPS_DEFINE=()
 

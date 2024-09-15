@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-declare -r ARCHLINUX_VERSION=latest
 declare -a PACMAN_CACHE_ARGS
 
 function use_pacman_cache() {
@@ -15,13 +14,23 @@ function use_pacman_cache() {
 }
 
 pacman_prepare_environment() {
-	use_pacman_cache "archlinux_${ARCHLINUX_VERSION}"
-
 	info "update pacman cache"
 	local ARCH_PACMAN_CID
-	ARCH_PACMAN_CID=$(create_if_not "pacman" "archlinux_${ARCHLINUX_VERSION}")
-	buildah run "${PACMAN_CACHE_ARGS[@]}" "${ARCH_PACMAN_CID}" bash -c \
-		"rm -f /var/lib/pacman/db.lck ; echo 'Server = http://mirrors.aliyun.com/archlinux/\$repo/os/\$arch' > /etc/pacman.d/mirrorlist ; pacman --noconfirm -Syy"
+	ARCH_PACMAN_CID=$(create_if_not "pacman" "docker.io/library/archlinux")
+	local TMP_SCRIPT=$(create_temp_file "pacman.install.sh")
+
+	{
+		echo 'rm -f /var/lib/pacman/db.lck'
+		if ! is_ci; then
+			cat <<-'EOF'
+				echo 'Server = http://mirrors.aliyun.com/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist 
+			EOF
+		fi
+		echo "pacman --noconfirm -Syy"
+	} >"${TMP_SCRIPT}"
+
+	local WHO_AM_I="pacman:prepare"
+	buildah_run_shell_script "${PACMAN_CACHE_ARGS[@]}" "${ARCH_PACMAN_CID}" "${TMP_SCRIPT}"
 }
 
 function fork_archlinux() {
@@ -39,11 +48,12 @@ function fork_archlinux() {
 	SEARCH="^(${SEARCH:1})$"
 	SEARCH=$(printf 'pacman --noconfirm -Ss %q' "${SEARCH}")
 
-	buildah_cache_start "archlinux:${ARCHLINUX_VERSION}"
+	buildah_cache_start "docker.io/library/archlinux"
 
 	STEP="安装系统依赖:"
 	___pacman_hash() {
-		use_pacman_cache >&2
+		use_pacman_cache "archlinux_latest" >&2
+		pacman_prepare_environment >&2
 
 		RES=$(buildah "${PACMAN_CACHE_ARGS[@]}" run "${ARCH_PACMAN_CID}" "bash" "-cx" "${SEARCH}")
 		RES=$(echo "${RES}" | grep -vE '^\s' | sed -E 's/\s+\[.+$//g')

@@ -18,7 +18,6 @@ function download_file() {
 	local OUTFILE="${LOCAL_TMP}/${NAME}"
 	local ARGS=()
 
-	info " * downloading ${NAME} from ${URL}"
 	if [[ -z ${URL} ]]; then
 		die "missing download url."
 	fi
@@ -27,34 +26,24 @@ function download_file() {
 	if [[ -n ${CI-} ]]; then
 		ARGS+=(--verbose)
 	else
-		ARGS+=(--quiet --show-progress --progress=bar:force:noscroll)
+		ARGS+=(--progress=bar)
 	fi
 	if [[ ${FORCE_DOWNLOAD+found} == found ]] || ! [[ -e ${OUTFILE} ]]; then
-		local -i TRY=0
 		local EXARGS=()
 
-		if [[ -z ${HTTP_PROXY-} ]]; then
-			EXARGS+=(--no-proxy)
-		fi
 		if [[ -n ${HTTP_COOKIE-} ]]; then
 			EXARGS+=(--header "Cookie: ${HTTP_COOKIE}")
 		fi
 
 		control_ci group "download with wget"
-		while ! wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=0 --continue >&2; do
-			TRY=$((TRY + 1))
-			if [[ ${TRY} -gt 5 ]]; then
-				rm -f "${OUTFILE}.downloading"
-				die "Cannot download from ${URL} (after 5 try)"
-			fi
-			info_warn "Download failed, retry (${TRY})..."
-		done
-		control_ci groupEnd
+		info " * downloading ${NAME} from ${URL}"
+		x wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=8 --continue >&2
 
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 		info_log "    downloaded."
+		control_ci groupEnd
 	else
-		info_log "    download file cached."
+		info_log "download file ${NAME} cached."
 	fi
 
 	echo "${OUTFILE}"

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# shellcheck source=package/include.sh
+source /usr/lib/lib.sh
+
+ACTION=?
+for A; do
+	if [[ ${A} != -* ]]; then
+		ACTION=${A}
+		break
+	fi
+done
+
+D_ARGS=()
+info_log "[dnf] execute: action=${ACTION} mode=${RUNMODE-???}"
+if [[ ${RUNMODE-} == guest ]]; then
+	{
+		create-base-filesystem /install-root
+		make_bind_mount /install-root
+	} >&2
+
+	mkdir -p /install-root/etc/dnf
+	cp /etc/dnf/dnf.conf /install-root/etc/dnf/dnf.conf # todo: protect
+
+	if ! mountpoint -q /install-root/var/lib/dnf/repos || ! mountpoint -q /install-root/var/cache/dnf; then
+		info_error "invalid host mountpoint!"
+		exit 1
+	fi
+
+	if [[ ${RPMDB} == 'remove' ]]; then
+		shadow_dir /var/lib/rpm
+	fi
+
+	shadow_dir /etc/yum.repos.d
+	cp -r /etc/yum.repos.d/. /install-root/etc/yum.repos.d
+	cd /install-root
+	D_ARGS+=('--installroot=/install-root')
+else
+	cd /
+	D_ARGS+=('--installroot=/')
+fi
+
+if [[ -n ${http_proxy-} ]]; then
+	info_warn "dnf is using proxy ${http_proxy}."
+	D_ARGS+=("--setopt=proxy=${http_proxy}")
+fi
+
+# cat /etc/dnf/dnf.conf
+x /usr/bin/dnf --assumeyes "${D_ARGS[@]}" --nodocs --nogpgcheck "--releasever=${FEDORA_VERSION}" "$@" </dev/null &
+
+trap 'info_error "get sigint"; exit 233' INT
+wait $!
+info_note "dnf complete"
+
+if [[ ${ACTION} == install && ${RUNMODE-} == guest ]]; then
+	cd /install-root
+
+	BUSYBOX_BIN=$(find usr/bin usr/sbin -name busybox -or -name busybox.shared | head -n1 | sed 's/^\.//')
+
+	if [[ -n ${BUSYBOX_BIN} ]]; then
+		info_success "installing busybox (${BUSYBOX_BIN})..."
+		chroot /install-root "/${BUSYBOX_BIN}" --install -s /usr/bin
+	else
+		info_log "no busybox."
+	fi
+fi

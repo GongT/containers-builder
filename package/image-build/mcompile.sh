@@ -23,18 +23,17 @@ function run_compile() {
 
 	info "compile project in '${WORKER}' by '${SCRIPT}'"
 	local SCRIPT_FILE
-	SCRIPT_FILE=$(create_temp_file "mcompile.${PROJECT_ID}")
-	{
-		SHELL_COMMON_LIBS
-		echo "export PROJECT_ID='${PROJECT_ID}'"
-		echo "export SYSTEM_COMMON_CACHE='/cache/common'"
-		echo "export SYSTEM_FAST_CACHE='/cache/fast'"
+
+	EXTRA=$(
+		cat <<-EOF
+			export PROJECT_ID='${PROJECT_ID}'
+			export SYSTEM_COMMON_CACHE='/cache/common'
+			export SYSTEM_FAST_CACHE='/cache/fast'
+		EOF
 		cat "${COMMON_LIB_ROOT}/staff/mcompile/prefix.sh"
-		export_script_variable CI
-		export_script_function is_ci
-		SHELL_USE_PROXY
-		cat "${SCRIPT}"
-	} >"${SCRIPT_FILE}"
+	)
+	SCRIPT_FILE=$(create_temp_file "mcompile.${PROJECT_ID}")
+	construct_child_shell_script guest "${SCRIPT}" "${EXTRA}" >"${SCRIPT_FILE}"
 
 	local MOUNT_SOURCE=()
 	if [[ ${SOURCE_DIRECTORY} != no ]]; then
@@ -44,10 +43,11 @@ function run_compile() {
 	if ! grep -q "group .*" "${SCRIPT_FILE}"; then
 		control_ci group "Compile ${PROJECT_ID}"
 	fi
-	buildah run \
+	buildah_run_shell_script \
 		"--volume=${SYSTEM_COMMON_CACHE}:/cache/common" \
 		"--volume=${SYSTEM_FAST_CACHE}:/cache/fast" \
-		"${MOUNT_SOURCE[@]}" "${WORKER}" bash <"${SCRIPT_FILE}"
+		"${MOUNT_SOURCE[@]}" \
+		"${WORKER}" "${SCRIPT_FILE}"
 	if ! grep -q "group .*" "${SCRIPT_FILE}"; then
 		control_ci groupEnd
 	fi
@@ -55,34 +55,32 @@ function run_compile() {
 function run_install() {
 	local -r SOURCE_IMAGE="$1" TARGET_CONTAINER="$2" PROJECT_ID=$3
 
-	local PREPARE_SCRIPT
-	if [[ $# -gt 3 ]]; then
-		PREPARE_SCRIPT=$(<"$4")
-	elif [[ ! -t 0 ]]; then
-		PREPARE_SCRIPT=$(cat)
-	else
-		PREPARE_SCRIPT="make install"
-	fi
+	local PREPARE_SCRIPT='' EXTRA
 
 	control_ci group "Install Project :: ${PROJECT_ID}"
 	WORKER=$(new_container "install.${PROJECT_ID}" "${SOURCE_IMAGE}")
 	collect_temp_container "${WORKER}"
 
 	local TMPF=$(create_temp_file install.script)
-	{
-		SHELL_SCRIPT_PREFIX
-		SHELL_COMMON_LIBS
-		declare -p PROJECT_ID
-		export_script_variable CI
-		export_script_function is_ci
-		echo "mkdir -p /mnt/install"
-		cat "${COMMON_LIB_ROOT}/staff/mcompile/installer.sh"
-		echo "${PREPARE_SCRIPT}"
-	} >"${TMPF}"
 
+	EXTRA=$(
+		declare -p PROJECT_ID
+		echo 'mkdir -p /mnt/install'
+		echo 'function install_main() {'
+		if [[ $# -gt 3 ]]; then
+			cat "$4"
+		else
+			echo "make install"
+		fi
+		echo '}'
+	)
+
+	construct_child_shell_script guest "${COMMON_LIB_ROOT}/staff/mcompile/installer.sh" "${EXTRA}" >"${TMPF}"
+
+	local TGT
 	TGT="$(create_temp_dir)"
 	echo "install ${TARGET_CONTAINER} with WORKER=${WORKER} [using temp folder ${TGT}]"
-	buildah run "--volume=${TGT}:/mnt/install" "${WORKER}" bash < "${TMPF}"
+	buildah_run_shell_script "--volume=${TGT}:/mnt/install" "${WORKER}" "${TMPF}"
 	buildah add "${TARGET_CONTAINER}" "${TGT}/filesystem.tar" /
 
 	control_ci groupEnd

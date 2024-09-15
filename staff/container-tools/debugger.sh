@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
+use_normal
 
 echo -ne "\ec"
 

@@ -3,12 +3,10 @@ function buildah_cache_start() {
 	local BASE_IMG=$1
 
 	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
-		if [[ ${BASE_IMG} == "fedora" || ${BASE_IMG} == "fedora-minimal" ]]; then
-			BASE_IMG+=":${FEDORA_VERSION}"
-		else
-			info_warn "using Fedora with version tag: ${BASE_IMG}"
-		fi
 		BASE_IMG="registry.fedoraproject.org/${BASE_IMG}"
+	fi
+	if [[ ${BASE_IMG} == "registry.fedoraproject.org/fedora" || ${BASE_IMG} == "registry.fedoraproject.org/fedora-minimal" ]]; then
+		BASE_IMG+=":${FEDORA_VERSION}"
 	fi
 
 	info "start cache branch"

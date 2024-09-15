@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function ensure_mounts() {
 	local I
 	for I in "${PREPARE_FOLDERS[@]}"; do

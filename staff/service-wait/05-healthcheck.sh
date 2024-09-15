@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -r ANNO_MY_HEALTHCHECK="healthcheck"
 function is_image_has_healthcheck() {
 	[[ "${ARGS[*]} ${INPUT_ARGUMENTS[*]}" == *"--healthcheck="* ]]

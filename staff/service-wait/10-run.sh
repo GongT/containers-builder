@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -i SERVICE_START_TIMEOUT_SEC=0
 function timespan_to_us() {
 	if [[ $1 == infinitiy ]]; then

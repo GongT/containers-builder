@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -r LABELID_SYSTEMD="me.gongt.using.systemd"
 
 function inspect_image() {

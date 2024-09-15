@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function wait_by_create_file() {
 	local ACTIVE_FILE=$1 ACTIVE_FILE_ABS ROOT
 	wait_for_conmon_start

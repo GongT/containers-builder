@@ -24,7 +24,7 @@ __concat_wait_files() {
 
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
 		printf '\n## FILE: %s\n' "$(basename "${FILE_PATH}")"
-		tail -n +4 "${FILE_PATH}"
+		cat "${FILE_PATH}"
 		printf '\n'
 	done
 }

@@ -14,6 +14,8 @@ if [[ ${SYSTEM_FAST_CACHE+found} != "found" ]]; then
 	SYSTEM_FAST_CACHE="${SYSTEM_COMMON_CACHE}"
 fi
 declare -xr SYSTEM_COMMON_CACHE SYSTEM_FAST_CACHE
+declare -xr PRIVATE_CACHE="${SYSTEM_COMMON_CACHE}/image-build"
+mkdir -p "${PRIVATE_CACHE}"
 
 if [[ ${REGISTRY_AUTH_FILE+found} != "found" ]]; then
 	declare -xr REGISTRY_AUTH_FILE="/etc/containers/auth.json"

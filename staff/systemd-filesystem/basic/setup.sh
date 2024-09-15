@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-shopt -s nullglob
-
 if [[ -e /etc/fedora-release ]]; then
 	rm -rvf /usr/lib/systemd/system/local-fs.target.wants /usr/lib/systemd/system/graphical.target.wants /usr/lib/systemd/system/multi-user.target.wants
 	rm -rvf /etc/systemd/system/*.target.wants

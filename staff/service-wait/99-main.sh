@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -i WAIT_ERROR=66
 function core_switch() {
 	case "${WAIT_TYPE}" in

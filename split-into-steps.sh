@@ -8,6 +8,7 @@ declare -xr _BUILDSCRIPT_RUN_STEP_=none
 CWD=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 SOURCE_FILE=$(realpath "$1")
 TEMPLATE=$(realpath "$2")
+for arg; do shift; done
 
 # shellcheck source=/dev/null
 source "${SOURCE_FILE}"

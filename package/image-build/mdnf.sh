@@ -1,38 +1,161 @@
 #!/usr/bin/env bash
 
-REPO_CACHE_DIR="${SYSTEM_COMMON_CACHE}/dnf/repos"
-
-mkdir -p "${REPO_CACHE_DIR}" "${SYSTEM_COMMON_CACHE}/dnf/packges"
-
 TMPREPODIR=
 
-declare -ra DNF_RUN_ARGS=(
-	"--volume=${REPO_CACHE_DIR}:/var/lib/dnf/repos"
-	"--volume=${SYSTEM_COMMON_CACHE}/dnf/packges:/var/cache/dnf"
-	"--env=FEDORA_VERSION=${FEDORA_VERSION}"
-	"--cap-add=CAP_SYS_ADMIN"
-)
+function create_dnf_arguments() {
+	local -nr VARREF="$1"
+	if ! variable_is_array "$1"; then
+		die "$1 is not array"
+	fi
+	shift
 
-function _dnf_prep() {
-	if container_exists mdnf; then
-		DNF=$(container_get_id mdnf)
+	VARREF=(
+		"--env=PATH=/usr/local/bin:/usr/bin:/usr/sbin"
+		"--env=RPMDB=${DNF_ENVIRONMENT_RPMDB}"
+		"--cap-add=CAP_SYS_ADMIN" # to mount
+		"--env=FEDORA_VERSION=${FEDORA_VERSION}"
+		"--env=WHO_AM_I=mdnf"
+	)
+
+	if [[ $# -gt 0 ]]; then
+		local SRC
+		SRC=$(realpath -e "$1")
+		local -r IN_ROOT='/install-root'
+		VARREF+=("--env=RUNMODE=guest")
+		VARREF+=("--volume=${SRC}:/install-root")
 	else
-		control_ci group "prepare dnf container"
-		DNF=$(new_container "mdnf" "fedora:${FEDORA_VERSION}")
-		buildah copy "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/dnf.conf" /etc/dnf/dnf.conf
-		buildah copy --chmod=0777 "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/bin.sh" /usr/bin/dnf.sh
+		local -r IN_ROOT=""
+		VARREF+=("--env=RUNMODE=host")
+	fi
+	VARREF+=(
+		"--mount=type=tmpfs,destination=${IN_ROOT}/var/lib/dnf"
+		"--volume=${PRIVATE_CACHE}/dnf/repos:${IN_ROOT}/var/lib/dnf/repos"
+		"--volume=${PRIVATE_CACHE}/dnf/pkgs:${IN_ROOT}/var/cache/dnf"
+	)
+	mkdir -p "${PRIVATE_CACHE}/dnf/repos" "${PRIVATE_CACHE}/dnf/pkgs"
+}
 
-		local WHO_AM_I="dnf:prepare"
-		buildah_run_shell_script "${DNF_RUN_ARGS[@]}" "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/prepare.sh"
+declare _DNF_ENVIRONMENT_CID
+declare -a DNF_ENVIRONMENT_ENABLES=()
+declare -a DNF_ENVIRONMENT_REPOS=()
+declare DNF_ENVIRONMENT_RPMDB=keep
+function dnf_use_environment() {
+	DNF_ENVIRONMENT_ENABLES=()
+	DNF_ENVIRONMENT_REPOS=()
+	DNF_ENVIRONMENT_RPMDB=remove
+	local ARG DNF
+	for ARG; do
+		if [[ $ARG == '--enable='* ]]; then
+			DNF_ENVIRONMENT_ENABLES+=("$(split_assign_argument_value "${ARG}")")
+		elif [[ $ARG == '--repo='* ]]; then
+			DNF_ENVIRONMENT_REPOS+=("$(split_assign_argument_value "${ARG}")")
+		elif [[ $ARG == '--rpmdb=remove' || $ARG == '--rpmdb=keep' ]]; then
+			DNF_ENVIRONMENT_RPMDB=$(split_assign_argument_value "${ARG}")
+		else
+			die "invalid argument: ${ARG}"
+		fi
+	done
+	local CACHE_ID=''
+	CACHE_ID=$(echo "${DNF_ENVIRONMENT_ENABLES[*]} ${DNF_ENVIRONMENT_REPOS[*]} ${DNF_ENVIRONMENT_RPMDB}" | md5sum | awk '{print "dnf-" $1}')
+	info "create dnf environment: ${CACHE_ID} with ${#DNF_ENVIRONMENT_ENABLES[@]} repos in ${#DNF_ENVIRONMENT_REPOS[@]} package, rpmdb=${DNF_ENVIRONMENT_RPMDB}"
+
+	if container_exists "${CACHE_ID}"; then
+		DNF=$(container_get_id "${CACHE_ID}")
+		info_note "use exists: ${DNF}"
+	else
+		control_ci group "prepare new dnf container"
+		DNF=$(new_container "${CACHE_ID}-work" "fedora:${FEDORA_VERSION}")
+		collect_temp_container "${CACHE_ID}-work"
+		buildah copy "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/fs" /
+		buildah config "--env=PATH=/usr/local/bin:/usr/bin:/usr/sbin" "${DNF}"
+
+		local EXTRA TMPSCRIPT=$(create_temp_file "dnf.lib.sh")
+
+		local DNF_REPOS=() FILE
+		for NAME in "${DNF_ENVIRONMENT_REPOS[@]}"; do
+			if [[ ${NAME} == http://* || ${NAME} == https://* ]]; then
+				FILE=$(download_file "${NAME}" "$(basename "${NAME}")")
+				buildah copy "${DNF}" "${FILE}" /opt/repos/
+			elif [[ -e ${NAME} ]]; then
+				buildah copy "${DNF}" "$(realpath -m "${NAME}")" /opt/repos/
+			else
+				die "unknown DNF repo type: ${NAME} (allow rpm/repo file)"
+			fi
+		done
+
+		EXTRA=$(declare -p DNF_ENVIRONMENT_ENABLES)
+		construct_child_shell_script guest "${COMMON_LIB_ROOT}/staff/mdnf/lib.sh" "${EXTRA}" >"${TMPSCRIPT}"
+		buildah copy "${DNF}" "${TMPSCRIPT}" /usr/lib/lib.sh
+
+		local -a CONTAINER_ARGS=()
+		create_dnf_arguments CONTAINER_ARGS
+		buildah_run_shell_script "${CONTAINER_ARGS[@]}" "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/prepare.sh" </dev/null
+		buildah rename "${DNF}" "${CACHE_ID}"
 		control_ci groupEnd
 	fi
 
-	if [[ -n ${http_proxy-} ]]; then
-		info_warn "dnf is using proxy ${http_proxy}."
-		buildah run "${DNF}" sh -c "echo 'proxy=${http_proxy}' >> /etc/dnf/dnf.conf"
-	else
-		buildah run "${DNF}" sh -c "sed -i '/proxy=/d' /etc/dnf/dnf.conf"
+	_DNF_ENVIRONMENT_CID="${DNF}"
+}
+function call_dnf_install() {
+	if ! variable_bounded _DNF_ENVIRONMENT_CID; then
+		die "no call to dnf_use_environment"
 	fi
+	local -r WORKING_CONTAINER="$1" PACKAGE_FILE="$2" POST_SCRIPT="${3-}" DNF="${_DNF_ENVIRONMENT_CID}"
+
+	local TMPSCRIPT ROOT
+
+	if [[ ! -e ${PACKAGE_FILE} ]]; then
+		die "missing list file: ${PACKAGE_FILE}"
+	fi
+
+	local -a PKGS=()
+	read_list_file "${PACKAGE_FILE}" PKGS
+
+	call_dnf_with "${WORKING_CONTAINER}" "${POST_SCRIPT}" install "${PKGS[@]}"
+}
+
+function call_dnf_with() {
+	local -r WORKING_CONTAINER="$1" POST_SCRIPT="$2"
+	local -a CONTAINER_ARGS=() DNF_ARGS=("${@:3}")
+
+	if [[ -n ${POST_SCRIPT} ]]; then
+		if [[ ! -e ${POST_SCRIPT} ]]; then
+			die "missing script file: ${POST_SCRIPT}"
+		fi
+		local POST_SCRIPT_ABS
+		POST_SCRIPT_ABS=$(realpath -e "${POST_SCRIPT}")
+		CONTAINER_ARGS+=("--volume=${POST_SCRIPT_ABS}:/tmp/dnf.postscript.sh:ro")
+	fi
+
+	function _run_group() {
+		local INSTALL_ROOT
+		INSTALL_ROOT=$(buildah mount "${WORKING_CONTAINER}")
+		info_note "working root physical location: ${INSTALL_ROOT}"
+		create_dnf_arguments CONTAINER_ARGS "${INSTALL_ROOT}"
+
+		buildah run "${CONTAINER_ARGS[@]}" "${_DNF_ENVIRONMENT_CID}" \
+			/usr/local/bin/dnf "${DNF_ARGS[@]}"
+
+		buildah unmount "${WORKING_CONTAINER}"
+
+		info_note "DNF run FINISH"
+	}
+
+	alternative_buffer_execute \
+		"run for: ${WORKING_CONTAINER}, script: ${POST_SCRIPT-not present}, cmdline: dnf ${DNF_ARGS[*]}" \
+		_run_group
+	unset -f _run_group
+}
+function call_dnf_direct() {
+	if ! variable_bounded _DNF_ENVIRONMENT_CID; then
+		die "no call to dnf_use_environment"
+	fi
+
+	local -a CONTAINER_ARGS=()
+	create_dnf_arguments CONTAINER_ARGS
+
+	indent_stream buildah run "${CONTAINER_ARGS[@]}" "--env=ACTION=${ACTION}" "${_DNF_ENVIRONMENT_CID}" \
+		/usr/local/bin/dnf "$@"
 }
 
 function dnf_install() {
@@ -63,13 +186,16 @@ function make_base_image_by_dnf() {
 	local CACHE_NAME="$1"
 	local PKG_LIST_FILE="$2"
 
-	info "make base image by fedora dnf, package list file: ${PKG_LIST_FILE}..."
-
+	if [[ -z ${STEP-} ]]; then
+		STEP="复制文件"
+	fi
 	_dnf_hash_cb() {
+		info_log "package list file: ${PKG_LIST_FILE}"
 		cat "${PKG_LIST_FILE}"
 		printf '\n'
 		dnf_list_version "${PKG_LIST_FILE}"
 		printf '\n'
+		info_log "use script file: ${POST_SCRIPT-*not use*}"
 		echo "${POST_SCRIPT-}"
 	}
 	_dnf_build_cb() {
@@ -92,72 +218,6 @@ function run_dnf_with_list_file() {
 	mapfile -t PKGS <"${LST_FILE}"
 	run_dnf "${WORKER}" "${PKGS[@]}"
 }
-function run_dnf() {
-	local WORKING_CONTAINER="$1"
-	shift
-
-	local PACKAGES=("$@")
-	local TMPSCRIPT ROOT
-
-	local DNF # init in _dnf_prep
-
-	function _run_group() {
-		_dnf_prep >&2
-
-		ROOT=$(buildah mount "${WORKING_CONTAINER}")
-		MNT_DNF=$(buildah mount "${DNF}")
-		mkdir -p "${ROOT}/etc/yum.repos.d"
-		rsync -rv "${MNT_DNF}/etc/yum.repos.d/." "${ROOT}/etc/yum.repos.d"
-		rsync -rv "${COMMON_LIB_ROOT}/staff/extra-repos/." "${ROOT}/etc/yum.repos.d"
-		[[ -n ${TMPREPODIR} ]] && [[ -e ${TMPREPODIR} ]] && rsync -rv "${TMPREPODIR}/." "${ROOT}/etc/yum.repos.d"
-		#
-		info_note "using repos: " $(ls "${ROOT}/etc/yum.repos.d")
-		for D in bin sbin lib lib64; do
-			if [[ ! -e "${ROOT}/${D}" ]]; then
-				mkdir -p "${ROOT}/usr/${D}"
-				ln -s "./usr/${D}" "${ROOT}/${D}"
-			fi
-		done
-
-		buildah run "--volume=${ROOT}:/install-root" "${DNF_RUN_ARGS[@]}" "${DNF}" \
-			dnf.sh "${PACKAGES[@]}"
-
-		if [[ -n ${POST_SCRIPT-} ]]; then
-			TMPSCRIPT=$(create_temp_file dnf.script.sh)
-			{
-				declare -p PACKAGES FEDORA_VERSION
-				echo "${POST_SCRIPT}"
-			} >"${TMPSCRIPT}"
-			chmod a+x "${TMPSCRIPT}"
-			local WHO_AM_I="dnf:postscript"
-			buildah_run_shell_script "${WORKING_CONTAINER}" "${TMPSCRIPT}"
-		fi
-		buildah unmount "${WORKING_CONTAINER}"
-		buildah unmount "${DNF}"
-
-		echo "DNF run FINISH"
-	}
-
-	alternative_buffer_execute \
-		"run dnf, install ${#PACKAGES[@]} packages, inside container: ${WORKING_CONTAINER}, postscript: ${POST_SCRIPT:+yes}" \
-		_run_group
-	unset _run_group
-}
-function run_dnf_host() {
-	local ACTION="$1" DNF DNF_CMD
-	shift
-	local PACKAGES=("$@")
-
-	_dnf_prep >&2
-
-	indent_stream buildah run "${DNF_RUN_ARGS[@]}" "--env=ACTION=${ACTION}" "${DNF}" \
-		dnf.sh "${PACKAGES[@]}"
-}
-
-function delete_rpm_files() {
-	local CONTAINER="$1"
-	buildah run "${CONTAINER}" bash -c "rm -rf /var/lib/dnf /var/lib/rpm /var/cache"
-}
 
 function dnf_list_version() {
 	local FILE=$1 PKGS=()
@@ -174,6 +234,10 @@ function dnf() {
 	die "deny run dnf on host!"
 }
 
+function dnf_add_preinstall_package() {
+	download_file
+	echo "${CONTENT}" >"${TMPREPODIR}/${TITLE}.repo"
+}
 function dnf_add_repo_string() {
 	local TITLE=$1 CONTENT=$2
 	if [[ -z ${TMPREPODIR} ]]; then

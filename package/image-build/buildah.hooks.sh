@@ -102,9 +102,13 @@ function buildah() {
 
 			COMMIT_CONFIGS+=("--annotation=${ANNOID_CACHE_PREV_STAGE}-" "--annotation=${ANNOID_CACHE_HASH}-")
 
-			local BASE_FULL_NAME BASE_DIGIST
-			BASE_FULL_NAME=$(image_find_full_name "${LAST_KNOWN_BASE}")
-			BASE_DIGIST=$(image_get_digist "${BASE_FULL_NAME}")
+			local BASE_FULL_NAME= BASE_DIGIST=
+			if [[ -n ${LAST_KNOWN_BASE} ]]; then
+				BASE_FULL_NAME=$(image_find_full_name "${LAST_KNOWN_BASE}")
+			fi
+			if [[ -n ${BASE_FULL_NAME} ]]; then
+				BASE_DIGIST=$(image_get_digist "${BASE_FULL_NAME}")
+			fi
 			LAST_KNOWN_BASE=
 			if [[ -n ${BASE_FULL_NAME} && -n ${BASE_DIGIST} ]]; then
 				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_NAME}=${BASE_FULL_NAME}")
@@ -133,6 +137,7 @@ function buildah() {
 		return
 		;;
 	run)
+		EXARGS+=("--mount=type=tmpfs,destination=/tmp")
 		if [[ ${BUILDAH_EXTRA_ARGS+found} == found ]]; then
 			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
 		fi

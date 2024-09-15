@@ -8,7 +8,7 @@ function __call_array() {
 			"${pre_eval}" "${handler}"
 		fi
 		# info_note "    call ${handler}"
-		try_call_function "${handler}"
+		try "${handler}"
 		if [[ ${ERRNO} -ne 0 ]]; then
 			info_warn "while execute function: ${handler} around ${ERRLOCATION}"
 			return ${ERRNO}

@@ -61,24 +61,19 @@ function make_base_image_by_fedora_pip() {
 
 	mkdir -p "${SYSTEM_COMMON_CACHE}/pip"
 
-	local TMPF
-	TMPF=$(create_temp_file)
-	echo python3 >"${TMPF}"
-	echo python3-pip >>"${TMPF}"
-	if [[ -n "${BUILD_SYS_DEPS_FILE}" ]]; then
-		cat "${BUILD_SYS_DEPS_FILE}" >>"${TMPF}"
+	local TMPLIST=$(create_temp_file) TMPSCRIPT=$(create_temp_file)
+	echo python3 >"${TMPLIST}"
+	echo python3-pip >>"${TMPLIST}"
+	if [[ -n ${BUILD_SYS_DEPS_FILE} ]]; then
+		cat "${BUILD_SYS_DEPS_FILE}" >>"${TMPLIST}"
 	fi
 
 	STEP="安装python和系统依赖"
-	local POST_SCRIPT="_post_act"
-	function _post_act() {
-		deny_proxy buildah run "$1" python3 -m "${PIP_CMD[@]}" --upgrade pip
-		deny_proxy buildah run "$1" python3 -m pip --version
-	}
-	perfer_proxy make_base_image_by_dnf "${NAME}-build" "${TMPF}"
-
-	unset -f _post_act
-	unset POST_SCRIPT
+	cat <<-EOF >"${TMPSCRIPT}"
+		python3 -m "${PIP_CMD[@]}" --upgrade pip
+		python3 -m pip --version
+	EOF
+	make_base_image_by_dnf "${NAME}-build" "${TMPLIST}" "${TMPSCRIPT}"
 
 	STEP="安装pip依赖"
 	function _hash_() {
@@ -98,13 +93,13 @@ function make_base_image_by_fedora_pip() {
 	unset BUILDAH_EXTRA_ARGS
 
 	## make_base_image_by_apk
-	TMPF=$(create_temp_file)
-	echo python3 >"${TMPF}"
-	if [[ -n "${RT_SYS_DEPS_FILE}" ]]; then
-		cat "${RT_SYS_DEPS_FILE}" >>"${TMPF}"
+	TMPLIST=$(create_temp_file)
+	echo python3 >"${TMPLIST}"
+	if [[ -n ${RT_SYS_DEPS_FILE} ]]; then
+		cat "${RT_SYS_DEPS_FILE}" >>"${TMPLIST}"
 	fi
 	STEP="安装运行时系统依赖"
-	perfer_proxy make_base_image_by_dnf "${NAME}" "${TMPF}"
+	perfer_proxy make_base_image_by_dnf "${NAME}" "${TMPLIST}"
 
 	STEP="复制pip安装结果"
 	function _hash_() {

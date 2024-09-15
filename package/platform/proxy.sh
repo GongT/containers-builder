@@ -8,7 +8,7 @@ if [[ -n ${PROXY} && ${PROXY} != http://* && ${PROXY} != https://* ]]; then
 fi
 declare -xr PROXY
 
-info_note "using PROXY="
+info_note "using PROXY=${PROXY-*not set*}"
 
 function SHELL_USE_PROXY() {
 	if [[ ${PROXY+found} == found ]]; then

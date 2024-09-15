@@ -162,21 +162,11 @@ function ensure_symlink() {
 }
 
 function read_list_file() {
-	local FILE=$1 VARNAME=$2 ARR
-	mapfile -t ARR <"${FILE}"
+	local -r FILE=$1
+	local -r VARNAME=$2
+	if ! variable_is_array "${VARNAME}"; then
+		die "variable is not array: ${VARNAME}"
+	fi
 
-	local ARR2=()
-	for I in "${ARR[@]}"; do
-		if [[ -z ${I} ]]; then
-			continue
-		fi
-
-		if [[ ${I} == "#"* ]]; then
-			continue
-		fi
-
-		ARR2+=("$(printf '%q' "${I}")")
-	done
-
-	eval "${VARNAME}=(${ARR2[*]})"
+	sed -E 's/#.*$//g; s/\s+$//g; /^$/d' "${FILE}" | mapfile -t "${VARNAME}"
 }

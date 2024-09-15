@@ -19,6 +19,9 @@ function variable_is_array() {
 function variable_is_map() {
 	[[ $(declare -p "$1" 2>&1) == "declare -"A* ]]
 }
+function variable_bounded() {
+	declare -p "$1" | grep -F " $1=" &>/dev/null
+}
 function variable_exists() {
 	declare -p "$1" &>/dev/null
 }

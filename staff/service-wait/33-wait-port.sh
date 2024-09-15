@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function wait_by_port() {
 	local -r PORT_DEFINE="$1"
 	local -r PORT=${PORT_DEFINE%/*} PROTOCOL=${PORT_DEFINE#*/}

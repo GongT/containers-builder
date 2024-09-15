@@ -100,7 +100,7 @@ function buildah_cache() {
 	LAST_CACHE_COMES_FROM=build
 	local -r CONTAINER_ID="${BUILDAH_NAME_BASE}_from${DONE_STAGE}_to${WORK_STAGE}"
 	new_container "${CONTAINER_ID}" "${BUILDAH_LAST_IMAGE}" >/dev/null
-	try_call_function "${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
+	try "${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
 	if [[ $ERRNO -ne 0 ]]; then
 		info_error "build callback '${BUILDAH_BUILD_CALLBACK}' failed to run with $ERRNO ($ERRLOCATION)"
 		dedent

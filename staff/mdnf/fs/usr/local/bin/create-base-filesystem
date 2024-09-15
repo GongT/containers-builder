@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ROOT=$1
+echo "ensure systemroot at $ROOT"
+for D in bin sbin lib lib64; do
+	if [[ ! -e "${ROOT}/${D}" ]]; then
+		echo "    fix directory: ${D}"
+		mkdir -p "${ROOT}/usr/${D}"
+		ln -s "./usr/${D}" "${ROOT}/${D}"
+	fi
+done
+
+mkdir -p "${ROOT}/var" "${ROOT}/var/spool/mail"
+
+if [[ ! -e "${ROOT}/var/run" ]]; then
+	echo "    fix directory: run"
+	mkdir -p "${ROOT}/run"
+	ln -s "../run" "${ROOT}/var/run"
+fi

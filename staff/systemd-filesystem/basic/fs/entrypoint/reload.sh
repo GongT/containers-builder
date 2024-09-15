@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 echo "reloading..."
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"

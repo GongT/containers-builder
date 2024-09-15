@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 declare -r HOSTFILE=/etc/hosts
 
 function info() {

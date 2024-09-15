@@ -8,19 +8,15 @@ declare -r __PRAGMA_ONCE_FUNCTIONS_INSTALL_SH=yes
 # shellcheck source=package/include.sh disable=SC2312
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/include.sh"
 
-pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
-
-source "./container-install/networking.sh"
-source "./container-install/pod.sh"
-source "./container-install/environments.sh"
-source "./container-install/volumes.sh"
-source "./container-install/systemd.sh"
-source "./container-install/systemd.service.sh"
-source "./container-install/image-pull.sh"
-source "./container-install/install-script.sh"
-source "./container-install/uninstall.sh"
-source "./container-install/capability.sh"
-source "./container-install/services.sh"
-source "./container-install/service-wait.sh"
-
-popd &>/dev/null
+source "${COMMON_LIB_ROOT}/package/container-install/networking.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/pod.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/environments.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/volumes.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/systemd.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/systemd.service.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/image-pull.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/install-script.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/uninstall.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/capability.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/services.sh"
+source "${COMMON_LIB_ROOT}/package/container-install/service-wait.sh"

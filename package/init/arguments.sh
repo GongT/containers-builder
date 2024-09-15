@@ -222,5 +222,26 @@ function _arg_set() {
 	done
 	echo -ne "\e[0m"
 }
+function split_assign_argument_value() {
+	printf '%s' "${1#*=}"
+}
+function split_assign_argument_key() {
+	printf '%s' "${1%%=*}"
+}
+function is_long_argument() {
+	[[ ${1:0:2} == '--' && ${#1} -gt 2 ]]
+}
+function is_short_argument() {
+	[[ ${1:0:1} == '-' && ${1:1:1} != '-' && ${1:1:1} != '=' && ${#1} -gt 1 ]]
+}
+function is_combind_short_argument() {
+	is_short_argument "$1" && [[ ${#1} -gt 2 && ${1:2:1} != '=' ]]
+}
+function is_assign_argument() {
+	[[ $1 == -*=* ]]
+}
+function is_flag_argument() {
+	[[ $1 == -* && $1 != -*=* ]]
+}
 
 arg_flag _ACTION_HELP help "show help"

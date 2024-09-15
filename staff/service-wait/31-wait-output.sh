@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function wait_by_output() {
 	local WAIT_OUTPUT=$1
 

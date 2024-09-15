@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -i SERVICE_START_TIMEOUT_SEC=0
 function get_service_timeout() {
 	if [[ ${SERVICE_START_TIMEOUT_SEC} -ne 0 ]]; then

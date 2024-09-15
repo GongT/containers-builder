@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 function wait_by_sleep() {
 	local -r WAIT_TIME=$1
 	local -i I

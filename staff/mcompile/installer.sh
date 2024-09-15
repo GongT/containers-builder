@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 ### this file execute inside container
 
 declare -rx INSTALL_TARGET="/mnt/install"
@@ -134,3 +132,5 @@ function collect_binary_dependencies() {
 		done
 	done
 }
+
+install_main

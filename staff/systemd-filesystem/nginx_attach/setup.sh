@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -Eeuo pipefail
-
 if [[ -z ${NGINX_CONFIG-} ]]; then
 	NGINX_CONFIG=/opt/nginx.conf
 fi

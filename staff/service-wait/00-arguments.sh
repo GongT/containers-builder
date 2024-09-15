@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -ra INPUT_ARGUMENTS=("$@")
 declare -a ARGS=()
 function add_run_argument() {

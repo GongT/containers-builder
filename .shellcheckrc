@@ -1,3 +1,5 @@
+shell=bash
+
 # foo appears unused. Verify it or export it.
 disable=SC2034
 
@@ -13,7 +15,12 @@ disable=SC2002
 # When used with -p, -m only applies to the deepest directory.
 disable=SC2174
 
-shell=bash
+# Expressions don't expand in single quotes, use double quotes for that.shellcheck
+disable=SC2016
+
+# XXX references arguments, but none are ever passed
+disable=SC2120
+
 enable=add-default-case
 enable=avoid-nullary-conditions
 enable=check-extra-masked-returns

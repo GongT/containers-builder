@@ -53,7 +53,7 @@ function __exit_delete_temp_files() {
 	local TEMP_TO_DELETE I
 	mapfile -t TEMP_TO_DELETE <"${TMP_REGISTRY_FILE}"
 
-	info_note "destroy temporary content at ${TMPDIR} (set NO_DELETE_TEMP=yes to prevent)"
+	info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
 	rm -rf "${TMPDIR}"
 
 	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
@@ -94,13 +94,13 @@ function __exit_delete_container() {
 		return
 	fi
 
-	control_ci group "deleting temporary containers and images..."
-	info_note "set NO_DELETE_TEMP=yes to prevent"
+	control_ci group "deleting ${#TODEL_IMG[@]} containers and ${#TODEL_CTR[@]} images..."
+	info_note "\t(set NO_DELETE_TEMP=yes to prevent)"
 	if [[ ${#TODEL_CTR[@]} -ne 0 ]]; then
-		x buildah rm "${TODEL_CTR[@]}" >/dev/null
+		xbuildah rm "${TODEL_CTR[@]}" >/dev/null
 	fi
 	if [[ ${#TODEL_IMG[@]} -ne 0 ]]; then
-		x podman rmi "${TODEL_IMG[@]}" >/dev/null
+		xpodman rmi "${TODEL_IMG[@]}" >/dev/null
 	fi
 	control_ci groupEnd
 }

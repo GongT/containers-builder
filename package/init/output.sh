@@ -1,38 +1,9 @@
 #!/usr/bin/env bash
 
-INSIDE_GROUP=
+declare -i INSIDE_GROUP=
 SAVED_INDENT=()
 export _CURRENT_INDENT=""
 PRINT_STACK=yes
-
-function die() {
-	local LASTERR=$?
-	control_ci groupEnd
-	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
-	if [[ ${PRINT_STACK-no} == yes ]]; then
-		callstack 2
-	fi
-	control_ci error "$*"
-	if [[ $LASTERR -gt 0 ]]; then
-		exit $LASTERR
-	elif [[ ${ERRNO-} -gt 0 ]]; then
-		exit $ERRNO
-	else
-		exit 1
-	fi
-}
-
-function print_failure() {
-	info_error "$@"
-	return 66
-}
-
-function export_script_variable() {
-	declare -p "$@" 2>/dev/null || true
-}
-function export_script_function() {
-	declare -fp "$@" 2>/dev/null || true
-}
 
 function control_ci() {
 	local -r ACTION="$1"
@@ -67,11 +38,8 @@ function control_ci() {
 		fi
 		;;
 	group)
-		if [[ -n ${INSIDE_GROUP} ]]; then
-			die "not allow nested output group"
-		fi
-		INSIDE_GROUP=yes
-		if [[ -n ${GITHUB_ACTIONS-} ]]; then
+		INSIDE_GROUP=$((INSIDE_GROUP + 1))
+		if [[ ${INSIDE_GROUP} -eq 1 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then
 			save_indent
 			echo "::group::$*" >&2
 		else
@@ -80,11 +48,11 @@ function control_ci() {
 		fi
 		;;
 	groupEnd)
-		if [[ -z ${INSIDE_GROUP} ]]; then
+		if [[ ${INSIDE_GROUP} -eq 0 ]]; then
 			return # must allow, die() rely on this
 		fi
-		INSIDE_GROUP=
-		if [[ -n ${GITHUB_ACTIONS-} ]]; then
+		INSIDE_GROUP=$((INSIDE_GROUP - 1))
+		if [[ ${INSIDE_GROUP} -eq 0 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then
 			restore_indent
 			echo "::endgroup::" >&2
 		else
@@ -96,38 +64,6 @@ function control_ci() {
 		die "[CI] not support action: ${ACTION}"
 		;;
 	esac
-}
-
-function SHELL_SCRIPT_PREFIX() {
-	echo '#!/usr/bin/env bash'
-	declare -fp use_strict use_normal
-	echo 'use_normal'
-}
-
-function SHELL_COMMON_LIBS() {
-	echo '
-declare _CURRENT_INDENT=""
-# function try_resolve_file() {
-# 	echo "[in container] $*"
-# }
-'
-	declare -pf callstack filtered_jq json_array json_array_get_back json_map json_map_get_back \
-		die indent dedent x trim \
-		info info_note info_log info_warn info_success info_error info_bright info_stream \
-		variable_is_array variable_is_map variable_exists is_tty function_exists \
-		global_error_trap set_error_trap function_exists try_call_function
-
-	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
-	declare -p microsecond_unit
-
-	declare -p JQ_ARGS
-	if [[ -n ${CI-} ]]; then
-		declare -p CI
-	else
-		echo "unset CI"
-	fi
-	echo 'set_error_trap'
-	cat "${COMMON_LIB_ROOT}/staff/tools/shell-tiny-lib.sh"
 }
 
 function info() {
@@ -200,7 +136,7 @@ function filtered_jq() {
 function json_map() {
 	local -nr VARREF=$1
 	if ! variable_is_map "$1"; then
-		echo "variable is not a map: $1" >&2
+		info_error "variable is not map: $(declare -p "${VARNAME}" 2>&1)"
 		return 1
 	fi
 	local ARGS=()
@@ -212,7 +148,7 @@ function json_map() {
 function json_map_get_back() {
 	local -r VARNAME="$1" JSON="$2"
 	if ! variable_is_map "${VARNAME}"; then
-		echo "variable is not a map: ${VARNAME}" >&2
+		info_error "variable is not map: $(declare -p "${VARNAME}" 2>&1)"
 		return 1
 	fi
 
@@ -235,8 +171,10 @@ function json_array() {
 function json_array_get_back() {
 	local -r _VARNAME="$1" JSON="$2"
 
-	if ! variable_is_map "${_VARNAME}"; then
-		die "variable is not array: ${VARNAME}"
+	if ! variable_is_array "${_VARNAME}"; then
+		info_error "variable is not array: $(declare -p "${_VARNAME}" 2>&1)"
+		callstack 0
+		return 1
 	fi
 
 	local -i SIZE i
@@ -294,39 +232,71 @@ function restore_cursor_position() {
 	if ! get_cursor_line; then
 		return 0
 	fi
-	local -i SAVED=${CURSOR_LINE}
+	local -i SAVED=${CURSOR_LINE} CLEAR=${1-1}
 	printf '\e[u' >&2
 	if get_cursor_line && [[ $CURSOR_LINE -gt 1 ]]; then
-		printf '\e[J' >&2
+		if [[ ${CLEAR} -ne 0 ]]; then
+			printf '\e[J' >&2
+		fi
 	else
-		printf '\e[%d;1H\e[K' ${SAVED} ${SAVED} >&2
+		printf '\e[%d;1H' ${SAVED} ${SAVED} >&2
+		if [[ ${CLEAR} -ne 0 ]]; then
+			printf '\e[K' >&2
+		fi
 	fi
+}
+function soft_clear() {
+	local -i LINES=10
+	if ! LINES=$(tput lines); then
+		LINES=10
+	fi
+	for ((i = 1; i < LINES; i++)); do
+		printf '\n'
+	done
 }
 
 function alternative_buffer_execute() {
 	local TITLE="$1" RET
 	shift
-	if ! is_ci && is_tty && [[ ${ALTERNATIVE_BUFFER_ENABLED} == no ]]; then
-		info_warn "$TITLE"
-		printf '\e[?1049h'
+
+	if ! is_ci && is_tty && [[ ${ALTERNATIVE_BUFFER_ENABLED} == no ]] && [[ ${ALLOW_ALTERNATIVE_BUFFER-yes} == yes ]]; then
 		ALTERNATIVE_BUFFER_ENABLED=yes
 		local TMP_OUT
-		TMP_OUT=$(create_temp_file dnf.out)
+		TMP_OUT=$(create_temp_file "screen.output.txt")
+		save_cursor_position
+		info "save log to ${TMP_OUT}"
 		save_indent
 
-		try_call_function "$@" 2>&1 | tee "${TMP_OUT}"
+		info_warn "$TITLE"
+		restore_cursor_position
+		{
+			stty -echo
+			tput smcup
+			tput home
+			tput ed
+		}
+		info_log "$TITLE"
 
-		restore_indent
+		try "$@" &> >(tee "${TMP_OUT}")
+		echo "ERRNO=$ERRNO ERRLOCATION=$ERRLOCATION"
+
 		ALTERNATIVE_BUFFER_ENABLED=no
-		printf '\e[?1049l\e[J\e[1F'
+		{
+			stty echo
+			tput rmcup
+			tput ed
+		} >&2
+		restore_indent
 
 		if [[ ${ERRNO} -eq 0 ]]; then
-			info_log "${TITLE}"
-			info_note "store output to tempfile: $TMP_OUT"
+			collect_temp_file "${TMP_OUT}"
+			info_success "[screen] ${TITLE} (command '$*' return ${ERRNO})"
+			info_note "[screen]     to see output, set ALLOW_ALTERNATIVE_BUFFER=no"
 			return 0
 		else
-			info_error "${TITLE}"
-			cat "${TMP_OUT}"
+			info_error "[screen:${ERRNO}] ${TITLE}"
+			indent_stream cat "${TMP_OUT}"
+			info_error "[screen:${ERRNO}] ${TITLE}"
 			return ${ERRNO}
 		fi
 	else
@@ -335,4 +305,31 @@ function alternative_buffer_execute() {
 		control_ci groupEnd
 	fi
 	unset _run_group
+}
+function term_reset() {
+	control_ci groupEnd
+	{
+		stty echo
+		tput oc
+		tput rs2
+		printf '\e[s'
+		tput rmcup
+		printf '\e[u'
+		printf "\r\e[K"
+	} >&2
+}
+
+function pause() {
+	local _ msg=${1-'press any key.'}
+	read -r -p "${msg}" _
+	tput cuu1
+}
+
+function hyperlink() {
+	local NAME=$1 URL=$2 ID=${3-}
+	if [[ "$ID" ]]; then
+		ID="id=$ID"
+	fi
+
+	printf '\e[4m\e]8;%s;%s\e\\%s\e]8;;\e\\\e[0m' "$ID" "$URL" "$NAME"
 }

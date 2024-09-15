@@ -71,11 +71,7 @@ function _create_unit_name() {
 
 function _create_common_lib() {
 	local COMMONLIB
-	COMMONLIB=$(
-		SHELL_SCRIPT_PREFIX
-		SHELL_COMMON_LIBS
-		SHELL_USE_PROXY
-	)
+	COMMONLIB=$(construct_child_shell_script host "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh")
 	write_file "${SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
 }
 

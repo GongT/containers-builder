@@ -1,16 +1,25 @@
 {
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
 	"bashIde.includeAllWorkspaceSymbols": true,
 	"bashIde.backgroundAnalysisMaxFiles": 5000,
-	"terminal.integrated.defaultProfile.linux": "test",
+	// "terminal.integrated.defaultProfile.linux": "test",
 	"bashIde.shfmt.languageDialect": "bash",
 	"bashIde.shfmt.simplifyCode": true,
 	"search.exclude": {
 		"**/local-history": true,
 		"**/*.bak/**": true,
+		"/tests": true,
 	},
+	"bashIde.globPattern": "package/**/*@(.sh|.inc)",
+	"bashIde.logLevel": "debug",
 	"terminal.integrated.profiles.linux": {
 		"test": {
-			"args": ["test@localhost", "-t"],
+			"args": [
+				"test@localhost",
+				"-t"
+			],
 			"icon": "terminal-bash",
 			"path": "ssh",
 			"color": "terminal.ansiGreen",
@@ -19,11 +28,14 @@
 			}
 		},
 		"bash": {
-			"args": ["--login", "-i"],
+			"args": [
+				"--login",
+				"-i"
+			],
 			"icon": "terminal-bash",
 			"path": "bash"
 		},
-		"pwsh":null,
+		"pwsh": null,
 		"unshare": null,
 		"JavaScript Debug Terminal": null,
 	},

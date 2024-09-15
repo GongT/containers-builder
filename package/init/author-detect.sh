@@ -4,9 +4,9 @@ function detect_author() {
 	else
 		AUTHOR="${USER:-nobody}@$(hostname)"
 	fi
-	declare -g AUTHOR
 }
 
 if [[ -z ${AUTHOR-} ]]; then
 	detect_author
 fi
+export AUTHOR

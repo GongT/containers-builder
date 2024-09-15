@@ -23,10 +23,13 @@ function image_get_digist() {
 function image_find_full_name() {
 	local NAME_PART=$1 OUT LIST
 
+	if [[ -z ${NAME_PART} ]]; then
+		return
+	fi
+
 	if xpodman_capture image inspect "${NAME_PART}"; then
 		OUT="$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF "image not known" "${MANAGER_TMP_STDERR}"; then
-		echo "${NAME_PART}"
 		return
 	else
 		error_with_manager_output
@@ -34,7 +37,6 @@ function image_find_full_name() {
 
 	LIST=$(jq --raw-output --null-input '$ARGS.positional[0][0].NamesHistory + .[0].RepoTags | .[]' --jsonargs "${OUT}" | sort | uniq)
 	if [[ -z ${LIST} ]]; then
-		echo "${NAME_PART}"
 		return
 	fi
 	if echo "${LIST}" | grep -vqF ':latest'; then

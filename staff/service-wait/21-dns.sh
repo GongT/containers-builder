@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-set -Eeuo pipefail
-
 declare -i DNS_TIMEOUT=$(cat /etc/resolv.conf | grep timeout | sed 's/.*timeout://g; s/\s.*$//g')
 if [[ ${DNS_TIMEOUT} -lt 3 ]]; then
 	DNS_TIMEOUT=3
