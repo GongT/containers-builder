@@ -70,8 +70,7 @@ function parse_file_sections() {
 parse_file_sections
 
 function create_section() {
-	python3 "${COMMON_LIB_ROOT}/staff/build-steps/generate-section.py" "${STEP_CONTENT}" "${STEPDEF[index]}" "${STEPDEF[title]}" \
-		"_BUILDSCRIPT_RUN_STEP_=${STEPDEF[name]}:${STEPDEF[index]}" \
+	python3 "${COMMON_LIB_ROOT}/staff/build-steps/generate-section.py" "${STEP_CONTENT}" "${STEPDEF[name]}" "${STEPDEF[index]}" "${STEPDEF[title]}" \
 		| sed -u "s/^/${STEP_INDENT}/"
 }
 
