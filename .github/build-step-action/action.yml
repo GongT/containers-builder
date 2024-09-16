@@ -1,0 +1,5 @@
+name: 'Pick Podman Binary'
+description: 'Download podman binary by docker'
+runs:
+  using: 'docker'
+  image: 'docker://quay.io/podman/stable'

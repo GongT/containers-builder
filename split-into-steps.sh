@@ -1,13 +1,22 @@
-if [[ $# -ne 2 ]]; then
-	echo "Usage: $0 <source-file> <template.yaml>"
+if [[ $# -ne 3 ]]; then
+	echo "Usage: $0 <source-file> <template.yaml> <output.yaml>"
 	exit 1
 fi
+
+ENV_VARS=()
+for var in $(compgen -e); do
+	if [[ $(type -t "$var") == "function" ]]; then
+		continue
+	fi
+	ENV_VARS+=("$var")
+done
 
 declare -xr _BUILDSCRIPT_RUN_STEP_=none
 
 LIBDIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 SOURCE_FILE=$(realpath "$1")
 TEMPLATE=$(realpath "$2")
+OUTPUT_FILE=$(realpath -m "$3")
 for arg; do shift; done
 
 SOURCE_FILE_REL=$(realpath "--relative-to=$(pwd)" "${SOURCE_FILE}")
@@ -70,7 +79,7 @@ DIR=$(dirname "${CURRENT_FILE}")
 REL_DIR=$(realpath "--relative-to=$MONO_ROOT_DIR" "${DIR}")
 
 info_success "collected ${#STEPS_DEFINE[@]} steps"
-{
+OUTPUT=$(
 	echo "${FILE_PREFIX}"
 	printf "  SOURCE_FILE: %s\n" "${SOURCE_FILE_REL}"
 	printf "  PROJECT_DIR: %s\n" "${REL_DIR}"
@@ -82,4 +91,10 @@ info_success "collected ${#STEPS_DEFINE[@]} steps"
 		create_section
 	done
 	echo "${FILE_SUFFIX}"
-}
+)
+
+for var in "${ENV_VARS[@]}"; do
+	OUTPUT=${OUTPUT//"{{$var}}"/${!var}}
+done
+
+write_file --mode 0644 "${OUTPUT_FILE}" "${OUTPUT}"

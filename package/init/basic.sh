@@ -40,11 +40,11 @@ function is_ci() {
 
 function _check_ci_env() {
 	if is_ci; then
-		info_note "CI=${CI}"
+		info "run ci build mode"
 		export CI
 	else
 		unset CI
-		info_note "CI=*not set*"
+		info "not ci build mode"
 	fi
 }
 

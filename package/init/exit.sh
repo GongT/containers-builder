@@ -28,9 +28,6 @@ function _MAIN_exit_handler() {
 	set +x
 	set +Eeuo pipefail
 
-	_CURRENT_INDENT=''
-	SAVED_INDENT=()
-
 	term_reset
 
 	if [[ ${_EXIT_CODE} -eq 0 ]]; then

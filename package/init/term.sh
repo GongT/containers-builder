@@ -90,16 +90,20 @@ function alternative_buffer_execute() {
 	unset _run_group
 }
 function term_reset() {
-	control_ci groupEnd
-	{
-		stty echo
-		tput oc
-		tput rs2
-		printf '\e[s'
-		tput rmcup
-		printf '\e[u'
-		printf "\r\e[K"
-	} >&2
+	INSIDE_GROUP=0
+	_CURRENT_INDENT=''
+	SAVED_INDENT=()
+	if is_tty 2 && ! is_ci; then
+		{
+			stty echo
+			tput oc
+			tput rs2
+			printf '\e[s'
+			tput rmcup
+			printf '\e[u'
+			printf "\r\e[K"
+		} >&2
+	fi
 }
 
 function pause() {

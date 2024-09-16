@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
 if [[ -n ${RUNNER_TEMP-} ]]; then
-	TMPDIR="${RUNNER_TEMP}/"
+	TMPDIR="${RUNNER_TEMP}"
 else
 	if [[ -n ${XDG_RUNTIME_DIR-} ]]; then
 		TMPDIR="${XDG_RUNTIME_DIR}/tmp"
 	elif [[ -z ${TMPDIR-} ]] || [[ ${TMPDIR} == '/tmp' ]]; then
 		TMPDIR="${SYSTEM_FAST_CACHE}/tmp"
 	fi
+	TMPDIR=$(realpath -m "$TMPDIR/container-builder/${PROJECT_NAME}.$(date +%Y%m%d%H%M%S)")
 fi
 
-TMPDIR=$(realpath -m "$TMPDIR/container-builder/${PROJECT_NAME}.$(date +%Y%m%d%H%M%S)")
 mkdir -p "${TMPDIR}"
 declare -xr TMPDIR
 
@@ -53,8 +53,10 @@ function __exit_delete_temp_files() {
 	local TEMP_TO_DELETE I
 	mapfile -t TEMP_TO_DELETE <"${TMP_REGISTRY_FILE}"
 
-	info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
-	rm -rf "${TMPDIR}"
+	if ! is_ci; then
+		info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
+		rm -rf "${TMPDIR}"
+	fi
 
 	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
 		info_note "no extra temporary files"
