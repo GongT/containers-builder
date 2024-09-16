@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function image_get_id() {
+function image_get_digist() {
 	podman image inspect --format '{{.Id}}' "${IMAGE_TO_PULL}" 2>/dev/null | grep -ioE '^[0-9a-f]{12}' || true
 }
 function log() {
@@ -10,7 +10,7 @@ function log() {
 declare -r IMAGE_TO_PULL=$1 PULL_POLICY=$2
 log "start pull image '${IMAGE_TO_PULL}' with policy '${PULL_POLICY}'"
 
-OLD_ID=$(image_get_id)
+OLD_ID=$(image_get_digist)
 if [[ ${PULL_POLICY} != "always" ]]; then
 	if [[ -n ${OLD_ID} ]]; then
 		log "done, exists: ${OLD_ID}"
@@ -65,7 +65,7 @@ done
 
 systemd-notify "--status=pull complete"
 
-NEW_ID=$(image_get_id)
+NEW_ID=$(image_get_digist)
 
 if [[ ${OLD_ID} == "${NEW_ID}" ]]; then
 	log "image is up to date: ${OLD_ID}"
@@ -81,7 +81,7 @@ if [[ ${SKIP_REMOVE+found} != found ]]; then
 		| awk '{print $3}' \
 		| while read -r IMAGE_ID; do
 			systemd-notify "--status=[${TRIES}/${MAX_TRY}] pull ${IMAGE_TO_PULL}" "EXTEND_TIMEOUT_USEC=$((30 * 1000000))"
-			podman rmi "${IMAGE_ID}" || true
+			podman image rm "${IMAGE_ID}" || true
 		done
 fi
 

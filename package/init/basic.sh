@@ -40,11 +40,11 @@ function is_ci() {
 
 function _check_ci_env() {
 	if is_ci; then
-		info "run ci build mode"
+		info "[CI] dectected CI environment"
 		export CI
 	else
 		unset CI
-		info "not ci build mode"
+		info "[CI] no CI environment"
 	fi
 }
 
@@ -74,4 +74,10 @@ function export_array() {
 		printf '\t%q\n' "$@"
 	fi
 	printf ')\n'
+}
+
+function hash_string() {
+	local MOUT
+	MOUT=$(echo "$1" | md5sum "${HASH_TMP}")
+	echo "${MOUT}" | awk '{print $1}'
 }

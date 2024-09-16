@@ -49,7 +49,7 @@ function cache_try_pull() {
 
 	if [[ $ERRNO -eq 0 ]]; then
 		local IMAGE=$(<"$MANAGER_TMP_STDOUT")
-		if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]] && is_id_digist "${IMAGE}"; then
+		if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]] && is_digist "${IMAGE}"; then
 			info_log "  - name local image to match cache name."
 			xpodman image tag "${IMAGE}" "${NAME}"
 		fi

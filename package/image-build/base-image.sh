@@ -1,6 +1,7 @@
 declare LAST_KNOWN_BASE=
 function buildah_cache_start() {
 	local BASE_IMG=$1
+	local RESULT_ID BASE_NAME
 
 	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
 		BASE_IMG="registry.fedoraproject.org/${BASE_IMG}"
@@ -9,16 +10,16 @@ function buildah_cache_start() {
 		BASE_IMG+=":${FEDORA_VERSION}"
 	fi
 
-	info "start cache branch"
+	info_success "\nCache Branch Start"
 	if [[ ${BASE_IMG} == scratch ]]; then
 		LAST_KNOWN_BASE=
 		info_note "  - using empty base"
-		BUILDAH_LAST_IMAGE="scratch"
+		record_last_image "scratch"
 		return
 	fi
 
-	BUILDAH_LAST_IMAGE=$(image_find_id "${BASE_IMG}")
-	if [[ -n ${BUILDAH_LAST_IMAGE} ]]; then
+	RESULT_ID=$(image_find_digist "${BASE_IMG}")
+	if [[ -n ${RESULT_ID} ]]; then
 		if is_ci; then
 			if [[ ${NO_PULL_BASE-no} != yes ]]; then
 				info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE}"
@@ -29,14 +30,17 @@ function buildah_cache_start() {
 			fi
 		fi
 
-		LAST_KNOWN_BASE=$(image_find_full_name "${BASE_IMG}")
-		info_note "  - using exists base: ${LAST_KNOWN_BASE} ($BUILDAH_LAST_IMAGE)"
-		return
+		info_note "  - using exists base: $RESULT_ID"
+	else
+		info_note "  - using base not exists, pull it: ${BASE_IMG}"
+		RESULT_ID=$(xpodman image pull "${BASE_IMG}")
 	fi
 
-	info_note "  - using base not exists, pull it: ${BASE_IMG}"
-	BUILDAH_LAST_IMAGE=$(xpodman image pull "${BASE_IMG}")
-	LAST_KNOWN_BASE=$(image_find_full_name "${BUILDAH_LAST_IMAGE}")
+	record_last_image "${RESULT_ID}"
+
+	BASE_NAME=$(image_find_full_name "${RESULT_ID}")
+	record_last_base_name "${BASE_NAME}"
+	info_note "  - full name: ${BASE_NAME}"
 }
 
 # function _repo_query() {

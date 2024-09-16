@@ -1,15 +1,22 @@
-declare _BUILDSCRIPT_RUN_STEP_
+# '' - 正常生成
+# none - 跳过所有步骤
+# xxx:3 - 只运行cacheid是xxx的第3个步骤
+declare _BUILDSCRIPT_RUN_STEP_ # no =
+
 declare __SOME_STEP_RUN=no
 declare -a STEPS_DEFINE=()
 
 function is_recording_steps() {
-	[[ ${_BUILDSCRIPT_RUN_STEP_-} == 'none' ]]
+	[[ ${_BUILDSCRIPT_RUN_STEP_} == 'none' ]]
+}
+function is_normal_running() {
+	[[ ${_BUILDSCRIPT_RUN_STEP_} == '' ]]
 }
 
 function skip_this_step() {
 	local -r NAME=$1
 	local -ir INDEX=${_CURRENT_STAGE_STORE[${NAME}]}
-	if [[ -z ${_BUILDSCRIPT_RUN_STEP_} || ${_BUILDSCRIPT_RUN_STEP_} == "${NAME}:${INDEX}" ]]; then
+	if is_normal_running || [[ ${_BUILDSCRIPT_RUN_STEP_} == "${NAME}:${INDEX}" ]]; then
 		__SOME_STEP_RUN=yes
 		return 1
 	else
@@ -18,7 +25,7 @@ function skip_this_step() {
 }
 
 function should_quit_after_this_step() {
-	[[ ${__SOME_STEP_RUN} == yes ]]
+	! is_normal_running && ! is_recording_steps && [[ ${__SOME_STEP_RUN} == yes ]]
 }
 
 function commit_step_section() {
@@ -53,10 +60,62 @@ function __check_known_step_title() {
 	fi
 }
 
-if is_recording_steps; then
-	:
-elif [[ -n ${_BUILDSCRIPT_RUN_STEP_+f} ]]; then
-	register_exit_handler __check_known_step_title
-else
+function __print_steps_summary() {
+	info "summary:"
+	info_log "    Base Image: ${BASE_IMAGE_NAME-*missing*}"
+	info "recorded steps:"
+	for JSON in "${STEPS_DEFINE[@]}"; do
+		local -A STEPDEF=()
+		json_map_get_back "STEPDEF" "${JSON}"
+		info_log "[${STEPDEF[name]}:${STEPDEF[index]}] ${STEPDEF[title]}"
+		info_note "    from: ${STEPDEF[prev_image]}"
+		info_note "    tree_base: ${STEPDEF[cur_image]}"
+	done
+}
+
+if [[ -z ${_BUILDSCRIPT_RUN_STEP_-} ]]; then
+	info "[run mode] complate build"
 	_BUILDSCRIPT_RUN_STEP_=''
+elif is_recording_steps; then
+	info "[run mode] recording steps"
+	register_exit_handler __print_steps_summary
+else
+	info "[run mode] single step ($_BUILDSCRIPT_RUN_STEP_)"
+	register_exit_handler __check_known_step_title
 fi
+
+function record_last_image() {
+	if [[ $1 == -f ]]; then
+		control_ci set-env "LAST_BUILT_IMAGE_ID" "$2"
+		return
+	fi
+	local _ID=$1
+
+	if ! is_long_digist "${_ID}" && [[ ${_ID} != 'scratch' ]]; then
+		_ID=$(image_get_long_id "${_ID}")
+	fi
+
+	control_ci set-env "LAST_BUILT_IMAGE_ID" "${_ID}"
+}
+function get_last_image_id() {
+	if variable_exists LAST_BUILT_IMAGE_ID; then
+		printf '%s' "${LAST_BUILT_IMAGE_ID}"
+	else
+		info_error "no last step image id"
+		return 1
+	fi
+}
+
+function record_last_base_name() {
+	local -r NAME=$1
+	control_ci set-env "BASE_IMAGE_NAME" "${NAME}"
+}
+
+function get_last_base_name() {
+	if variable_exists BASE_IMAGE_NAME; then
+		printf '%s' "${BASE_IMAGE_NAME}"
+	else
+		info_error "no known base image id"
+		return 1
+	fi
+}

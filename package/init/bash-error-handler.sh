@@ -25,7 +25,7 @@ function callstack() {
 			echo "  ${stack_index}: ${FUNCNAME[${stack_index}]}() at ${F_NAME}:${BASH_LINENO[$((stack_index - 1))]}" >&2
 		fi
 	done
-	echo "stack finish" >&2
+	echo "(stack finish)" >&2
 }
 
 function try_resolve_file() {
@@ -95,6 +95,24 @@ function set_error_trap() {
 
 	eval "function ${try_symbol}() { ERRNO=0; \"\$@\"; }"
 
+	declare -g ERRSTACK_FILE
+	ERRSTACK_FILE=$(create_temp_file "error.stack.txt")
+	readonly ERRSTACK_FILE
+	unlink "${ERRSTACK_FILE}"
+
+	function catch_error_stack() {
+		if [[ -e ${ERRSTACK_FILE} ]]; then
+			return
+		fi
+		for I in "${FUNCNAME[@]}"; do
+			if [[ ${I} == __try_symbol__ ]]; then
+				return
+			fi
+		done
+		# info_warn "error stack captured"
+		callstack 2 &>"${ERRSTACK_FILE}" || true
+	}
+
 	function ___to_string_global_trap_code() {
 		ERRNO=$?
 		ERRLOCATION="${FUNCNAME[0]-*no frame*} (${BASH_SOURCE[0]-null source}:${BASH_LINENO[0]-null line})"
@@ -111,8 +129,11 @@ function set_error_trap() {
 		fi
 		if [[ ${FUNCNAME[0]} == __try_symbol__ ]]; then
 			local __R_CODE=0
+			unlink "${ERRSTACK_FILE}"
+			# info_warn "error stack cleard"
 		else
 			local __R_CODE=${ERRNO}
+			catch_error_stack
 		fi
 		# info_note "return $ERRNO"
 		# println '!!ERROR (%d) --------------' "${ERRNO}"
@@ -124,6 +145,7 @@ function set_error_trap() {
 	trap "$(declare -fp ___to_string_global_trap_code | sed -E "/^\S/d; s/^  //g; s/__try_symbol__/${try_symbol}/g")" ERR
 	unset -f ___to_string_global_trap_code
 }
+
 function use_strict() {
 	set -Euo pipefail
 	set +e

@@ -32,7 +32,7 @@ function make_base_image_by_alpine_pip() {
 			--user -r /tmp/requirements.txt
 	}
 	deny_proxy buildah_cache "${NAME}-build" _hash_ _build_
-	local PIP_SOURCE_IMAGE=${BUILDAH_LAST_IMAGE}
+	local PIP_SOURCE_IMAGE=$(get_last_image_id)
 
 	unset -f _hash_ _build_
 	unset BUILDAH_EXTRA_ARGS

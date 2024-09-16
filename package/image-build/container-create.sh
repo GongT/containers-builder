@@ -1,13 +1,13 @@
 function new_container() {
 	local NAME=$1
 	local EXISTS
-	EXISTS=$(container_find_id "${NAME}")
+	EXISTS=$(container_find_digist "${NAME}")
 	if [[ -n ${EXISTS} ]]; then
 		info_log "remove exists container '${EXISTS}'"
 		buildah rm "${EXISTS}" >/dev/null
 	fi
 	local FROM="${2-scratch}"
-	if [[ ${FROM} != scratch ]] && ! is_id_digist "${FROM}"; then
+	if [[ ${FROM} != scratch ]] && ! is_digist "${FROM}"; then
 		if is_ci; then
 			info_note "[CI] base image ${FROM}, pulling from registry (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "${FROM}" >&2
@@ -28,7 +28,7 @@ function create_if_not() {
 	elif [[ ${BASE} == "scratch" ]]; then
 		if container_exists "${NAME}"; then
 			info_log "using exists container '${NAME}'."
-			container_get_id "${NAME}"
+			container_get_digist "${NAME}"
 		else
 			info_log "container '${NAME}' not exists, create from scratch."
 			new_container "${NAME}" "scratch"
@@ -40,13 +40,13 @@ function create_if_not() {
 		fi
 
 		local EXISTS_CID GOT EXPECT
-		EXISTS_CID=$(container_find_id "${NAME}")
+		EXISTS_CID=$(container_find_digist "${NAME}")
 		if [[ -n ${EXISTS_CID} ]]; then
 			GOT=$(container_get_base_image_id "${EXISTS_CID}")
-			EXPECT=$(image_get_id "${BASE}")
+			EXPECT=$(image_get_digist "${BASE}")
 			if [[ ${EXPECT} == "${GOT}" ]]; then
 				info_log "using exists container '${NAME}'."
-				container_get_id "${NAME}"
+				container_get_digist "${NAME}"
 			else
 				info_log "not using exists container: ${BASE} is updated"
 				info_log "    current image:          ${EXPECT}"

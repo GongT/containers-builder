@@ -65,7 +65,7 @@ function dnf_use_environment() {
 	info "create dnf environment: ${CACHE_ID} with ${#DNF_ENVIRONMENT_ENABLES[@]} repos in ${#DNF_ENVIRONMENT_REPOS[@]} package, rpmdb=${DNF_ENVIRONMENT_RPMDB}"
 
 	if container_exists "${CACHE_ID}"; then
-		DNF=$(container_get_id "${CACHE_ID}")
+		DNF=$(container_get_digist "${CACHE_ID}")
 		info_note "use exists: ${DNF}"
 	else
 		control_ci group "prepare new dnf container"

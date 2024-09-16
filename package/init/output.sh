@@ -15,22 +15,13 @@ function control_ci() {
 		export "${NAME}=${VALUE}"
 		if ! is_ci; then
 			return
-		elif [[ -n ${GITHUB_ENV-} ]]; then
-			{
-				echo "${NAME}<<EOF"
-				echo "${VALUE}"
-				echo 'EOF'
-			} >>"${GITHUB_ENV}"
-		elif [[ -n ${GITLAB_ENV-} ]]; then
-			{
-				echo "${NAME}=\$(cat <<EOF"
-				echo "${VALUE}"
-				echo 'EOF'
-				echo ')'
-			} >>"${GITLAB_ENV}"
-		else
-			die "[CI] does not support current ci."
 		fi
+
+		{
+			echo "${NAME}<<EOF"
+			echo "${VALUE}"
+			echo 'EOF'
+		} >>"${GITHUB_ENV}"
 		;;
 	error)
 		if [[ -n ${GITHUB_ACTIONS-} ]]; then

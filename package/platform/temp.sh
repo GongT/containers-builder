@@ -103,7 +103,7 @@ function __exit_delete_container() {
 		xbuildah rm "${TODEL_CTR[@]}" >/dev/null
 	fi
 	if [[ ${#TODEL_IMG[@]} -ne 0 ]]; then
-		xpodman rmi "${TODEL_IMG[@]}" >/dev/null
+		xpodman image rm "${TODEL_IMG[@]}" >/dev/null
 	fi
 	dedent
 }
