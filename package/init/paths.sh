@@ -71,7 +71,9 @@ declare -xr CURRENT_DIR
 if [[ ${PROJECT_NAME+found} != found ]]; then
 	PROJECT_NAME="$(basename "${CURRENT_DIR}")"
 fi
-declare -xr PROJECT_NAME
+if [[ -n ${PROJECT_NAME} ]]; then
+	declare -xr PROJECT_NAME
+fi
 
 MONO_ROOT_DIR=${GITHUB_WORKSPACE-"$(dirname "${COMMON_LIB_ROOT}")"}
 if [[ -e "${MONO_ROOT_DIR}/.git" ]]; then
