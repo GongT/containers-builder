@@ -30,6 +30,9 @@ function control_ci() {
 		;;
 	group)
 		INSIDE_GROUP=$((INSIDE_GROUP + 1))
+		if [[ ${INSIDE_GROUP} -gt 5 ]]; then
+			die "too many group level"
+		fi
 		if [[ ${INSIDE_GROUP} -eq 1 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then
 			save_indent
 			echo "::group::$*" >&2
@@ -40,7 +43,8 @@ function control_ci() {
 		;;
 	groupEnd)
 		if [[ ${INSIDE_GROUP} -eq 0 ]]; then
-			return # must allow, die() rely on this
+			info_error "mismatch group start / end"
+			return
 		fi
 		INSIDE_GROUP=$((INSIDE_GROUP - 1))
 		if [[ ${INSIDE_GROUP} -eq 0 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then

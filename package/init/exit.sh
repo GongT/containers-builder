@@ -15,7 +15,7 @@ function call_exit_handlers() {
 		if [[ ${CB:0:1} == '[' ]]; then
 			local -a CMDS=()
 			json_array_get_back CMDS "${CB}"
-			info_note "[exit] ${CMDS[*]}"
+			info_note "${CMDS[*]}"
 			"${CMDS[@]}"
 		else
 			"${CB}"

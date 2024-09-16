@@ -45,8 +45,8 @@ function fork_archlinux() {
 	fi
 	local SEARCH RES
 	SEARCH=$(printf '|%s' "${DEPS[@]}")
-	SEARCH="^(${SEARCH:1})$"
-	SEARCH=$(printf 'pacman --noconfirm -Ss %q' "${SEARCH}")
+	SEARCH="(${SEARCH:1})"
+	SEARCH=$(printf 'pacman --noconfirm -Ss %q' "^${SEARCH}$" | grep -E "\b${SEARCH}\b")
 
 	buildah_cache_start "docker.io/library/archlinux"
 
