@@ -60,8 +60,10 @@ function buildah() {
 		fi
 		;;
 	mount | unmount)
-		xbuildah unshare buildah "${ACTION}" "${PASSARGS[@]}"
-		return
+		if ! is_root; then
+			xbuildah unshare "${BUILDAH}" "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}"
+			return
+		fi
 		;;
 	from)
 		# TODO: all image ids
