@@ -90,7 +90,6 @@ function alternative_buffer_execute() {
 	unset _run_group
 }
 function term_reset() {
-	local -i UNCLOSED=${INSIDE_GROUP-0}
 	_CURRENT_INDENT=''
 	SAVED_INDENT=()
 	if is_tty 2 && ! is_ci; then
@@ -105,12 +104,12 @@ function term_reset() {
 		} >&2
 	fi
 
-	if [[ ${UNCLOSED} -gt 0 ]]; then
+	if [[ ${INSIDE_GROUP} -gt 0 ]]; then
+		control_ci notice "Unclosed Group" "level: ${INSIDE_GROUP}"
 		local -i i
-		for ((i = UNCLOSED; i > 0; i--)); do
+		for ((i = INSIDE_GROUP; i > 0; i--)); do
 			control_ci groupEnd
 		done
-		info_error "unclosed group, level=${UNCLOSED}"
 	fi
 }
 

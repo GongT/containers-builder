@@ -23,9 +23,27 @@ function control_ci() {
 			echo 'EOF'
 		} >>"${GITHUB_ENV}"
 		;;
-	error)
+	error | notice | warning)
+		local TITLE=$1 MESSAGE=$2
 		if [[ -n ${GITHUB_ACTIONS-} ]]; then
-			echo "::error ::$*" >&2
+			echo "::${ACTION} title=${TITLE}::${MESSAGE}" >&2
+		elif [[ ${ACTION} == 'error' ]]; then
+			info_error "[${TITLE}] ${MESSAGE}"
+		elif [[ ${ACTION} == 'warning' ]]; then
+			info_warn "[${TITLE}] ${MESSAGE}"
+		elif [[ ${ACTION} == 'notice' ]]; then
+			info "[${TITLE}] ${MESSAGE}"
+		fi
+		;;
+	summary)
+		if is_ci; then
+			echo "$1" >>"${GITHUB_STEP_SUMMARY}"
+		else
+			printf "\e[2m"
+			printf '=%.0s' $(seq 1 ${COLUMNS-80})
+			printf '%s' "$1"
+			printf '=%.0s' $(seq 1 ${COLUMNS-80})
+			printf "\e[0m"
 		fi
 		;;
 	group)

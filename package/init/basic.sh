@@ -35,13 +35,13 @@ function trim() {
 }
 
 function is_ci() {
-	[[ ${CI+found} == "found" ]] && [[ -n ${CI} ]]
+	[[ ${CI-} ]]
 }
 
 function _check_ci_env() {
 	if is_ci; then
 		info "[CI] dectected CI environment"
-		export CI
+		readonly CI
 	else
 		unset CI
 		info "[CI] no CI environment"

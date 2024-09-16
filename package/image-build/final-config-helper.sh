@@ -39,5 +39,13 @@ function buildah_finalize_image() {
 
 	buildah commit "${RESULT}" "${IMAGE_OUT}" >/dev/null
 
-	register_exit_handler info_success "success build image\n  - IMAGE = ${LAST_COMMITED_IMAGE}\n  - NAME = ${IMAGE_OUT}\n$(xpodman image history "${LAST_COMMITED_IMAGE}" || true)"
+	local SUMMARY
+	SUMMARY=$(
+		echo "success build image"
+		echo "  - IMAGE = $LAST_COMMITED_IMAGE"
+		echo "  - NAME = $IMAGE_OUT"
+		xpodman image history "$LAST_COMMITED_IMAGE"
+	)
+
+	control_ci summary "${SUMMARY}"
 }

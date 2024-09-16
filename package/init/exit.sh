@@ -56,7 +56,7 @@ function _MAIN_exit_handler() {
 	fi
 
 	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		control_ci error "bash exit with error code ${_EXIT_CODE}"
+		control_ci error "Build Script Error" "bash exit with error code ${_EXIT_CODE}"
 		if [[ -n ${STACKINFO} ]]; then
 			printf "\e[38;5;1merror stack:\n%s\e[0m\n" "${STACKINFO}"
 		else
@@ -67,8 +67,6 @@ function _MAIN_exit_handler() {
 				printf "\e[0m"
 			fi
 		fi
-	elif [[ -n ${INSIDE_GROUP} ]]; then
-		control_ci error "script success, but last output group is not closed."
 	else
 		info_note "script success."
 	fi
@@ -99,13 +97,15 @@ function die() {
 	set +e
 	trap - ERR
 
-	local LASTERR=$?
-	control_ci groupEnd
+	local LASTERR=$? STACK
 	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
+
+	STACK=$(callstack 2 2>&1)
 	if [[ ${PRINT_STACK-no} == yes ]]; then
-		callstack 2
+		printf '%s\n' "${STACK}"
 	fi
-	control_ci error "$*"
+
+	control_ci error "Build Script Died" "$*"$'\n'"${STACK}"
 	if [[ $LASTERR -gt 0 ]]; then
 		exit $LASTERR
 	elif [[ ${ERRNO-} -gt 0 ]]; then
