@@ -22,7 +22,7 @@ for i in sys.argv[5:]:
     [k,v] = i.split('=', 1)
     data['env'][k] = v
 
-data['env']['_BUILDSCRIPT_RUN_STEP_'] = f"{step}:{name}"
+data['env']['_BUILDSCRIPT_RUN_STEP_'] = f"{name}:{step}"
 
 data['id'] = f"{name.replace('-','_')}_step_{step}"
 

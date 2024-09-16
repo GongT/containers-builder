@@ -132,7 +132,7 @@ function buildah() {
 		## Note: current oci not support healthcheck, docker not correct save annotations
 		OUTPUT=$(xbuildah commit "--format=oci" --rm --quiet "${PASSARGS[@]}")
 		info_note "commit: ${OUTPUT}"
-		control_ci "set-env" "LAST_COMMITED_IMAGE" "${OUTPUT}"
+		control_ci set-env "LAST_COMMITED_IMAGE" "${OUTPUT}"
 		if ! is_digist "${OUTPUT}"; then
 			die "output wrong"
 		fi

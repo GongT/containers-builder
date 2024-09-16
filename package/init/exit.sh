@@ -31,23 +31,34 @@ function _MAIN_exit_handler() {
 	term_reset
 	_CURRENT_INDENT='[exit] '
 
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
+		info_warn "last command return: ${_EXIT_CODE}."
+	elif [[ ${EXIT_CODE} -ne 0 ]]; then
+		_EXIT_CODE=${EXIT_CODE}
+		info_warn "process exit code: ${EXIT_CODE}."
+	elif [[ ${ERRNO} -ne 0 ]]; then
+		info_warn "unclean errno: ${ERRNO}."
+	fi
+
+	local STACKINFO
+	if [[ -e ${ERRSTACK_FILE} ]]; then
+		STACKINFO=$(<"${ERRSTACK_FILE}")
+	fi
+
+	call_exit_handlers
+
 	if [[ ${_EXIT_CODE} -eq 0 ]]; then
 		if [[ ${EXIT_CODE} -ne 0 ]]; then
 			_EXIT_CODE=${EXIT_CODE}
-			info_warn "process exit code: ${_EXIT_CODE}."
 		elif [[ ${ERRNO} -ne 0 ]]; then
 			_EXIT_CODE=${ERRNO}
-			info_warn "unclean errno: ${_EXIT_CODE}."
 		fi
-	else
-		info_warn "return code: ${_EXIT_CODE}."
 	fi
 
-	STACKINFO=$(
-		if [[ -e ${ERRSTACK_FILE} ]]; then
-			printf "\e[38;5;1merror stack:\n"
-			cat "${ERRSTACK_FILE}"
-			printf "\e[0m"
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
+		control_ci error "bash exit with error code ${_EXIT_CODE}"
+		if [[ -n ${STACKINFO} ]]; then
+			printf "\e[38;5;1merror stack:\n%s\e[0m\n" "${STACKINFO}"
 		else
 			STACKINFO=$(callstack 1 2>&1)
 			if [[ ${STACKINFO} != *' die()'* ]]; then
@@ -55,15 +66,6 @@ function _MAIN_exit_handler() {
 				printf '%s\n' "${STACKINFO}"
 				printf "\e[0m"
 			fi
-		fi
-	)
-
-	call_exit_handlers
-
-	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		control_ci error "bash exit with error code ${_EXIT_CODE}"
-		if [[ -n ${STACKINFO} ]]; then
-			printf '%s\n' "${STACKINFO}"
 		fi
 	elif [[ -n ${INSIDE_GROUP} ]]; then
 		control_ci error "script success, but last output group is not closed."
