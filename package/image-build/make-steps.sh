@@ -54,7 +54,7 @@ function commit_step_section() {
 }
 
 function __check_known_step_title() {
-	if [[ ${__SOME_STEP_RUN} == no ]]; then
+	if [[ ${ERRNO} -eq 0 ]] && [[ ${__SOME_STEP_RUN} == no ]]; then
 		ERRNO=233
 		info_error "no step have been run"
 	fi

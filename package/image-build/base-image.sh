@@ -21,8 +21,8 @@ function buildah_cache_start() {
 	RESULT_ID=$(image_find_digist "${BASE_IMG}")
 	if [[ -n ${RESULT_ID} ]]; then
 		if is_ci; then
-			if [[ ${NO_PULL_BASE-no} != yes ]]; then
-				info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE}"
+			if [[ ${NO_PULL_BASE-} == yes ]]; then
+				info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE-}"
 			else
 				control_ci group "[cache start] pull base image: ${BASE_IMG}"
 				xpodman image pull "${BASE_IMG}"
