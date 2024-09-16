@@ -17,6 +17,10 @@ function skip_this_step() {
 	fi
 }
 
+function should_quit_after_this_step() {
+	[[ ${__SOME_STEP_RUN} == yes ]]
+}
+
 function commit_step_section() {
 	if ! is_recording_steps; then
 		info_note "  - skip"

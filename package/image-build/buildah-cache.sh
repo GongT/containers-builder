@@ -129,4 +129,9 @@ _buildah_cache_done() {
 	else
 		info_note "[${BUILDAH_NAME_BASE}] STEP ${WORK_STAGE} DONE | BUILDAH_LAST_IMAGE=${BUILDAH_LAST_IMAGE}\n"
 	fi
+
+	if should_quit_after_this_step; then
+		log_success "build step done"
+		exit 0
+	fi
 }
