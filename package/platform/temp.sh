@@ -20,8 +20,10 @@ declare -xr TMP_IMAGE_FILE="${TMPDIR}/temp-images"
 touch "${TMP_REGISTRY_FILE}" "${TMP_CONTAINER_FILE}" "${TMP_IMAGE_FILE}"
 
 if [[ ${NO_DELETE_TEMP-no} != yes ]]; then
-	register_exit_handler __exit_delete_container
-	register_exit_handler __exit_delete_temp_files
+	if ! is_ci; then
+		register_exit_handler __exit_delete_container
+		register_exit_handler __exit_delete_temp_files
+	fi
 else
 	register_exit_handler echo "no delete temp: NO_DELETE_TEMP is set; location is ${TMPDIR}"
 fi
@@ -53,25 +55,23 @@ function __exit_delete_temp_files() {
 	local TEMP_TO_DELETE I
 	mapfile -t TEMP_TO_DELETE <"${TMP_REGISTRY_FILE}"
 
-	if ! is_ci; then
-		info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
-		rm -rf "${TMPDIR}"
-	fi
+	info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
+	rm -rf "${TMPDIR}"
 
 	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
 		info_note "no extra temporary files"
 		return
 	fi
 
-	control_ci group "deleting extra temporary files..."
+	info_note "deleting extra temporary files..."
+	indent
 	for I in "${TEMP_TO_DELETE[@]}"; do
 		if [[ -e ${I} ]]; then
 			info_note "delete ${I}"
 			rm -vrf "${I}"
 		fi
 	done
-
-	control_ci groupEnd
+	dedent
 }
 
 function collect_temp_container() {
@@ -96,13 +96,14 @@ function __exit_delete_container() {
 		return
 	fi
 
-	control_ci group "deleting ${#TODEL_IMG[@]} containers and ${#TODEL_CTR[@]} images..."
+	info_note group "deleting ${#TODEL_IMG[@]} containers and ${#TODEL_CTR[@]} images..."
 	info_note "\t(set NO_DELETE_TEMP=yes to prevent)"
+	indent
 	if [[ ${#TODEL_CTR[@]} -ne 0 ]]; then
 		xbuildah rm "${TODEL_CTR[@]}" >/dev/null
 	fi
 	if [[ ${#TODEL_IMG[@]} -ne 0 ]]; then
 		xpodman rmi "${TODEL_IMG[@]}" >/dev/null
 	fi
-	control_ci groupEnd
+	dedent
 }
