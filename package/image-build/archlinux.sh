@@ -65,7 +65,7 @@ function fork_archlinux() {
 		echo "${RES}"
 	}
 	___pacman_install() {
-		buildah run "${PACMAN_CACHE_ARGS[@]}" "$1" "bash" "-c" "echo 'Server = http://mirrors.aliyun.com/archlinux/\$repo/os/\$arch' > /etc/pacman.d/mirrorlist ; cat /etc/pacman.d/mirrorlist ; pacman --noconfirm -Su ${DEPS[*]}"
+		buildah run "${PACMAN_CACHE_ARGS[@]}" "$1" "bash" "-c" "cat /etc/pacman.d/mirrorlist; exec pacman --noconfirm -Su ${DEPS[*]}"
 	}
 	buildah_cache "${NAME}" ___pacman_hash ___pacman_install
 
