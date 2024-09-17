@@ -69,6 +69,9 @@ function _create_service_lib() {
 	BODY=$(
 		_create_common_lib
 		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
+
+		printf "declare -rx CONTAINER_ID=%q\n" "$(unit_get_scopename)"
+
 		call_script_emit
 	)
 	write_file "${SCRIPTS_DIR}/service-library.sh" "$BODY"
