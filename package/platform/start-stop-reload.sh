@@ -23,7 +23,6 @@ function _stopreload_config_buildah() {
 		S=$(json_array "${CUSTOMRELOAD_COMMAND[@]}")
 		add_build_config "--label=${LABELID_RELOAD_COMMAND}=$(json_array "${CUSTOMRELOAD_COMMAND[@]}")"
 	fi
-	_customstop_reset
 }
 register_argument_config _stopreload_config_buildah
 

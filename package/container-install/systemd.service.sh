@@ -14,7 +14,7 @@ function unit_body() {
 		;;
 	RestartPreventExitStatus)
 		# multiple directive, no escape
-		_S_BODY_RAW_LINE+=("$K=$*")
+		_S_BODY_CONFIG[RestartPreventExitStatus]+=" $*"
 		;;
 	Environment*)
 		# multiple directive, not command
@@ -106,8 +106,9 @@ function _print_unit_service_section() {
 		echo "# default stop command"
 		__unit_gracefull_stopper
 	fi
+
 	if [[ ${#CUSTOMRELOAD_COMMAND[@]} -gt 0 ]]; then
-		printf_command_direction ExecReload= "${CUSTOMSTOP_COMMAND[@]}"
+		printf_command_direction ExecReload= "${CUSTOMRELOAD_COMMAND[@]}"
 	else
 		echo "# default reload command"
 		__unit_default_reloader
