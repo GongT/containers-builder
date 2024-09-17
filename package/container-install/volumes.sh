@@ -47,8 +47,8 @@ function shared_sockets_provide() {
 		fi
 		ARGS+=("$i")
 		FULLPATH+=("${SHARED_SOCKET_PATH}/${i}")
+		_S_PROVIDE_SOCKETS+=("$i")
 	done
-	_S_PROVIDE_SOCKETS+=("$@")
 }
 
 function __reset_volumes() {
