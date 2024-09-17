@@ -38,19 +38,19 @@ function _MAIN_exit_handler() {
 	fi
 
 	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		control_ci error "Script Execute Fail" "bash exit with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		control_ci error "Script Execute Fail" "bash exit with error code ${_EXIT_CODE}"$'\n'"${STACKINFO}"
 		info_warn "last command return: ${_EXIT_CODE}.${STACKINFO+ (stack exists)}"
 	elif [[ ${EXIT_CODE} -ne 0 ]]; then
 		_EXIT_CODE=${EXIT_CODE}
 		EXIT_CODE=0
 
-		control_ci error "Script Return Error" "process will return with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		control_ci error "Script Return Error" "process will return with error code ${_EXIT_CODE}"$'\n'"${STACKINFO}"
 		info_warn "process exit code: ${EXIT_CODE}.${STACKINFO+ (stack exists)}"
 	elif [[ ${ERRNO} -ne 0 ]]; then
 		_EXIT_CODE=${ERRNO}
 		ERRNO=0
 
-		control_ci error "Script Unclean Exit" "something wrong with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		control_ci error "Script Unclean Exit" "something wrong with error code ${_EXIT_CODE}"$'\n'"${STACKINFO}"
 		info_warn "unclean errno: ${ERRNO}.${STACKINFO+ (stack exists)}"
 	fi
 

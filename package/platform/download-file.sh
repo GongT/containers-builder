@@ -269,7 +269,7 @@ function download_git() {
 		fi
 		mkdir -p "${CWD}"
 
-		retry_execute 10 3 git -C "${CWD}" clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "${BRANCH}" --single-branch "${URL}" . 2>&1 | indent_stream
+		indent_stream retry_execute 10 3 git -C "${CWD}" clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "${BRANCH}" --single-branch "${URL}" . 2>&1
 
 		date +%s >"${TIMESTAMP}"
 		info_success "clone complete."

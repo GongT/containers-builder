@@ -105,22 +105,31 @@ function digist_to_short() {
 	fi
 }
 
-function retry_execute() {
-	local -ir MAX_TRY=$1 INTERVAL=$2
-	shift
-	shift
+if is_ci; then
+	function retry_execute() {
+		shift
+		shift
 
-	if function_exists "$1"; then
-		die "retry_execute do not support bash function"
-	fi
+		x "$@"
+	}
+else
+	function retry_execute() {
+		local -ir MAX_TRY=$1 INTERVAL=$2
+		shift
+		shift
 
-	local -i TRY
-	for ((TRY = 1; TRY < MAX_TRY; TRY++)); do
-		if x "$@"; then
-			return 0
+		if function_exists "$1"; then
+			die "retry_execute do not support bash function"
 		fi
-		sleep "${INTERVAL}"
-	done
 
-	x "$@"
-}
+		local -i TRY
+		for ((TRY = 1; TRY < MAX_TRY; TRY++)); do
+			if x "$@"; then
+				return 0
+			fi
+			sleep "${INTERVAL}"
+		done
+
+		x "$@"
+	}
+fi
