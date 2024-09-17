@@ -67,7 +67,7 @@ function construct_child_shell_script() {
 
 		echo "${FIRST_LINE}"
 
-		printf 'if declare -p %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; declare -xr %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
+		printf 'if declare -p %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; declare -r %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
 
 		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
 		export_common_libs
