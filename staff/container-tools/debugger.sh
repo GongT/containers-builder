@@ -16,9 +16,6 @@ function xpodman() {
 	exec podman "${ARGS[@]}"
 }
 
-if variable_exists CONTAINER_ID; then
-	die "must not have CONTAINER_ID"
-fi
 declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_template "${UNIT_NAME}")_${RANDOM}"
 
 printf "\e[2m"

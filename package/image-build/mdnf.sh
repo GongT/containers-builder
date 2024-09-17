@@ -187,9 +187,13 @@ function dnf_list_version() {
 function dnf_install_step() {
 	local CACHE_NAME="$1"
 	local PKG_LIST_FILE="$2"
+	local POST_SCRIPT="${3-}"
 
 	if [[ ! -e ${PKG_LIST_FILE} ]]; then
 		die "missing install list file: ${PKG_LIST_FILE}"
+	fi
+	if [[ -n ${POST_SCRIPT} && ! -e ${POST_SCRIPT} ]]; then
+		die "missing post install script: ${POST_SCRIPT}"
 	fi
 
 	_dnf_hash_cb() {
@@ -197,7 +201,7 @@ function dnf_install_step() {
 		cat "${PKG_LIST_FILE}"
 		info_note "   listing versions..."
 		dnf_list_version "${PKG_LIST_FILE}"
-		echo "${POST_SCRIPT-}"
+		cat "${POST_SCRIPT}"
 	}
 	_dnf_build_cb() {
 		local CONTAINER="$1"

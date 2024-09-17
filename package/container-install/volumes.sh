@@ -22,6 +22,9 @@ function unit_fs_bind() {
 		FROM="${CONTAINERS_DATA_PATH}/${FROM}"
 	fi
 
+	# detect_filesystem_dependency "${FROM}"
+	unit_unit RequiresMountsFor "${FROM}"
+
 	_S_PREP_FOLDER+=("${FROM}")
 	_S_VOLUME_ARG+=("--volume=${FROM}:${TO}${OPTIONS}")
 }

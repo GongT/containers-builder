@@ -70,7 +70,7 @@ function _create_service_lib() {
 		_create_common_lib
 		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
 
-		printf "declare -rx CONTAINER_ID=%q\n" "$(unit_get_scopename)"
+		printf "declare CONTAINER_ID=%q\n" "$(unit_get_scopename)"
 
 		call_script_emit
 	)

@@ -118,7 +118,7 @@ function die() {
 	local LASTERR=$? STACK
 	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
 
-	catch_error_stack
+	if function_exists catch_error_stack; then catch_error_stack; fi
 
 	if [[ $LASTERR -gt 0 ]]; then
 		exit $LASTERR
