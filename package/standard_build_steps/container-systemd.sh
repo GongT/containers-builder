@@ -13,7 +13,7 @@ function validate_systemd_plugin_param() {
 	local VARNAME=${VARDEF%%=*}
 
 	if [[ ! (${VARNAME} =~ ^[A-Z]*$) ]]; then
-		die "systemd define variable must uppercase (${VARDEF})"
+		die "systemd define variable must uppercase (${VARNAME})"
 	fi
 }
 
