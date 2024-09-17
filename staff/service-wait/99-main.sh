@@ -34,7 +34,7 @@ function service_wait_thread() {
 	function _wait_exit() {
 		local RET=$?
 		if [[ ${WAIT_ERROR} -eq 0 && ${RET} -eq 0 ]]; then
-			startup_done
+			return
 		elif [[ ${RET} -eq 251 ]]; then
 			exit 0 # no need wait
 		else
@@ -45,9 +45,10 @@ function service_wait_thread() {
 			local SPID
 			SPID=$(get_service_property "MainPID")
 			if [[ ${SPID} -gt 0 ]]; then
-				echo "send signal to podman container ${SPID}"
+				info "send signal to podman container ${SPID}"
 				kill -s sigterm "${SPID}"
 			fi
+			exit ${RET}
 		fi
 	}
 	trap _wait_exit EXIT
@@ -55,6 +56,8 @@ function service_wait_thread() {
 	info_log "wait container ${CONTAINER_ID}, type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
 
 	core_switch
+
+	startup_done
 }
 
 function main() {

@@ -27,6 +27,9 @@ case "${ACTION}" in
 '' | --pre)
 	do_default "${ORIGINAL_ARGS[@]}"
 	;;
+watch)
+	do_default_watch
+	;;
 install)
 	go_home
 	exec bash ../install-cli-tool.sh

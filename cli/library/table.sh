@@ -129,8 +129,6 @@ function print_services_status_table() {
 
 		table_row "$SRV" "\e[${T_ENABLE}m${UnitFileState}\e[0m" "$T_STATE" "$T_TIME" "$T_RES" "${T_STATUS}"
 	done
-
-	table_print
 }
 
 function calc_delta_human() {

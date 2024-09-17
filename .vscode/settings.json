@@ -4,7 +4,7 @@
 	},
 	"bashIde.includeAllWorkspaceSymbols": true,
 	"bashIde.backgroundAnalysisMaxFiles": 5000,
-	// "terminal.integrated.defaultProfile.linux": "test",
+	"terminal.integrated.defaultProfile.linux": "test",
 	"bashIde.shfmt.languageDialect": "bash",
 	"bashIde.shfmt.simplifyCode": true,
 	"search.exclude": {
