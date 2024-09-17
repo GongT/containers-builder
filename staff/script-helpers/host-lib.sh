@@ -10,20 +10,47 @@ else
 	declare -xr TMPDIR="/tmp/image-build/"
 fi
 
-declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
-function load_sdnotify() {
-	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
-		function sdnotify() {
-			# echo "[SDNOTIFY] $*" >&2
-			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
-		}
-	else
-		function sdnotify() {
-			# echo "[SDNOTIFY] (disabled) $*" >&2
-			:
-		}
+if [[ ${NOTIFY_SOCKET+found} == found ]]; then
+	declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET}
+	function sdnotify() {
+		# echo "[SDNOTIFY] $*" >&2
+		NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
+	}
+else
+	function sdnotify() {
+		# echo "[SDNOTIFY] (disabled) $*" >&2
+		:
+	}
+fi
+
+function expand_timeout() {
+	if [[ $1 -gt 0 ]]; then
+		sdnotify "EXTEND_TIMEOUT_USEC=$1"
 	fi
 }
+function expand_timeout_seconds() {
+	if [[ $1 -gt 0 ]]; then
+		sdnotify "EXTEND_TIMEOUT_USEC=$(($1 * 1000000 + 5000))"
+	fi
+}
+function systemctl() {
+	if [[ -z ${XDG_RUNTIME_DIR-} ]] || [[ $XDG_RUNTIME_DIR == */0 ]]; then
+		/usr/bin/systemctl "$@"
+	else
+		/usr/bin/systemctl --user "$@"
+	fi
+}
+function journalctl() {
+	if [[ -z ${XDG_RUNTIME_DIR-} ]] || [[ $XDG_RUNTIME_DIR == */0 ]]; then
+		/usr/bin/journalctl "$@"
+	else
+		/usr/bin/journalctl --user "$@"
+	fi
+}
+function get_service_property() {
+	systemctl show "${UNIT_NAME}" "--property=$1" --value
+}
+
 function hide_sdnotify() {
 	unset NOTIFY_SOCKET
 }

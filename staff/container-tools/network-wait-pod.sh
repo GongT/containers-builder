@@ -27,7 +27,7 @@ while ! podman pod exists "$1"; do
 	fi
 
 	spend=$(seconds_timespan "${delta_sec}")
-	systemd-notify "--status=wait pod ${NAME} [${spend}/${START_TIMEOUT}]" "EXTEND_TIMEOUT_USEC=5000000"
+	sdnotify "--status=wait pod ${NAME} [${spend}/${START_TIMEOUT}]" "EXTEND_TIMEOUT_USEC=5000000"
 	sleep 5
 done
 

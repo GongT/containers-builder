@@ -45,7 +45,6 @@ fi
 unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 
 info_log "pulling from registry..."
-load_sdnotify
 
 declare -i TRIES=1 MAX_TRY=5
 while true; do

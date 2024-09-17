@@ -3,8 +3,6 @@
 # shellcheck source=../../package/include.sh
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"
 
-load_sdnotify
-
 mapfile -t IDS < <(podman ps --format '{{.ID}}')
 
 for ID in "${IDS[@]}"; do

@@ -62,7 +62,6 @@ function service_wait_thread() {
 
 function execute_service_waiter_main() {
 	detect_image_using_systemd
-	load_sdnotify
 
 	push_engine_param "--name=${CONTAINER_ID}" "--replace=true"
 	push_engine_param "--env=INVOCATION_ID=${INVOCATION_ID}"

@@ -1,36 +1,28 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source "./common_service_library.sh"
-
-function query() {
-	jq --exit-status --compact-output --monochrome-output --raw-output "$@"
-}
+source "../../package/include.sh"
+use_normal
 
 function JQ() {
-	echo "${JSON}" | query "$@"
+	local -r FILTER="\$ARGS.positional[0]$1"
+	filtered_jq --null-input "${FILTER}" --jsonargs "${JSON}"
 }
 
-function try() {
-	if [[ -z ${NOTIFY_SOCKET:-} ]]; then
-		echo -ne "\e[2m"
-	fi
+function try_resolve() {
 	while true; do
-		expand_timeout 32
-		if nslookup -timeout=30 "$1" "${2:-}" | grep -i -A 100 "$1" &>/dev/null; then
-			echo "  - success"
+		expand_timeout_seconds 32
+		if nslookup -timeout=30 "$1" | grep -i -A 100 "$1" &>/dev/null; then
+			info_log "  - success"
 			break
 		fi
-		echo "  - failed"
+		info_log "  - failed"
 		sleep 1
 	done
-	if [[ -z ${NOTIFY_SOCKET:-} ]]; then
-		echo -ne "\e[0m"
-	fi
 }
 
 TO_RESOLVE=()
-JSON=$(podman info -f json | query '.registries')
+JSON=$(podman info -f json | filtered_jq '.registries')
+readonly JSON
 for URL in $(JQ '.search[]'); do
 	if JQ ".[\"${URL}\"]" &>/dev/null; then
 		mapfile -t MIRRORS_URL < <(JQ ".[\"${URL}\"].Mirrors[].Location")
@@ -56,7 +48,6 @@ for TARGET in "${TO_RESOLVE[@]}"; do
 done
 
 for TARGET in "${!DOMAINS[@]}"; do
-	sdnotify "try resolve ${TARGET}"
-	try "${TARGET}"
+	info "try resolve ${TARGET}"
+	try_resolve "${TARGET}"
 done
-startup_done

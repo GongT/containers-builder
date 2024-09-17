@@ -54,9 +54,9 @@ start | restart | stop | reload | reset-failed | status | enable | disable)
 	if [[ $# -gt 0 ]]; then
 		die "this command is to control ALL enabled service, not some of them"
 	fi
-	do_ls enabled >/dev/null
+	do_ls enabled | mapfile -t LIST_RESULT
 	if [[ -n ${#LIST_RESULT[@]} ]]; then
-		systemctl "${ACTION}" "${LIST_RESULT[@]}"
+		x systemctl "${ACTION}" "${LIST_RESULT[@]}"
 	fi
 	;;
 log)
@@ -70,7 +70,7 @@ abort)
 		| awk '{print $1}' | mapfile -t LIST_RESULT
 
 	if [[ -n ${#LIST_RESULT[@]} ]]; then
-		systemctl stop "${LIST_RESULT[@]}"
+		x systemctl stop "${LIST_RESULT[@]}"
 	fi
 	;;
 attach)

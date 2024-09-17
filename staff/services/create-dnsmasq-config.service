@@ -5,6 +5,7 @@ Conflicts=systemd-resolved.service
 [Service]
 ExecStartPre=!/usr/bin/env bash "__SCRIPT__"
 Slice=services.slice
+RestartPreventExitStatus=233
 
 [Install]
 Alias=nameserver.service

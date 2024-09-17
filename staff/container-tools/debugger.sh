@@ -72,8 +72,6 @@ unset I A RESULT
 
 detect_image_using_systemd
 
-load_sdnotify
-
 ensure_mounts
 
 make_arguments

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+exit 233
+
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source "./common_service_library.sh"
 
