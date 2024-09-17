@@ -42,7 +42,7 @@ function run_compile() {
 
 	control_ci group "Compile ${PROJECT_ID}"
 
-	if [[ ${NO_DELETE_TEMP} == yes ]]; then
+	if [[ ${NO_DELETE_TEMP-} == yes ]]; then
 		local WHO_AM_I="${TMPF}"
 	else
 		local WHO_AM_I="${SCRIPT}"
