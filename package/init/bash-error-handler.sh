@@ -88,6 +88,7 @@ function println() {
 function set_error_trap() {
 	# info_note "install global error trap."
 	if [[ -n "$(trap -p ERR)" ]]; then
+		info_log "$(trap -p ERR | head -n3)"
 		die "already set ERR trap"
 	fi
 
@@ -106,6 +107,7 @@ function set_error_trap() {
 		callstack "${1-2}" &>"${ERRSTACK_FILE}" || true
 	}
 	function catch_error_stack() {
+		local I
 		if [[ -e ${ERRSTACK_FILE} ]]; then
 			return
 		fi

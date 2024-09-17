@@ -22,7 +22,8 @@ function run_compile() {
 	mkdir -p "${SYSTEM_FAST_CACHE}/CCACHE"
 
 	info "compile project in '${WORKER}' by '${SCRIPT}'"
-	local SCRIPT_FILE
+	local TMPF
+	TMPF=$(create_temp_file "mcompile.${PROJECT_ID}.sh")
 
 	EXTRA=$(
 		cat <<-EOF
@@ -32,25 +33,26 @@ function run_compile() {
 		EOF
 		cat "${COMMON_LIB_ROOT}/staff/mcompile/prefix.sh"
 	)
-	SCRIPT_FILE=$(create_temp_file "mcompile.${PROJECT_ID}")
-	construct_child_shell_script "${SCRIPT_FILE}" "${SCRIPT}" "${EXTRA}"
+	construct_child_shell_script "${TMPF}" "${SCRIPT}" "${EXTRA}"
 
 	local MOUNT_SOURCE=()
 	if [[ ${SOURCE_DIRECTORY} != no ]]; then
 		MOUNT_SOURCE+=("--volume=${SOURCE_DIRECTORY}:/opt/projects/${PROJECT_ID}")
 	fi
 
-	if ! grep -q "group .*" "${SCRIPT_FILE}"; then
-		control_ci group "Compile ${PROJECT_ID}"
+	control_ci group "Compile ${PROJECT_ID}"
+
+	if [[ ${NO_DELETE_TEMP} == yes ]]; then
+		local WHO_AM_I="${TMPF}"
+	else
+		local WHO_AM_I="${SCRIPT}"
 	fi
 	buildah_run_shell_script \
 		"--volume=${SYSTEM_COMMON_CACHE}:/cache/common" \
 		"--volume=${SYSTEM_FAST_CACHE}:/cache/fast" \
 		"${MOUNT_SOURCE[@]}" \
-		"${WORKER}" "${SCRIPT_FILE}"
-	if ! grep -q "group .*" "${SCRIPT_FILE}"; then
-		control_ci groupEnd
-	fi
+		"${WORKER}" "${TMPF}"
+	control_ci groupEnd
 }
 function run_install() {
 	local -r SOURCE_IMAGE="$1" TARGET_CONTAINER="$2" PROJECT_ID=$3

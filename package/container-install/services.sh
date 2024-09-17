@@ -13,10 +13,13 @@ function _copy_common_static_unit() {
 }
 
 function _create_common_lib() {
+	declare -p SYSTEM_COMMON_CACHE SYSTEM_FAST_CACHE PRIVATE_CACHE COMMON_LIB_ROOT MONO_ROOT_DIR SHARED_SCRIPTS_DIR PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
+
 	export_common_libs
 	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
 	declare -fp is_long_digist is_digist digist_to_short
 	declare -p microsecond_unit
+
 	SHELL_USE_PROXY
 	export_array CONTROL_SERVICES "${_RECORD_COMMON_SERVICES[@]}"
 

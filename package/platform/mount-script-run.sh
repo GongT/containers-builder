@@ -35,65 +35,63 @@ function export_common_libs() {
 	declare -fp filtered_jq json_array json_array_get_back json_map json_map_get_back
 	declare -p JQ_ARGS
 
-	declare -fp die indent dedent x trim
-	declare -fp info info_note info_log info_warn info_success info_error info_bright info_stream
+	declare -fp die indent dedent x trim indent_stream indent_multiline save_indent restore_indent
+	declare -fp info info_note info_log info_warn info_success info_error info_bright
 	declare -fp variable_is_array variable_is_map variable_exists is_tty function_exists
 	declare -fp use_strict use_normal set_error_trap callstack function_exists reflect_function_location caller_hyperlink
 	declare -fp register_exit_handler call_exit_handlers
-
-	declare -p SYSTEM_COMMON_CACHE SYSTEM_FAST_CACHE PRIVATE_CACHE COMMON_LIB_ROOT MONO_ROOT_DIR SHARED_SCRIPTS_DIR PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 }
 
 function _warp_script_in_function() {
 	local FN_NAME=$1 SCRIPT_DATA=$1
-	echo "${RANDOM_MAIN}"
 
-	printf 'function %s {' "${RANDOM_MAIN}"
+	printf 'function %s {' "${FN_NAME}"
 	echo "${DATA}" | sed 's/^/\t/g'
 	printf '}\n'
 }
 
+## construct_child_shell_script OUTPUT_FILE SCRIPT_FILE [EXTRA_CONTENT]
 function construct_child_shell_script() {
 	local OUTPUT_FILE="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
 
-	local FIRST_LINE DATA
+	local FIRST_LINE
 
 	read -r FIRST_LINE <"${SCRIPT_FILE}"
-	if [[ ${FIRST_LINE} == '#!'* ]]; then
-		DATA=$(tail -n+2 "${SCRIPT_FILE}")
-	else
+	if [[ ${FIRST_LINE} != '#!'* ]]; then
 		info_warn "missing shebang in file ${SCRIPT_FILE}"
-		DATA=$(<"${SCRIPT_FILE}")
 		FIRST_LINE='#!/usr/bin/bash'
 	fi
 
-	echo "${FIRST_LINE}"
+	local RANDOM_NAME="__pragma_script_once_${RANDOM}__"
+	{
 
-	local RANDOM_NAME="__wrap_script_main_${RANDOM}"
+		echo "${FIRST_LINE}"
 
-	printf 'if declare -f %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; ' "${RANDOM_NAME}"
-	_warp_script_in_function "${RANDOM_NAME}" "${DATA}"
+		printf 'if declare -p %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; declare -xr %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
 
-	printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
-	export_common_libs
-	cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
-	SHELL_USE_PROXY
+		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
+		export_common_libs
+		cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
+		SHELL_USE_PROXY
 
-	printf '%s\n' "${EXTRA_CONTENT}"
-	if [[ -n ${CI-} ]]; then
-		declare -p CI
-	else
-		echo "unset CI"
-	fi
-	declare -fp is_ci control_ci
-	declare -p _CURRENT_INDENT
-	echo '
+		printf '%s\n' "${EXTRA_CONTENT}"
+		if [[ -n ${CI-} ]]; then
+			declare -p CI
+		else
+			echo "unset CI"
+		fi
+		declare -fp is_ci control_ci
+		declare -p _CURRENT_INDENT
+		echo '
 function try_resolve_file() {
 	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"
 }
 '
 
-	printf 'use_normal\n%s "$@"\n' "${RANDOM_MAIN}"
+		echo 'use_normal'
+
+		cat_source_file "${SCRIPT_FILE}"
+	} >"${OUTPUT_FILE}"
 }
 
 function cat_source_file() {

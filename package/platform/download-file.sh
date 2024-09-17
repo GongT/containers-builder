@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-declare -r LOCAL_TMP="${SYSTEM_COMMON_CACHE}/Download"
+declare -xr GIT_REPO_EXPIRES=604800 # 7 days
 
 function download_file_force() {
 	local FILE="download_${RANDOM}" URL="$1"
@@ -15,14 +15,14 @@ function download_file_force() {
 }
 function download_file() {
 	local URL="$1" NAME="$2"
-	local OUTFILE="${LOCAL_TMP}/${NAME}"
+	local OUTFILE="${PRIVATE_CACHE}/download/${NAME}"
 	local ARGS=()
 
 	if [[ -z ${URL} ]]; then
 		die "missing download url."
 	fi
 
-	mkdir -p "${LOCAL_TMP}"
+	mkdir -p "${PRIVATE_CACHE}/download"
 	if [[ -n ${CI-} ]]; then
 		ARGS+=(--verbose)
 	else
@@ -207,69 +207,91 @@ function http_get_github_last_commit_id_on_branch() {
 
 function _join_git_path() {
 	local NAME="$1" BRANCH="$2"
-	echo "${LOCAL_TMP}/git_download.v2/${NAME}-${BRANCH}/.git"
+	echo "${PRIVATE_CACHE}/gitrepo/${NAME}-${BRANCH}"
 }
+
+function hash_git_result() {
+	local REPO="$1" BRANCH="$2" WT
+	printf '%s:%s>' "${REPO}" "${BRANCH}"
+	WT="$(_join_git_path "${NAME}" "${BRANCH}")"
+	git -C "${WT}" log --format="%H" -n 1
+}
+
 function download_github() {
-	local REPO="$1" BRANCH="$2" GIT_DIR
+	local REPO="$1" BRANCH="$2"
 	perfer_proxy download_git "https://github.com/${REPO}.git" "$@"
 }
 function download_git() {
-	local URL="$1" NAME="$2" BRANCH="$3"
-	GIT_DIR="$(_join_git_path "${NAME}" "${BRANCH}")"
-	export GIT_DIR
-	local TIMESTAMP="${GIT_DIR}/timestamp"
+	local URL="$1" NAME="$2" BRANCH="$3" CWD
+	declare -x GIT_DIR
+	CWD="$(_join_git_path "${NAME}" "${BRANCH}")"
+	GIT_DIR="${CWD}/.git"
 
-	control_ci group " * git clone ${URL} (${BRANCH})"
-	info_log "  to ${GIT_DIR}"
+	local -r TIMESTAMP="${GIT_DIR}/timestamp"
+
+	info "git clone ${URL} (${BRANCH})"
+	indent
+	info_log "   to ${CWD}"
 
 	if [[ -e "${GIT_DIR}/config" ]]; then
 		local REFS
-		mapfile -t REFS < <(git for-each-ref "--format=%(refname)" refs/heads/ || true)
+		mapfile -t REFS < <(git -C "${CWD}" for-each-ref "--format=%(refname)" refs/heads/ || true)
 		if [[ ${#REFS[@]} != 1 ]] || [[ ${REFS[0]} != "refs/heads/${BRANCH}" ]]; then
 			info_warn "invalid git status: multiple or invalid branch"
-			rm -rf "${GIT_DIR}"
-			control_ci groupEnd
-
-			download_git "$@"
-			return
+			rm -rf "${CWD}"
 		fi
-
-		local CTIME
-		CTIME=$(date +%s)
-		if [[ -e ${TIMESTAMP} ]] && [[ $(<"${TIMESTAMP}") -gt $((CTIME - 3600)) ]]; then
-			CTIME=$(<"${TIMESTAMP}")
-			CTIME=$((CTIME + 3600))
-			info_note "skip download, cache expire at $(date "--date=@${CTIME}" +"%F %T")"
-		else
-			x git submodule update --recursive
-			x git submodule sync --recursive
-			x git submodule update --init --recursive
-			x git fetch --depth=3 --no-tags --update-shallow --recurse-submodules 1>&2
-			x git reset --hard "origin/${BRANCH}" 1>&2
-			date +%s >"${TIMESTAMP}"
-		fi
-	else
-		x git clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "${BRANCH}" --single-branch "${URL}" "$(dirname "${GIT_DIR}")" 1>&2
-		date +%s >"${TIMESTAMP}"
 	fi
 
-	git log --format="%H" -n 1
-	echo "last commit id is: $(git log --format="%H" -n 1)" >&2
+	if [[ -e "${GIT_DIR}/config" ]]; then
+		local CTIME
+		CTIME=$(date +%s)
+		if [[ -e ${TIMESTAMP} ]] && [[ $(<"${TIMESTAMP}") -gt $((CTIME - GIT_REPO_EXPIRES)) ]]; then
+			CTIME=$(<"${TIMESTAMP}")
+			CTIME=$((CTIME + GIT_REPO_EXPIRES))
+			info_success "skip download, cache expire at $(date "--date=@${CTIME}" +"%F %T")"
+		else
+			info "update existing cache."
+			indent_stream retry_execute 10 3 git -C "${CWD}" submodule update --depth 3 --recursive
+			indent_stream x git -C "${CWD}" submodule sync --recursive
+			indent_stream retry_execute 10 3 git -C "${CWD}" submodule update --depth 3 --init --recursive
+			indent_stream retry_execute 10 3 git -C "${CWD}" fetch --depth=3 --no-tags --update-shallow --recurse-submodules
+			indent_stream x git -C "${CWD}" reset --hard "origin/${BRANCH}"
+
+			date +%s >"${TIMESTAMP}"
+
+			info_success "update complete."
+		fi
+	else
+		info "clone new repo."
+		if [[ -d ${CWD} ]]; then
+			info_warn "deleting folder: ${CWD}"
+			rm -rf "${CWD}"
+		fi
+		mkdir -p "${CWD}"
+
+		retry_execute 10 3 git -C "${CWD}" clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "${BRANCH}" --single-branch "${URL}" . 2>&1 | indent_stream
+
+		date +%s >"${TIMESTAMP}"
+		info_success "clone complete."
+	fi
+
+	info_bright "last commit id is: $(git -C "${CWD}" log --format="%H" -n 1)"
+	dedent
 	unset GIT_DIR
-	control_ci groupEnd
 }
 function download_git_result_copy() {
-	local DIST="$1" NAME=$2 BRANCH="${3}" GIT_DIR
-	GIT_DIR=$(_join_git_path "${NAME}" "${BRANCH}")
-	export GIT_DIR
-	if [[ ! -f "${GIT_DIR}/config" ]]; then
+	local DIST="$1" NAME=$2 BRANCH="${3}" CWD
+	declare -x GIT_DIR
+	CWD="$(_join_git_path "${NAME}" "${BRANCH}")"
+	GIT_DIR="${CWD}/.git"
+
+	if [[ ! -f "${GIT_DIR}/timestamp" ]]; then
 		die "missing downloaded git data: ${GIT_DIR} (from ${NAME})"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
 	mkdir -p "${DIST}"
-	x git "--work-tree=${DIST}/" checkout --recurse-submodules "origin/${BRANCH}" -- .
+	x git -C "${DIST}" "--git-dir=${GIT_DIR}" checkout --recurse-submodules "origin/${BRANCH}" -- .
 	# git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
-
 	unset GIT_DIR
 }
 

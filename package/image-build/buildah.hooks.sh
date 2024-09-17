@@ -144,6 +144,7 @@ function buildah() {
 		if [[ ${BUILDAH_EXTRA_ARGS+found} == found ]]; then
 			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
 		fi
+		xbuildah "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}" </dev/null
 		;;
 	*) ;;
 	esac

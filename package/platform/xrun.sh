@@ -104,3 +104,23 @@ function digist_to_short() {
 		die "invalid digist: $1"
 	fi
 }
+
+function retry_execute() {
+	local -ir MAX_TRY=$1 INTERVAL=$2
+	shift
+	shift
+
+	if function_exists "$1"; then
+		die "retry_execute do not support bash function"
+	fi
+
+	local -i TRY
+	for ((TRY = 1; TRY < MAX_TRY; TRY++)); do
+		if x "$@"; then
+			return 0
+		fi
+		sleep "${INTERVAL}"
+	done
+
+	x "$@"
+}

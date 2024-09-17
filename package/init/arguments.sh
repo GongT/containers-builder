@@ -124,6 +124,8 @@ function arg_finish() {
 		# )
 		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs --no-run-if-empty -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
+	else
+		info_note "environment file not exists: ${USER_PRIVATE_CONFIG_FILE}"
 	fi
 
 	for i in $(seq $((${#__BASH_ARGV[@]} - 1)) -1 0); do

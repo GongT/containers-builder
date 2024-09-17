@@ -8,7 +8,12 @@ else
 	elif [[ -z ${TMPDIR-} ]] || [[ ${TMPDIR} == '/tmp' ]]; then
 		TMPDIR="${SYSTEM_FAST_CACHE}/tmp"
 	fi
-	TMPDIR=$(realpath -m "$TMPDIR/container-builder/${PROJECT_NAME}.$(date +%Y%m%d%H%M%S)")
+	if [[ ${NO_DELETE_TEMP-} != yes ]]; then
+		TMPDIR=$(realpath -m "$TMPDIR/container-builder/${PROJECT_NAME}.$(date +%Y%m%d%H%M%S)")
+	else
+		TMPDIR=$(realpath -m "$TMPDIR/container-builder/${PROJECT_NAME}")
+		rm -rf "${TMPDIR}"
+	fi
 fi
 
 mkdir -p "${TMPDIR}"

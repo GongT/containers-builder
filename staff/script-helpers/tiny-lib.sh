@@ -18,6 +18,10 @@ function _exit_handle_in_script() {
 }
 trap _exit_handle_in_script EXIT
 
+if [[ -z ${TMPDIR-} ]]; then
+	declare -xr TMPDIR='/tmp'
+fi
+
 function create_temp_dir() {
 	local FILE_NAME="${1-unknown-usage}"
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
