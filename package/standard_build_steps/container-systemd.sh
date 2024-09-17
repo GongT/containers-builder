@@ -12,7 +12,7 @@ function validate_systemd_plugin_param() {
 	fi
 	local VARNAME=${VARDEF%%=*}
 
-	if [[ ! (${VARNAME} =~ ^[A-Z]*$) ]]; then
+	if [[ ${VARNAME^^} != "${VARNAME}" ]]; then
 		die "systemd define variable must uppercase (${VARNAME})"
 	fi
 }
@@ -128,7 +128,7 @@ function setup_systemd() {
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi
 				)
-				construct_child_shell_script "${TMPF}" "${SETUP_SRC}" "${EXTRA}" 
+				construct_child_shell_script "${TMPF}" "${SETUP_SRC}" "${EXTRA}"
 
 				buildah_run_shell_script \
 					"${SETUP_ARGS[@]}" \
