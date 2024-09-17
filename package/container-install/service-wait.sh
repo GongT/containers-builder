@@ -7,7 +7,8 @@ function _service_executer_write() {
 		echo 'source "__replace_me__/include.sh"'
 		call_script_emit
 		__concat_wait_files
-		echo main
+		echo use_normal
+		echo execute_service_waiter_main
 	} >"${TMPF}"
 
 	WHO_AM_I='service-waiter' \

@@ -60,7 +60,7 @@ function service_wait_thread() {
 	startup_done
 }
 
-function main() {
+function execute_service_waiter_main() {
 	detect_image_using_systemd
 	load_sdnotify
 
