@@ -1,28 +1,24 @@
 #!/usr/bin/bash
 
-die() {
-	echo "$*" >&2
-	exit 1
-}
-x() {
-	echo " + $*" >&2
-	"$@"
-}
+source "../../package/include.sh"
+
+use_normal
 
 OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${CONTAINER_ID}" 2>&1)"
 if [[ ${OUTPUT} == *"no such container"* ]]; then
+	info_note "greate! no container need to kill."
 	exit 0
 fi
 
 if [[ ${OUTPUT} == "running" ]]; then
-	echo "found running container."
+	info_log "found running container."
 	x podman stop --ignore "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
 fi
 
 if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
 	sleep 3s
 	if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
-		echo "clearing dirty state."
+		info_warn "clearing dirty state."
 		x podman rm --ignore --force "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
 	else
 		exit 0
@@ -32,7 +28,7 @@ else
 fi
 
 if podman container inspect "${CONTAINER_ID}" &>/dev/null; then
-	echo "clearing dirty state (tree)."
+	info_warn "clearing dirty state (tree)."
 	x podman rm --ignore --force --depend "--time=${PODMAN_TIMEOUT_TO_KILL}" "${CONTAINER_ID}"
 else
 	exit 0

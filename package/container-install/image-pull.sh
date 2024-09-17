@@ -22,7 +22,7 @@ function __emit_image_pull() {
 	else # always
 		local _PULL_HELPER
 		_PULL_HELPER=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/pull-image.sh")
-		unit_hook_start "${_PULL_HELPER}" "${_S_IMAGE}" "${_S_IMAGE_PULL}"
+		unit_hook_start "${_PULL_HELPER}" "${_S_IMAGE_PULL}"
 	fi
 	unit_comment "IMAGE_NAME=${_S_IMAGE}"
 	unit_comment "IMAGE_NAME_PULL=${_S_IMAGE_PULL}"

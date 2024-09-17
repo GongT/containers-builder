@@ -74,8 +74,6 @@ function _MAIN_exit_handler() {
 	exit "${_EXIT_CODE}"
 }
 
-trap _MAIN_exit_handler EXIT
-
 function _MAIN_cancel_handler() {
 	set +x
 	_CURRENT_INDENT=''
@@ -89,9 +87,13 @@ function _MAIN_cancel_handler() {
 		fi
 	fi
 }
-if ! is_ci && is_tty; then
-	trap _MAIN_cancel_handler INT
-fi
+
+function use_exit_handler() {
+	trap _MAIN_exit_handler EXIT
+	if ! is_ci && is_tty; then
+		trap _MAIN_cancel_handler INT
+	fi
+}
 
 function die() {
 	set +e

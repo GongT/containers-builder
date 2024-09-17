@@ -89,7 +89,7 @@ function dnf_use_environment() {
 		done
 
 		EXTRA=$(declare -p DNF_ENVIRONMENT_ENABLES)
-		construct_child_shell_script guest "${COMMON_LIB_ROOT}/staff/mdnf/lib.sh" "${EXTRA}" >"${TMPSCRIPT}"
+		construct_child_shell_script "${TMPSCRIPT}" "${COMMON_LIB_ROOT}/staff/mdnf/lib.sh" "${EXTRA}"
 		buildah copy "${DNF}" "${TMPSCRIPT}" /usr/lib/lib.sh
 
 		local -a CONTAINER_ARGS=()

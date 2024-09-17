@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+declare _CURRENT_INDENT=""
+
+if variable_exists RUNTIME_DIRECTORY; then
+	declare -xr RUNTIME_DIRECTORY
+	declare -xr TMPDIR="${RUNTIME_DIRECTORY}/"
+else
+	declare -xr RUNTIME_DIRECTORY="/run"
+	declare -xr TMPDIR="/tmp/image-build/"
+fi
+
 declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
 function load_sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
@@ -15,4 +25,80 @@ function load_sdnotify() {
 }
 function hide_sdnotify() {
 	unset NOTIFY_SOCKET
+}
+
+# if variable_exists
+
+function is_ci() {
+	false
+}
+
+function control_ci() {
+	local -r ACTION="$1"
+	shift
+	# info_log "[CI] Action=$ACTION, Args=$*" >&2
+	case "${ACTION}" in
+	set-env)
+		local NAME=$1 VALUE=$2
+		export "${NAME}=${VALUE}"
+		;;
+	error | notice | warning)
+		local TITLE=$1 MESSAGE=$2
+		if [[ ${ACTION} == 'error' ]]; then
+			info_error "[${TITLE}] ${MESSAGE}"
+		elif [[ ${ACTION} == 'warning' ]]; then
+			info_warn "[${TITLE}] ${MESSAGE}"
+		elif [[ ${ACTION} == 'notice' ]]; then
+			info "[${TITLE}] ${MESSAGE}"
+		fi
+		;;
+	group)
+		info_bright "[Start Group] $*"
+		indent
+		;;
+	groupEnd)
+		dedent
+		info_note "[End Group]"
+		;;
+	*)
+		die "[None-CI] not support action: ${ACTION}"
+		;;
+	esac
+}
+
+function try_resolve_file() {
+	# TODO
+	echo "$*"
+}
+function get_container_id() {
+	if [[ ${CONTAINER_ID} == *%* ]]; then
+		if [[ -z ${template_id-} ]]; then
+			die "for template (instantiated / ending with @) service, must have environment variable: template_id"
+		fi
+		filter_systemd_template "${CONTAINER_ID}"
+	else
+		echo "${CONTAINER_ID}"
+	fi
+}
+
+function filter_systemd_template() {
+	if [[ $1 == *%* && -z ${template_id-} ]]; then
+		die "for template (instantiated / ending with @) service, must have environment variable: template_id"
+	fi
+	echo "${1//%i/${template_id}}"
+}
+
+function create_temp_dir() {
+	local FILE_NAME="${1-unknown-usage}"
+	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
+	if [[ ! -d ${TMPDIR} ]]; then
+		mkdir -p "${TMPDIR}"
+	fi
+	mktemp "--tmpdir=${TMPDIR}" --directory "${FILE_BASE}.XXXXX.${FILE_EXT}"
+}
+
+function create_temp_file() {
+	local FILE_NAME="${1-unknown-usage}"
+	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
+	mktemp "--tmpdir" "--dry-run" "${FILE_BASE}.XXXXX.${FILE_EXT}"
 }

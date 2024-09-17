@@ -106,6 +106,11 @@ function write_file() {
 	local ARGS MODE MKDIR=1
 	__fs_args "$@"
 	local TARGET=${ARGS[0]} DATA=${ARGS[1]}
+
+	if [[ ${TARGET} == *$'\n'* ]]; then
+		die "wrong params: target contains invalid character"
+	fi
+
 	TARGET=$(resolve "${SCRIPTS_DIR}" "${TARGET}")
 
 	# info_warn "--> ${#TARGET} / ${#DATA} / ${MODE-unbound}"
@@ -170,3 +175,11 @@ function read_list_file() {
 
 	sed -E 's/#.*$//g; s/\s+$//g; /^$/d' "${FILE}" | mapfile -t "${VARNAME}"
 }
+
+function is_uninstalling() {
+	[[ -n ${_ACTION_UNINSTALL} ]]
+}
+function is_installing() {
+	[[ -z ${_ACTION_UNINSTALL} ]]
+}
+arg_flag _ACTION_UNINSTALL uninstall "uninstall (remove files)"

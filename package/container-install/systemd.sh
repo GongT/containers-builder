@@ -64,11 +64,13 @@ function _create_unit_name() {
 	fi
 }
 
-function _create_common_lib() {
-	local COMMONLIB
-	COMMONLIB=$(construct_child_shell_script host - "$(<"${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh")")
-	write_file "${SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
-	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "$COMMONLIB"
+function _create_service_lib() {
+	local BODY
+	BODY=$(
+		_create_common_lib
+		call_script_emit
+	)
+	write_file "${SCRIPTS_DIR}/service-library.sh" "$BODY"
 }
 
 function unit_write() {
@@ -77,7 +79,7 @@ function unit_write() {
 	fi
 
 	install_common_system_support
-	_create_common_lib
+	_create_service_lib
 
 	local TF
 	TF=$(create_temp_file "${_S_CURRENT_UNIT_FILE}")
@@ -94,8 +96,6 @@ function unit_write() {
 
 function unit_finish() {
 	unit_write
-
-	_debugger_file_write
 
 	apply_systemd_service "${_S_CURRENT_UNIT_FILE}"
 
@@ -174,6 +174,8 @@ function _export_base_envs() {
 	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
+	echo "declare -r UNIT_NAME='${_S_CURRENT_UNIT_NAME}'"
+	echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
 }
 register_script_emit _export_base_envs
 
@@ -204,13 +206,18 @@ NotifyAccess=all"
 
 	## exec start
 	printf_command_direction ExecStart= "$(_service_executer_write)"
-	echo "# debug script: $(get_debugger_script)"
+
+	## debug script
+	local DEBUG_SCRIPT
+	DEBUG_SCRIPT=$(_debugger_file_write)
+	echo "# debug script: ${DEBUG_SCRIPT}"
 
 	_print_unit_service_section
 
 	echo "Environment=CONTAINER_ID=$(unit_get_scopename)"
 	echo "Environment=UNIT_NAME=%n"
-	echo "Environment=CURRENT_SYSTEMD_UNIT_PARAM=%i"
+	echo "Environment=template_id=%i"
+	echo "RuntimeDirectory=containers/services/$(unit_get_scopename)"
 
 	if [[ -n ${_S_INSTALL} ]]; then
 		echo ""
@@ -229,12 +236,6 @@ NotifyAccess=all"
 	echo "PROJECT_NAME=${PROJECT_NAME}"
 	echo "SYSTEM_COMMON_CACHE=${SYSTEM_COMMON_CACHE}"
 	echo "SYSTEM_FAST_CACHE=${SYSTEM_FAST_CACHE}"
-}
-
-function unit_using_systemd() {
-	info_warn "unit_using_systemd not used"
-	# shellcheck disable=SC2016
-	# unit_body ExecReload '/usr/bin/podman exec $CONTAINER_ID /usr/bin/bash /entrypoint/reload.sh'
 }
 function unit_depend() {
 	if [[ -n $* ]]; then

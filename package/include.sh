@@ -46,3 +46,4 @@ source "${COMMON_LIB_ROOT}/package/platform/mount-script-run.sh"
 
 _check_ci_env
 use_normal
+use_exit_handler

@@ -98,7 +98,7 @@ function set_error_trap() {
 	declare -g ERRSTACK_FILE
 	ERRSTACK_FILE=$(create_temp_file "error.stack.txt")
 	readonly ERRSTACK_FILE
-	unlink "${ERRSTACK_FILE}"
+	if [[ -e ${ERRSTACK_FILE} ]]; then unlink "${ERRSTACK_FILE}"; fi
 
 	function catch_error_stack() {
 		if [[ -e ${ERRSTACK_FILE} ]]; then
@@ -129,7 +129,7 @@ function set_error_trap() {
 		fi
 		if [[ ${FUNCNAME[0]} == __try_symbol__ ]]; then
 			local __R_CODE=0
-			unlink "${ERRSTACK_FILE}"
+			if [[ -e ${ERRSTACK_FILE} ]]; then unlink "${ERRSTACK_FILE}"; fi
 			# info_warn "error stack cleard"
 		else
 			local __R_CODE=${ERRNO}

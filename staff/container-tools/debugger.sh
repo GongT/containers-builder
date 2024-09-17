@@ -16,13 +16,15 @@ function xpodman() {
 	exec podman "${ARGS[@]}"
 }
 
-function filter_systemd_template() {
-	echo "$1" | sed "s/%i/${template_id}/g"
-}
+if variable_exists CONTAINER_ID; then
+	die "must not have CONTAINER_ID"
+fi
+declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_template "${UNIT_NAME}")_${RANDOM}"
 
 printf "\e[2m"
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
+printf 'Container Id: %s\n' "${CONTAINER_ID}"
 printf 'Service File: %s\n' "$SERVICE_FILE"
 printf 'Podman Params: %s\n' "${ENGINE_PARAMS[*]}"
 printf 'Image Name: %s\n' "${PODMAN_IMAGE_NAME}"
@@ -41,14 +43,6 @@ echo ""
 # 模拟出execute的输入参数
 #     COMMAND_LINE
 
-if echo "$CONTAINER_ID" | grep -q '%i'; then
-	if [[ -z ${template_id-} ]]; then
-		die "for template (instantiated / ending with @) service, must have environment variable: template_id"
-	fi
-else
-	declare -g template_id='!'
-fi
-
 if [[ "${ENTRYPOINT-}" ]]; then
 	echo "force using entrypoint: $ENTRYPOINT"
 	RESULT+=("--entrypoint=$ENTRYPOINT")
@@ -56,12 +50,13 @@ fi
 
 COPY=()
 for A in "${ENGINE_PARAMS[@]}"; do
-	if [[ $A == "--mac-address="* ]]; then
+	if [[ $A == "--mac-address="* || $A == "--pod="* ]]; then
 		continue
 	fi
 	COPY+=("$(filter_systemd_template "$A")")
 done
 ENGINE_PARAMS=("${COPY[@]}")
+ENGINE_PARAMS+=("--name=${CONTAINER_ID}")
 
 if [[ $# -gt 0 ]]; then
 	COMMAND_LINE=("$@")

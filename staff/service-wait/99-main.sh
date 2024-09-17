@@ -62,6 +62,9 @@ function main() {
 	load_sdnotify
 
 	push_engine_param "--name=${CONTAINER_ID}" "--replace=true"
+	push_engine_param "--env=INVOCATION_ID=${INVOCATION_ID}"
+	push_engine_param "--annotation=systemd.unit.invocation_id=${INVOCATION_ID}"
+	push_engine_param "--annotation=systemd.unit.name=${UNIT_NAME}"
 	ensure_mounts
 	remove_old_socks
 

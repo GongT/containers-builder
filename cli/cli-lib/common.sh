@@ -3,15 +3,6 @@
 declare -ra CONTROL_SERVICES=(wait-dns-working.service containers-ensure-health.timer services-boot.service)
 BIN_SRC_HOME=$(<"$SCRIPTS_DIR/cli-home")
 
-function die() {
-	echo "$*" >&2
-	exit 1
-}
-function x() {
-	printf "\e[2m+ %s\e[0m\n" "$*" >&2
-	"$@"
-}
-
 declare -a LIST_RESULT=()
 function do_ls() {
 	local _LIST_RESULT U

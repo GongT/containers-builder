@@ -25,7 +25,7 @@ function control_ci() {
 		;;
 	error | notice | warning)
 		local TITLE=$1 MESSAGE=$2
-		if [[ -n ${GITHUB_ACTIONS-} ]]; then
+		if is_ci; then
 			echo "::${ACTION} title=${TITLE}::${MESSAGE}" >&2
 		elif [[ ${ACTION} == 'error' ]]; then
 			info_error "[${TITLE}] ${MESSAGE}"
@@ -51,7 +51,7 @@ function control_ci() {
 		if [[ ${INSIDE_GROUP} -gt 5 ]]; then
 			die "too many group level"
 		fi
-		if [[ ${INSIDE_GROUP} -eq 1 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then
+		if [[ ${INSIDE_GROUP} -eq 1 ]] && is_ci; then
 			save_indent
 			echo "::group::$*" >&2
 		else
@@ -65,7 +65,7 @@ function control_ci() {
 			return
 		fi
 		INSIDE_GROUP=$((INSIDE_GROUP - 1))
-		if [[ ${INSIDE_GROUP} -eq 0 ]] && [[ -n ${GITHUB_ACTIONS-} ]]; then
+		if [[ ${INSIDE_GROUP} -eq 0 ]] && is_ci; then
 			restore_indent
 			echo "::endgroup::" >&2
 		else

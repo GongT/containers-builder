@@ -1,21 +1,21 @@
 #!/usr/bin/bash
 
-declare -xr LABELID_STOP_COMMAND="me.gongt.cmd.stop"
+source "../../package/include.sh"
 
-# shellcheck source=../../package/include.sh
-source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"
+declare -xr LABELID_STOP_COMMAND="me.gongt.cmd.stop"
+use_normal
 
 get_label() {
 	TMPL=$(printf '{{index .Config.Labels "%s"}}' "$1")
 	podman container inspect -f "$TMPL" "${CONTAINER_ID}"
 }
-
+info_note "container name: ${CONTAINER_ID}"
 OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${CONTAINER_ID}" 2>&1)"
 if [[ ${OUTPUT} == *"no such container"* ]] || [[ ${OUTPUT} != "running" ]]; then
-	echo "no need to stop, container already removed or stopped."
+	info_success "no need to stop, container already removed or stopped."
 	exit 0
 fi
-echo "found container running..."
+info_log "found container running..."
 
 CMD=$(get_label "$LABELID_STOP_COMMAND" | jq '.[]' | tr '\n' ' ')
 if [[ -n ${CMD} ]]; then
@@ -34,3 +34,5 @@ if [[ ${TO} -lt 0 ]]; then
 	TO='-1'
 fi
 x podman stop "--time=${TO}" "${CONTAINER_ID}"
+
+info_success "container stopped."

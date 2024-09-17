@@ -107,9 +107,9 @@ function buildah_cache() {
 
 	indent
 	LAST_CACHE_COMES_FROM=build
-	local -r CONTAINER_ID="${CACHE_NAME}_from${DONE_STAGE}_to${WORK_STAGE}"
-	new_container "${CONTAINER_ID}" "${PREV_STAGE_IMAGE_ID}" >/dev/null
-	try "${BUILDAH_BUILD_CALLBACK}" "${CONTAINER_ID}"
+	local -r CID="${CACHE_NAME}_from${DONE_STAGE}_to${WORK_STAGE}"
+	new_container "${CID}" "${PREV_STAGE_IMAGE_ID}" >/dev/null
+	try "${BUILDAH_BUILD_CALLBACK}" "${CID}"
 	if [[ $ERRNO -ne 0 ]]; then
 		info_error "build callback '${BUILDAH_BUILD_CALLBACK}' failed to run with $ERRNO ($ERRLOCATION)"
 		dedent
@@ -125,10 +125,10 @@ function buildah_cache() {
 		"--author=${AUTHOR}" \
 		"--comment=cache:step${WORK_STAGE}" \
 		"--created-by=RUN build-script # ${COMMENT}" \
-		"${CONTAINER_ID}" >/dev/null
+		"${CID}" >/dev/null
 
 	local BUILT_ID
-	BUILT_ID=$(buildah commit "${CONTAINER_ID}" "${STEP_RESULT_IMAGE}")
+	BUILT_ID=$(buildah commit "${CID}" "${STEP_RESULT_IMAGE}")
 
 	_buildah_cache_done "${BUILT_ID}"
 }

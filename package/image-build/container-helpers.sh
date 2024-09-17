@@ -17,9 +17,6 @@ function image_exists() {
 function image_get_long_id() {
 	xpodman image inspect --format '{{.ID}}' "$1"
 }
-function image_get_digist() {
-	xpodman image inspect --format '{{.Digest}}' "$1"
-}
 function image_find_full_name() {
 	local NAME_PART=$1 OUT LIST
 

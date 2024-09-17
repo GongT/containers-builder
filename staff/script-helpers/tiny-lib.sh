@@ -27,5 +27,5 @@ function create_temp_dir() {
 function create_temp_file() {
 	local FILE_NAME="${1-unknown-usage}"
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
-	mktemp "--tmpdir" "${FILE_BASE}.XXXXX.${FILE_EXT}"
+	mktemp "--tmpdir=${TMPDIR}" "${FILE_BASE}.XXXXX.${FILE_EXT}"
 }

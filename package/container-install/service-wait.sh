@@ -2,16 +2,16 @@ function _service_executer_write() {
 	local DATA='' TMPF
 	TMPF=$(create_temp_file)
 
-	DATA=$(
+	{
+		echo '#!/usr/bin/bash'
+		echo 'source "__replace_me__/include.sh"'
 		call_script_emit
 		__concat_wait_files
 		echo main
-	)
+	} >"${TMPF}"
 
-	construct_child_shell_script host - "${DATA}" >"${TMPF}"
-
-	copy_file --mode 0744 "${TMPF}" "${SCRIPTS_DIR}/execute"
-	echo "${SCRIPTS_DIR}/execute"
+	WHO_AM_I='service-waiter' \
+		install_script "${TMPF}" "execute"
 }
 
 __concat_wait_files() {
@@ -19,29 +19,25 @@ __concat_wait_files() {
 	local FILE_PATH
 
 	find "${COMMON_LIB_ROOT}/staff/service-wait" -type f -print0 | sort -z | while read -d '' -r FILE_PATH; do
-		printf '\n## FILE: %s\n' "$(basename "${FILE_PATH}")"
-		cat "${FILE_PATH}"
-		printf '\n'
+		cat_source_file "${FILE_PATH}"
 	done
 }
-get_debugger_script() {
-	echo "${SCRIPTS_DIR}/debug-startup.sh"
-}
 _debugger_file_write() {
-	local I EX_SRC TMPF
+	local I EX_SRC TMPF OUTPUT
 
 	TMPF=$(create_temp_file "debugger.script.file.sh")
 
-	EX_SRC=$(
-		echo "declare -r CONTAINER_ID='$(unit_get_scopename)'"
-		echo "declare -r NAME='${_S_CURRENT_UNIT_NAME}'"
-		echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
+	local SRC="${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh"
+	{
+		echo '#!/usr/bin/bash'
+		echo 'source "__replace_me__/include.sh"'
 		call_script_emit
 		__concat_wait_files
-	)
-	construct_child_shell_script host "${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh" "${EX_SRC}" >"${TMPF}"
+		cat_source_file "${SRC}"
+	} >"${TMPF}"
 
-	copy_file --mode 0755 "${TMPF}" "$(get_debugger_script)"
+	WHO_AM_I='service-waiter (debug)' \
+		install_script "${TMPF}" "debug-start.sh"
 }
 
 function unit_start_notify() {

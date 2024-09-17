@@ -219,7 +219,7 @@ function _arg_set() {
 	{
 		printf "\e[2m"
 		for VAR_NAME in "${!_ARG_INPUT[@]}"; do
-			printf "%s=%s" "${VAR_NAME}" "${!VAR_NAME:-*unset*}"
+			printf "%s=%s\n" "${VAR_NAME}" "${!VAR_NAME:-*unset*}"
 		done
 		printf "\e[0m"
 	} >&2

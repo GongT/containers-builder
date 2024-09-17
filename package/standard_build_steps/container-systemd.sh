@@ -118,7 +118,7 @@ function setup_systemd() {
 
 				local EXTRA
 				EXTRA=$(
-						printf 'declare -xr WHO_AM_I=%q\n' "${SETUP_SRC}"
+					printf 'declare -xr WHO_AM_I=%q\n' "${SETUP_SRC}"
 					if [[ ${PROJECT_NAME} == "${CACHE_BRANCH}" ]]; then
 						printf 'declare -xr PROJECT=%q\n' "${PROJECT_NAME}"
 					else
@@ -128,7 +128,7 @@ function setup_systemd() {
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi
 				)
-				construct_child_shell_script guest "${SETUP_SRC}" "${EXTRA}" >"${TMPF}"
+				construct_child_shell_script "${TMPF}" "${SETUP_SRC}" "${EXTRA}" 
 
 				buildah_run_shell_script \
 					"${SETUP_ARGS[@]}" \

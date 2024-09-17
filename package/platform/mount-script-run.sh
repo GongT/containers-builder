@@ -40,20 +40,44 @@ function export_common_libs() {
 	declare -fp variable_is_array variable_is_map variable_exists is_tty function_exists
 	declare -fp use_strict use_normal set_error_trap callstack function_exists reflect_function_location caller_hyperlink
 	declare -fp register_exit_handler call_exit_handlers
-
-	cat "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
 }
 
-function export_host_libs() {
-	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
-	declare -p microsecond_unit
+function _warp_script_in_function() {
+	local FN_NAME=$1 SCRIPT_DATA=$1
+	echo "${RANDOM_MAIN}"
 
-	echo 'function control_ci() { return; }'
-	echo 'declare _CURRENT_INDENT=""'
-	cat "${COMMON_LIB_ROOT}/staff/script-helpers/host-lib.sh"
+	printf 'function %s {' "${RANDOM_MAIN}"
+	echo "${DATA}" | sed 's/^/\t/g'
+	printf '}\n'
 }
 
-function export_guest_libs() {
+function construct_child_shell_script() {
+	local OUTPUT_FILE="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
+
+	local FIRST_LINE DATA
+
+	read -r FIRST_LINE <"${SCRIPT_FILE}"
+	if [[ ${FIRST_LINE} == '#!'* ]]; then
+		DATA=$(tail -n+2 "${SCRIPT_FILE}")
+	else
+		info_warn "missing shebang in file ${SCRIPT_FILE}"
+		DATA=$(<"${SCRIPT_FILE}")
+		FIRST_LINE='#!/usr/bin/bash'
+	fi
+
+	echo "${FIRST_LINE}"
+
+	local RANDOM_NAME="__wrap_script_main_${RANDOM}"
+
+	printf 'if declare -f %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; ' "${RANDOM_NAME}"
+	_warp_script_in_function "${RANDOM_NAME}" "${DATA}"
+
+	printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
+	export_common_libs
+	cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
+	SHELL_USE_PROXY
+
+	printf '%s\n' "${EXTRA_CONTENT}"
 	if [[ -n ${CI-} ]]; then
 		declare -p CI
 	else
@@ -66,62 +90,13 @@ function try_resolve_file() {
 	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"
 }
 '
+
+	printf 'use_normal\n%s "$@"\n' "${RANDOM_MAIN}"
 }
 
-function construct_child_shell_script() {
-	local KIND="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
-	local RANDOM_MAIN="__wrap_script_main_${RANDOM}" RANDOM_PRAGMA="__file_sourced_${RANDOM}"
-
-	local FIRST_LINE DATA
-	if [[ ${SCRIPT_FILE} == '-' ]]; then
-		echo '#!/usr/bin/bash'
-	else
-		read -r FIRST_LINE <"${SCRIPT_FILE}"
-		if [[ ${FIRST_LINE} == '#!'* ]]; then
-			DATA=$(tail -n+2 "${SCRIPT_FILE}")
-		else
-			info_warn "missing shebang in file ${SCRIPT_FILE}"
-			DATA=$(<"${SCRIPT_FILE}")
-			FIRST_LINE='#!/usr/bin/bash'
-		fi
-
-		printf '%s\n' "${FIRST_LINE}"
-		printf 'function %s {' "${RANDOM_MAIN}"
-		echo "${DATA}" | sed 's/^/\t/g'
-		printf '}\n'
-	fi
-
-	cat <<-'EOF'
-		if [[ -n ${RANDOM_PRAGMA-} ]]; then
-			return
-		fi
-	EOF
-
-	if [[ ${KIND} == 'host' ]]; then
-		declare -p COMMON_LIB_ROOT
-	fi
-	if [[ ${SCRIPT_FILE} != '-' ]]; then
-		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
-	fi
-	export_common_libs
-	SHELL_USE_PROXY
-
-	if [[ ${SCRIPT_FILE} != '-' ]]; then
-		printf '%s\n' "${EXTRA_CONTENT}"
-	fi
-	if [[ ${KIND} == 'host' ]]; then
-		export_host_libs
-	elif [[ ${KIND} == 'guest' ]]; then
-		export_guest_libs
-	else
-		die "invalid kind: ${KIND}, should be host/guest"
-	fi
-
-	declare -p RANDOM_PRAGMA
-
-	if [[ ${SCRIPT_FILE} == '-' ]]; then
-		printf 'use_normal\n%s\n' "${EXTRA_CONTENT}"
-	else
-		printf 'use_normal\n%s "$@"\n' "${RANDOM_MAIN}"
-	fi
+function cat_source_file() {
+	local -r FILE_PATH=$1
+	printf '\n## SOURCE FILE: %s\n' "${FILE_PATH}"
+	cat "${FILE_PATH}"
+	printf '\n'
 }

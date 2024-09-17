@@ -8,11 +8,25 @@ function _copy_common_static_unit() {
 	local FILE=$1 NAME="${2-"$(basename "$1")"}"
 	copy_file "${SERVICES_DIR}/${FILE}" "${SYSTEM_UNITS_DIR}/${NAME}"
 }
+
+function _create_common_lib() {
+	declare -p COMMON_LIB_ROOT microsecond_unit
+	export_common_libs
+	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
+	SHELL_USE_PROXY
+
+	cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/host-lib.sh"
+}
+
 function install_common_system_support() {
 	if [[ -n ${_COMMON_FILE_INSTALL} ]]; then
 		return
 	fi
 	declare -gr _COMMON_FILE_INSTALL=yes
+
+	local BODY
+	BODY=$(_create_common_lib)
+	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "${BODY}"
 
 	_copy_common_static_unit services-entertainment.slice
 	_copy_common_static_unit services-infrastructure.slice

@@ -1,3 +1,7 @@
+#!/bin/bash
+
+source "../package/include.sh"
+
 if [[ $# -ge 1 ]]; then
 	ACTION=${1-}
 	shift

@@ -33,7 +33,7 @@ function run_compile() {
 		cat "${COMMON_LIB_ROOT}/staff/mcompile/prefix.sh"
 	)
 	SCRIPT_FILE=$(create_temp_file "mcompile.${PROJECT_ID}")
-	construct_child_shell_script guest "${SCRIPT}" "${EXTRA}" >"${SCRIPT_FILE}"
+	construct_child_shell_script "${SCRIPT_FILE}" "${SCRIPT}" "${EXTRA}"
 
 	local MOUNT_SOURCE=()
 	if [[ ${SOURCE_DIRECTORY} != no ]]; then
@@ -75,7 +75,7 @@ function run_install() {
 		echo '}'
 	)
 
-	construct_child_shell_script guest "${COMMON_LIB_ROOT}/staff/mcompile/installer.sh" "${EXTRA}" >"${TMPF}"
+	construct_child_shell_script "${TMPF}" "${COMMON_LIB_ROOT}/staff/mcompile/installer.sh" "${EXTRA}"
 
 	local TGT
 	TGT="$(create_temp_dir)"
