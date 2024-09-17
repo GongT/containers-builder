@@ -1,19 +1,26 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC2312
-cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 declare -xr PROJECT_NAME="image-builder-cli"
-source "./package/include-install.sh"
-cd cli
+# shellcheck source=package/include-install.sh disable=SC2312
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/package/include-install.sh"
 
 arg_finish
 
 mkdir -p "${SCRIPTS_DIR}"
-rsync --itemize-changes --archive --human-readable "${PWD}/cli-lib" "${SCRIPTS_DIR}" --delete
 
-install_global_binary "${PWD}/bin.sh" "ms"  
+TMPF=$(create_temp_file "ms.binary.sh")
 
-echo "${PWD}" >"${SCRIPTS_DIR}/cli-home"
+{
+	echo '#!/usr/bin/bash'
+	echo 'source "../package/include.sh"'
+	find "${COMMON_LIB_ROOT}/cli/library" -type f | while read -r FILE; do
+		cat_source_file "${FILE}"
+	done
 
-echo "binary installed to ${BINARY_DIR}/ms"
-echo "library installed to ${SCRIPTS_DIR}"
+	find "${COMMON_LIB_ROOT}/cli/actions" -type f | while read -r FILE; do
+		cat_source_file "${FILE}"
+	done
+	cat_source_file "${COMMON_LIB_ROOT}/cli/bin.sh"
+} >"${TMPF}"
+
+install_global_binary "${TMPF}" "ms"

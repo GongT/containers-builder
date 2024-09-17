@@ -88,19 +88,3 @@ function container_get_base_image_id() {
 		error_with_manager_output
 	fi
 }
-
-function is_long_digist() {
-	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]]
-}
-function is_digist() {
-	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]] || [[ $1 =~ ^[0-9a-fA-F]{12}$ ]]
-}
-function digist_to_short() {
-	if [[ $1 =~ ^[0-9a-fA-F]{64}$ || $1 =~ ^[0-9a-fA-F]{12}$ ]]; then
-		echo "${1:0:12}"
-	elif [[ -z $1 ]]; then
-		echo
-	else
-		die "invalid digist: $1"
-	fi
-}

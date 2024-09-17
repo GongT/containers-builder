@@ -27,37 +27,52 @@ function _MAIN_exit_handler() {
 	local -i _EXIT_CODE=$?
 	set +x
 	set +Eeuo pipefail
+	trap - ERR
 
 	term_reset
 	_CURRENT_INDENT='[exit] '
-
-	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		info_warn "last command return: ${_EXIT_CODE}."
-	elif [[ ${EXIT_CODE} -ne 0 ]]; then
-		_EXIT_CODE=${EXIT_CODE}
-		info_warn "process exit code: ${EXIT_CODE}."
-	elif [[ ${ERRNO} -ne 0 ]]; then
-		info_warn "unclean errno: ${ERRNO}."
-	fi
 
 	local STACKINFO
 	if [[ -e ${ERRSTACK_FILE} ]]; then
 		STACKINFO=$(<"${ERRSTACK_FILE}")
 	fi
 
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
+		control_ci error "Script Execute Fail" "bash exit with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		info_warn "last command return: ${_EXIT_CODE}.${STACKINFO+ (stack exists)}"
+	elif [[ ${EXIT_CODE} -ne 0 ]]; then
+		_EXIT_CODE=${EXIT_CODE}
+		EXIT_CODE=0
+
+		control_ci error "Script Return Error" "process will return with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		info_warn "process exit code: ${EXIT_CODE}.${STACKINFO+ (stack exists)}"
+	elif [[ ${ERRNO} -ne 0 ]]; then
+		_EXIT_CODE=${ERRNO}
+		ERRNO=0
+
+		control_ci error "Script Unclean Exit" "something wrong with error code ${_EXIT_CODE}"'\n'"${STACKINFO}"
+		info_warn "unclean errno: ${ERRNO}.${STACKINFO+ (stack exists)}"
+	fi
+
 	call_exit_handlers
 
 	if [[ ${_EXIT_CODE} -eq 0 ]]; then
+		# error handler throw error
 		if [[ ${EXIT_CODE} -ne 0 ]]; then
 			_EXIT_CODE=${EXIT_CODE}
 		elif [[ ${ERRNO} -ne 0 ]]; then
 			_EXIT_CODE=${ERRNO}
 		fi
+		if [[ ${_EXIT_CODE} -ne 0 ]]; then
+			control_ci error "Script Cleanup Failed" "something wrong during script cleanup."
+			if [[ -z ${STACKINFO} && -e ${ERRSTACK_FILE} ]]; then
+				STACKINFO=$(<"${ERRSTACK_FILE}")
+			fi
+		fi
 	fi
 
 	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		control_ci error "Build Script Error" "bash exit with error code ${_EXIT_CODE}"
-		if [[ -n ${STACKINFO} ]]; then
+		if [[ -n ${STACKINFO-} ]]; then
 			printf "\e[38;5;1merror stack:\n%s\e[0m\n" "${STACKINFO}"
 		else
 			STACKINFO=$(callstack 1 2>&1)
@@ -71,6 +86,7 @@ function _MAIN_exit_handler() {
 		info_note "script success."
 	fi
 
+	# info_note "last statement."
 	exit "${_EXIT_CODE}"
 }
 
@@ -102,12 +118,8 @@ function die() {
 	local LASTERR=$? STACK
 	echo -e "\n\e[38;5;9;1mFatalError: $*\e[0m" >&2
 
-	STACK=$(callstack 2 2>&1)
-	if [[ ${PRINT_STACK-no} == yes ]]; then
-		printf '%s\n' "${STACK}"
-	fi
+	catch_error_stack
 
-	control_ci error "Build Script Died" "$*"$'\n'"${STACK}"
 	if [[ $LASTERR -gt 0 ]]; then
 		exit $LASTERR
 	elif [[ ${ERRNO-} -gt 0 ]]; then

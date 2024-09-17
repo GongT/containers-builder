@@ -28,11 +28,11 @@ function control_ci() {
 		if is_ci; then
 			echo "::${ACTION} title=${TITLE}::${MESSAGE}" >&2
 		elif [[ ${ACTION} == 'error' ]]; then
-			info_error "[${TITLE}] ${MESSAGE}"
+			info_error "[CI EVENT: ${TITLE}]"
 		elif [[ ${ACTION} == 'warning' ]]; then
-			info_warn "[${TITLE}] ${MESSAGE}"
+			info_warn "[CI EVENT: ${TITLE}]"
 		elif [[ ${ACTION} == 'notice' ]]; then
-			info "[${TITLE}] ${MESSAGE}"
+			info "[CI EVENT: ${TITLE}]"
 		fi
 		;;
 	summary)

@@ -46,13 +46,13 @@ function table_print() {
 }
 
 function print_services_status_table() {
-	local LoadState='' ActiveState='' SubState='' UnitFileState='' StateChangeTimestamp='' StatusText='' MemoryCurrent='' CPUUsageNSec=''
 	local SRV
-	local T_ENABLE='' T_STATE='' T_TIME='' T_RES=''
+	local T_ENABLE='' T_STATE='' T_TIME='' T_RES='' T_STATUS=''
 
-	table_start "Name" "Enabled" "State" "Time" "Resource"
+	table_start "Name" "Enabled" "State" "Time" "Resource" "Message"
 
-	for SRV in "${@}"; do
+	for SRV; do
+		local LoadState='' ActiveState='' SubState='' UnitFileState='' StateChangeTimestamp='' StatusText='' MemoryCurrent='' CPUUsageNSec=''
 		while read -r line; do
 			local "$line"
 		done < <(systemctl show "$SRV" -p LoadState,ActiveState,SubState,UnitFileState,StateChangeTimestamp,StatusText,MemoryCurrent,CPUUsageNSec)
@@ -89,12 +89,13 @@ function print_services_status_table() {
 			T_ENABLE='38;5;9'
 		fi
 
+		T_STATUS="${StatusText}"
 		if [[ $LoadState == not-found ]] || [[ ! $StateChangeTimestamp ]]; then
 			T_TIME=''
 		else
-			T_TIME=$(systemd-analyze timestamp "$StateChangeTimestamp" | grep 'From now:' | sed -E 's/\s*From now: //g' || echo 'NaN')
+			T_TIME=$(calc_delta_human "${StateChangeTimestamp}")
 			if [[ "$StatusText" ]]; then
-				T_TIME="$StatusText since $T_TIME"
+				T_TIME="$T_TIME"
 			fi
 		fi
 
@@ -126,8 +127,21 @@ function print_services_status_table() {
 			fi
 		fi
 
-		table_row "$SRV" "\e[${T_ENABLE}m${UnitFileState}\e[0m" "$T_STATE" "$T_TIME" "$T_RES"
+		table_row "$SRV" "\e[${T_ENABLE}m${UnitFileState}\e[0m" "$T_STATE" "$T_TIME" "$T_RES" "${T_STATUS}"
 	done
 
 	table_print
+}
+
+function calc_delta_human() {
+	# shellcheck disable=SC2155
+	{
+		local -i TIME=$(systemd-analyze timestamp "$1" | grep 'UNIX seconds' | cut -f 2 -d '@')
+		local -i NOW=$(date '+%s')
+		local -i DELTA="$((NOW - TIME))"
+		if [[ $DELTA -le 0 ]]; then
+			printf "future "
+		fi
+		seconds_timespan "${DELTA}" | cut -d ' ' -f -2
+	} || printf 'NaN'
 }

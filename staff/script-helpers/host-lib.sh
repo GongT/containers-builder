@@ -14,12 +14,13 @@ declare -xr __NOTIFYSOCKET=${NOTIFY_SOCKET-}
 function load_sdnotify() {
 	if [[ ${NOTIFY_SOCKET+found} == found ]]; then
 		function sdnotify() {
-			echo "[SDNOTIFY] $*" >&2
+			# echo "[SDNOTIFY] $*" >&2
 			NOTIFY_SOCKET="${__NOTIFYSOCKET}" systemd-notify "$@"
 		}
 	else
 		function sdnotify() {
-			echo "[SDNOTIFY] (disabled) $*" >&2
+			# echo "[SDNOTIFY] (disabled) $*" >&2
+			:
 		}
 	fi
 }
@@ -101,4 +102,14 @@ function create_temp_file() {
 	local FILE_NAME="${1-unknown-usage}"
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
 	mktemp "--tmpdir" "--dry-run" "${FILE_BASE}.XXXXX.${FILE_EXT}"
+}
+
+function image_find_digist() {
+	if OUTPUT=$(podman image inspect --format '{{.ID}}' "$1" 2>&1); then
+		digist_to_short "${OUTPUT}"
+	elif echo "${OUTPUT}" | grep -qF 'image not known'; then
+		return 0
+	else
+		error_with_manager_output
+	fi
 }

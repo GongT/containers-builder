@@ -47,7 +47,7 @@ seconds_timespan() {
 	local -i sec=$1
 	local h
 
-	systemd-analyze timespan "${sec}s" | grep 'Human:' | awk '{print $2}'
+	systemd-analyze timespan "${sec}s" | grep -F 'Human:' | sed -E 's/\s*Human:\s*//; s/min/m/'
 }
 
 declare -ri microsecond_unit=1000000

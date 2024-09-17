@@ -40,6 +40,8 @@ function export_common_libs() {
 	declare -fp variable_is_array variable_is_map variable_exists is_tty function_exists
 	declare -fp use_strict use_normal set_error_trap callstack function_exists reflect_function_location caller_hyperlink
 	declare -fp register_exit_handler call_exit_handlers
+
+	declare -p SYSTEM_COMMON_CACHE SYSTEM_FAST_CACHE PRIVATE_CACHE COMMON_LIB_ROOT MONO_ROOT_DIR SHARED_SCRIPTS_DIR PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 }
 
 function _warp_script_in_function() {

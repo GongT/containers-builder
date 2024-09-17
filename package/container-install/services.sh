@@ -3,17 +3,22 @@
 SERVICES_DIR="$COMMON_LIB_ROOT/staff/services"
 declare -r SERVICES_DIR
 _COMMON_FILE_INSTALL=
+declare -a _RECORD_COMMON_SERVICES=()
 
 function _copy_common_static_unit() {
 	local FILE=$1 NAME="${2-"$(basename "$1")"}"
 	copy_file "${SERVICES_DIR}/${FILE}" "${SYSTEM_UNITS_DIR}/${NAME}"
+
+	_RECORD_COMMON_SERVICES+=("${NAME}")
 }
 
 function _create_common_lib() {
-	declare -p COMMON_LIB_ROOT microsecond_unit
 	export_common_libs
 	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
+	declare -fp is_long_digist is_digist digist_to_short
+	declare -p microsecond_unit
 	SHELL_USE_PROXY
+	export_array CONTROL_SERVICES "${_RECORD_COMMON_SERVICES[@]}"
 
 	cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/host-lib.sh"
 }
@@ -24,17 +29,13 @@ function install_common_system_support() {
 	fi
 	declare -gr _COMMON_FILE_INSTALL=yes
 
-	local BODY
-	BODY=$(_create_common_lib)
-	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "${BODY}"
-
 	_copy_common_static_unit services-entertainment.slice
 	_copy_common_static_unit services-infrastructure.slice
 	_copy_common_static_unit services-normal.slice
 	_copy_common_static_unit services.slice
-	install_common_script_service wait-dns-working
-	install_common_script_service cleanup-stopped-containers
-	install_common_script_service containers-ensure-health
+	_install_common_script_service wait-dns-working
+	_install_common_script_service cleanup-stopped-containers
+	_install_common_script_service containers-ensure-health
 	_copy_common_static_unit containers-ensure-health.timer
 
 	if is_root; then
@@ -43,7 +44,7 @@ function install_common_system_support() {
 		_copy_common_static_unit services-pre.target
 		_copy_common_static_unit containers.target
 		_copy_common_static_unit services-spin-up.service
-		install_common_script_service services-boot
+		_install_common_script_service services-boot
 		service_dropin systemd-networkd alias-nameserver.conf
 		edit_system_service dnsmasq create-dnsmasq-config
 
@@ -59,8 +60,12 @@ function install_common_system_support() {
 			systemctl enable services.target
 		fi
 	fi
+
+	local BODY
+	BODY=$(_create_common_lib)
+	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "${BODY}"
 }
-function install_common_script_service() {
+function _install_common_script_service() {
 	local SRV="$1" ARG="${2-}" SCRIPT
 	local SRV_FILE
 
@@ -70,21 +75,23 @@ function install_common_script_service() {
 		SRV_FILE="${SRV}.service"
 	fi
 
-	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh" global)
+	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#${SCRIPT}#g" \
 		| output_file "${SYSTEM_UNITS_DIR}/${SRV_FILE}"
+	_RECORD_COMMON_SERVICES+=("${SRV_FILE}")
 }
 
 function use_common_timer() {
 	local NAME="$1" SCRIPT
-	install_common_script_service "${NAME}"
+	_install_common_script_service "${NAME}"
 
 	TIMER_FILE="${NAME}.timer"
 
 	_copy_common_static_unit "${TIMER_FILE}"
 	unit_unit Requires "${TIMER_FILE}"
+	_RECORD_COMMON_SERVICES+=("${TIMER_FILE}")
 }
 
 function use_common_service() {
@@ -94,7 +101,7 @@ function use_common_service() {
 		shift
 	fi
 
-	install_common_script_service "$@"
+	_install_common_script_service "$@"
 
 	local SRV="$1" ARG="${2-}" SRV_NAME
 	if [[ -n ${ARG} ]]; then
@@ -122,7 +129,7 @@ function edit_system_service() {
 	local SRV="$1" OVERWRITE="${2}" SCRIPT_FILE
 
 	install_common_system_support
-	SCRIPT_FILE=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh" global)
+	SCRIPT_FILE=$(install_script "${SERVICES_DIR}/${OVERWRITE}.sh")
 
 	if [[ ${SRV} != *".service" ]]; then
 		SRV="${SRV}.service"

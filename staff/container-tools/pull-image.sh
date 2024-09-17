@@ -19,7 +19,7 @@ if [[ ${PULL_POLICY} != "always" && -n ${OLD_ID} ]]; then
 	exit 0
 fi
 
-LAST_PULL_DIR="${XDG_RUNTIME_DIR}/last-pull"
+LAST_PULL_DIR="${PRIVATE_CACHE}/last-pull"
 mkdir -p "${LAST_PULL_DIR}"
 STORE_FILE="${LAST_PULL_DIR}/$(echo "${PODMAN_IMAGE_NAME}" | sed -E 's#[./-:]#_#g' | sed -E 's#__+#_#g')"
 declare -i NOW LAST

@@ -13,6 +13,9 @@ function output_file() {
 }
 
 function __fs_args() {
+	let OPERATER=$1
+	shift
+
 	while [[ $# -gt 0 ]]; do
 		if [[ $1 == "--nodir" ]]; then
 			MKDIR=0
@@ -24,6 +27,9 @@ function __fs_args() {
 		fi
 		shift
 	done
+	if [[ ${#ARGS[@]} -lt ${OPERATER} ]]; then
+		die "invalid filesystem function call (requires ${OPERATER} arguments)"
+	fi
 }
 
 function ensure_parent() {
@@ -72,7 +78,7 @@ function delete_file() {
 function copy_file() {
 	_arg_ensure_finish
 	local ARGS MODE MKDIR=1
-	__fs_args "$@"
+	__fs_args 2 "$@"
 
 	local FILE=${ARGS[0]} TARGET=${ARGS[1]}
 	FILE=$(resolve "${CURRENT_DIR}" "${FILE}")
@@ -104,7 +110,7 @@ function copy_file() {
 function write_file() {
 	_arg_ensure_finish
 	local ARGS MODE MKDIR=1
-	__fs_args "$@"
+	__fs_args 2 "$@"
 	local TARGET=${ARGS[0]} DATA=${ARGS[1]}
 
 	if [[ ${TARGET} == *$'\n'* ]]; then

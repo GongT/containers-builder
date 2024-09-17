@@ -100,6 +100,11 @@ function set_error_trap() {
 	readonly ERRSTACK_FILE
 	if [[ -e ${ERRSTACK_FILE} ]]; then unlink "${ERRSTACK_FILE}"; fi
 
+	function catch_error_stack_force() {
+		# println "error stack captured"
+		# mkdir -p "$(dirname "${ERRSTACK_FILE}")"
+		callstack "${1-2}" &>"${ERRSTACK_FILE}" || true
+	}
 	function catch_error_stack() {
 		if [[ -e ${ERRSTACK_FILE} ]]; then
 			return
@@ -109,8 +114,7 @@ function set_error_trap() {
 				return
 			fi
 		done
-		# info_warn "error stack captured"
-		callstack 2 &>"${ERRSTACK_FILE}" || true
+		catch_error_stack_force 3
 	}
 
 	function ___to_string_global_trap_code() {
@@ -130,12 +134,12 @@ function set_error_trap() {
 		if [[ ${FUNCNAME[0]} == __try_symbol__ ]]; then
 			local __R_CODE=0
 			if [[ -e ${ERRSTACK_FILE} ]]; then unlink "${ERRSTACK_FILE}"; fi
-			# info_warn "error stack cleard"
+			# println "error stack cleard"
 		else
 			local __R_CODE=${ERRNO}
 			catch_error_stack
 		fi
-		# info_note "return $ERRNO"
+		# println "return $ERRNO"
 		# println '!!ERROR (%d) --------------' "${ERRNO}"
 		return ${__R_CODE}
 	}

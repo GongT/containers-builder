@@ -68,6 +68,7 @@ function _create_service_lib() {
 	local BODY
 	BODY=$(
 		_create_common_lib
+		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
 		call_script_emit
 	)
 	write_file "${SCRIPTS_DIR}/service-library.sh" "$BODY"
@@ -112,6 +113,7 @@ function apply_systemd_service() {
 	_arg_ensure_finish
 	local UN="$1"
 
+	delete_file 0 "${PRIVATE_CACHE}/remember-service-list.txt"
 	if is_installing; then
 		if [[ ${SYSTEMD_RELOAD:-yes} == yes ]]; then
 			local AND_ENABLED=''
@@ -171,7 +173,6 @@ function unit_get_scopename() {
 	fi
 }
 function _export_base_envs() {
-	declare -p PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
 	echo "declare -r UNIT_NAME='${_S_CURRENT_UNIT_NAME}'"
@@ -228,14 +229,11 @@ NotifyAccess=all"
 	echo ""
 	echo "[X-Containers]"
 	printf '%s\n' "${_S_COMMENTS[@]}"
-	echo "CONTAINERS_DATA_PATH=${CONTAINERS_DATA_PATH}"
-	echo "COMMON_LIB_ROOT=${COMMON_LIB_ROOT}"
 	echo "MONO_ROOT_DIR=${MONO_ROOT_DIR-}"
 	echo "CURRENT_DIR=${CURRENT_DIR}"
 	echo "INSTALLER_SCRIPT=${CURRENT_FILE}"
 	echo "PROJECT_NAME=${PROJECT_NAME}"
-	echo "SYSTEM_COMMON_CACHE=${SYSTEM_COMMON_CACHE}"
-	echo "SYSTEM_FAST_CACHE=${SYSTEM_FAST_CACHE}"
+	echo "SCRIPTS_DIR=${SCRIPTS_DIR}"
 }
 function unit_depend() {
 	if [[ -n $* ]]; then

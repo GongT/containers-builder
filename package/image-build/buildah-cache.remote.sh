@@ -6,8 +6,8 @@ if [[ -n ${DOCKER_CACHE_CENTER_AUTH-} ]]; then
 fi
 
 if [[ -z ${DOCKER_CACHE_CENTER-} ]]; then
-	declare -rx DOCKER_CACHE_CENTER="dir:${SYSTEM_COMMON_CACHE}/image-builder"
-	mkdir --mode 0777 -p "${SYSTEM_COMMON_CACHE}/image-builder"
+	declare -rx DOCKER_CACHE_CENTER="dir:${PRIVATE_CACHE}/local-layers-cache"
+	mkdir --mode 0777 -p "${PRIVATE_CACHE}/local-layers-cache"
 fi
 
 case "${DOCKER_CACHE_CENTER}" in

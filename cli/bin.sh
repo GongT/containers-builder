@@ -1,7 +1,8 @@
 #!/bin/bash
 
-source "../package/include.sh"
+use_normal
 
+declare -ra ORIGINAL_ARGS=("$@")
 if [[ $# -ge 1 ]]; then
 	ACTION=${1-}
 	shift
@@ -11,29 +12,20 @@ fi
 
 if [[ ${UID} -eq 0 ]]; then
 	declare -xr SCRIPTS_DIR="/usr/local/libexec/image-builder-cli"
-	declare -r SYSTEM_UNITS_DIR="/usr/local/lib/systemd/system"
 else
 	declare -xr SCRIPTS_DIR="${HOME}/.local/libexec/image-builder-cli"
-	declare -r SYSTEM_UNITS_DIR="${HOME}/.config/systemd/user"
 	declare -r SYSTEMCTL=$(command -v systemctl)
 	function systemctl() {
 		"${SYSTEMCTL}" --user "$@"
 	}
 fi
-
 cd "${SCRIPTS_DIR}"
 
-source cli-lib/common.sh
-source cli-lib/table.sh
-source cli-lib/usage.sh
-for i in cli-lib/act_*.sh; do
-	# shellcheck disable=SC1090
-	source "${i}"
-done
+mkdir -p "${TMPDIR}"
 
 case "${ACTION}" in
-'')
-	do_default
+'' | --pre)
+	do_default "${ORIGINAL_ARGS[@]}"
 	;;
 install)
 	go_home
@@ -88,7 +80,7 @@ pstree)
 	do_pstree "$@"
 	;;
 pull)
-	do_pull_all "$@"
+	do_pull "$@"
 	;;
 deps)
 	do_deps "$@"
