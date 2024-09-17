@@ -79,15 +79,16 @@ function unit_write() {
 		die "create unit first."
 	fi
 
-	install_common_system_support
-	_create_service_lib
-
 	local TF
 	TF=$(create_temp_file "${_S_CURRENT_UNIT_FILE}")
 	_unit_assemble >"${TF}"
 	if [[ -e "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}" ]]; then
 		delete_file 0 "/usr/lib/systemd/system/${_S_CURRENT_UNIT_FILE}"
 	fi
+
+	install_common_system_support
+	_create_service_lib
+
 	if is_installing; then
 		info_log "verify unit: ${TF}"
 		printf "\e[38;5;9m%s\e[0m\n" "$(systemd-analyze verify "${TF}" 2>&1 | grep -F -- "$(basename "$TF")" || true)"

@@ -26,10 +26,6 @@ function environment_variable() {
 	done
 }
 
-function safe_environment() {
-	die "removed function safe_environment, use environment_variable"
-}
-
 function __commit_environment() {
 	local F
 	F="$(_env_passing_file_path container)"
@@ -52,7 +48,7 @@ function __commit_environment() {
 
 	OUTPUT=$(echo "${OUTPUT}" | sed -E 's#\s+$##g')
 
-	write_file --mode 0644 "${F}" "${OUTPUT}"
+	write_file --mode 0600 "${F}" "${OUTPUT}"
 
 	podman_engine_params "--env-file=${F}"
 
