@@ -30,7 +30,7 @@ function _SERVICE_exit_handler() {
 
 	_CURRENT_INDENT='[exit] '
 
-	info_note "call handler: last-return=${_EXIT_CODE}, ERRNO=${ERRNO}, EXIT_CODE=${EXIT_CODE-missing}, pid=$$"
+	# info_note "call handler: last-return=${_EXIT_CODE}, ERRNO=${ERRNO}, EXIT_CODE=${EXIT_CODE-missing}, pid=$$"
 
 	call_exit_handlers
 
@@ -52,7 +52,7 @@ function _SERVICE_exit_handler() {
 		fi
 	fi
 
-	exit $EXIT_CODE
+	exit $_EXIT_CODE
 }
 trap _SERVICE_exit_handler EXIT
 

@@ -54,6 +54,7 @@ for A in "${ENGINE_PARAMS[@]}"; do
 done
 ENGINE_PARAMS=("${COPY[@]}")
 ENGINE_PARAMS+=("--name=${CONTAINER_ID}")
+ENGINE_PARAMS+=("--env=IN_DEBUG_MODE=yes")
 
 if [[ $# -gt 0 ]]; then
 	COMMAND_LINE=("$@")
