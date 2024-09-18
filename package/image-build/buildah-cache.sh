@@ -96,7 +96,7 @@ function buildah_cache() {
 		else
 			info_success "cache exists <hash=${EXISTS_HASH}, base=${EXISTS_PREVIOUS_ID}>"
 			if [[ "${EXISTS_HASH}++${EXISTS_PREVIOUS_ID}" == "${WANTED_HASH}++${PREVIOUS_ID}" ]]; then
-				_buildah_cache_done "${STEP_RESULT_IMAGE}"
+				_buildah_cache_done hit "${STEP_RESULT_IMAGE}"
 				return
 			fi
 			info "cache outdat <want=${WANTED_HASH}, base=${PREVIOUS_ID}>"
@@ -130,11 +130,11 @@ function buildah_cache() {
 	local BUILT_ID
 	BUILT_ID=$(buildah commit "${CID}" "${STEP_RESULT_IMAGE}")
 
-	_buildah_cache_done "${BUILT_ID}"
+	_buildah_cache_done miss "${BUILT_ID}"
 }
 
 _buildah_cache_done() {
-	local -r BUILT_ID=$1
+	local -r CACHE_STATE=$1 BUILT_ID=$2
 	record_last_image "${BUILT_ID}"
 
 	cache_push "${CACHE_NAME}" "${WORK_STAGE}"
@@ -144,8 +144,39 @@ _buildah_cache_done() {
 		info_note "[${CACHE_NAME}] STEP ${WORK_STAGE} DONE | result: ${BUILT_ID}\n"
 	fi
 
+	SUMMARY=$(
+		echo "## ${CACHE_NAME} step ${WORK_STAGE} - ${_STITLE}"
+		echo " - cache status: ${CACHE_STATE}"
+		echo " - cache hash: ${WANTED_HASH}"
+		echo "### Base Image"
+		_image_summary "${PREVIOUS_ID}"
+		echo "### Built Result"
+		_image_summary "${BUILT_ID}"
+		echo ""
+	)
+	control_ci summary "${SUMMARY}"
+
 	if should_quit_after_this_step; then
 		info_success "build step done (skip all remaining steps)"
 		exit 0
 	fi
+}
+
+function _image_summary() {
+	local -r ID=$1
+	if [[ ${ID} == none ]]; then
+		echo " - scrach"
+		return
+	fi
+
+	local JSON CTIME SIZE NAME
+	JSON=$(podman image history --format=json "${ID}")
+
+	CTIME=$(parse_json "${JSON}" ".[0].created")
+	SIZE=$(parse_json "${JSON}" ".[0].size")
+	NAME=$(parse_json "${JSON}" ".[0].tags[0]")
+
+	printf ' - Create Time: %s\n' "$(TZ=GMT+9 systemd-analyze timestamp "${CTIME}" | grep -E 'Normalized form:|From now:' | sed -E 's/^.+:\s+//' | tr '\n' ' ('))"
+	printf ' - Size: %s\n' "$(numfmt --to=iec --suffix=B --format="%.2f" "${SIZE}")"
+	printf ' - Name: %s\n' "${NAME}"
 }

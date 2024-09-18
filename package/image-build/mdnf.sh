@@ -201,11 +201,11 @@ function dnf_install_step() {
 		cat "${PKG_LIST_FILE}"
 		info_note "   listing versions..."
 		dnf_list_version "${PKG_LIST_FILE}"
-		cat "${POST_SCRIPT}"
+		if [[ -n ${POST_SCRIPT} ]]; then cat "${POST_SCRIPT}"; fi
 	}
 	_dnf_build_cb() {
 		local CONTAINER="$1"
-		call_dnf_install "${CONTAINER}" "${PKG_LIST_FILE}"
+		call_dnf_install "${CONTAINER}" "${PKG_LIST_FILE}" "${POST_SCRIPT}"
 	}
 
 	if [[ ${FORCE_DNF+found} != found ]]; then

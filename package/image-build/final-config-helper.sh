@@ -41,11 +41,15 @@ function buildah_finalize_image() {
 
 	local SUMMARY
 	SUMMARY=$(
-		echo "success build image"
-		echo "  - IMAGE = $LAST_COMMITED_IMAGE"
-		echo "  - NAME = $IMAGE_OUT"
-		echo "  - BASE = ${LAST_KNOWN_BASE-}"
-		xpodman image tree "$LAST_COMMITED_IMAGE"
+		echo "## success build image"
+		echo " - IMAGE = ${LAST_COMMITED_IMAGE}"
+		echo " - NAME = ${IMAGE_OUT}"
+		echo " - BASE = ${BASE_IMAGE_NAME-}"
+		echo ""
+		echo '```text'
+		xpodman image tree "${LAST_COMMITED_IMAGE}"
+		echo '```'
+		echo ""
 	)
 
 	control_ci summary "${SUMMARY}"

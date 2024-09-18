@@ -8,7 +8,10 @@ function filtered_jq() {
 	fi
 	echo "${INPUT}"
 }
-
+function parse_json() {
+	local -r INPUT=$1 QUERY='$ARGS.positional[0] | '"$2"
+	jq "${JQ_ARGS[@]}" --null-input "${QUERY}" --jsonargs "${INPUT}"
+}
 function json_map() {
 	local -nr VARREF=$1
 	if ! variable_is_map "$1"; then
