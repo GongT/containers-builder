@@ -9,7 +9,7 @@ function create_dnf_arguments() {
 	fi
 	shift
 
-	VARREF=(
+	VARREF+=(
 		"--env=PATH=/usr/local/bin:/usr/bin:/usr/sbin"
 		"--env=RPMDB=${DNF_ENVIRONMENT_RPMDB}"
 		"--cap-add=CAP_SYS_ADMIN" # to mount
@@ -147,7 +147,7 @@ function call_dnf_with_guest() {
 	}
 
 	alternative_buffer_execute \
-		"run for: ${WORKING_CONTAINER}, script: ${POST_SCRIPT-not present}, cmdline: dnf ${DNF_ARGS[*]}" \
+		"run for: ${WORKING_CONTAINER}, script: ${POST_SCRIPT}, cmdline: dnf ${DNF_ARGS[*]}" \
 		_run_group
 	unset -f _run_group
 }
