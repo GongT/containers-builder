@@ -176,7 +176,7 @@ function _image_summary() {
 	SIZE=$(parse_json "${JSON}" ".[0].size")
 	NAME=$(parse_json "${JSON}" ".[0].tags[0]")
 
-	printf ' - Create Time: %s\n' "$(TZ=GMT+9 systemd-analyze timestamp "${CTIME}" | grep -E 'Normalized form:|From now:' | sed -E 's/^.+:\s+//' | tr '\n' ' ('))"
+	printf ' - Create Time: %s\n' "$(TZ=GMT+8 systemd-analyze timestamp "${CTIME}" | grep -E 'Normalized form:|From now:' | sed -E 's/^.+:\s+//' | tr '\n' '`' | sed 's/`/ (`/'))"
 	printf ' - Size: %s\n' "$(numfmt --to=iec --suffix=B --format="%.2f" "${SIZE}")"
 	printf ' - Name: %s\n' "${NAME}"
 }
