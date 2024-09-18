@@ -32,7 +32,7 @@ function buildah_run_shell_script() {
 function export_common_libs() {
 	echo 'declare -a EXIT_HANDLERS=()'
 
-	declare -fp filtered_jq json_array json_array_get_back json_map json_map_get_back
+	declare -fp filtered_jq parse_json json_array json_array_get_back json_map json_map_get_back
 	declare -p JQ_ARGS
 
 	declare -fp die indent dedent x trim indent_stream indent_multiline save_indent restore_indent

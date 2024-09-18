@@ -32,7 +32,7 @@ function image_find_full_name() {
 		error_with_manager_output
 	fi
 
-	LIST=$(jq --raw-output --null-input '$ARGS.positional[0][0].NamesHistory + .[0].RepoTags | .[]' --jsonargs "${OUT}" | sort | uniq)
+	LIST=$(jq --raw-output --null-input '$ARGS.named.INPUT[0].NamesHistory + .[0].RepoTags | .[]' --argjson INPUT "${OUT}" | sort | uniq)
 	if [[ -z ${LIST} ]]; then
 		return
 	fi

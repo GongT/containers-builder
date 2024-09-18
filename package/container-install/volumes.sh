@@ -29,18 +29,18 @@ function unit_fs_bind() {
 	_S_VOLUME_ARG+=("--volume=${FROM}:${TO}${OPTIONS}")
 }
 function _pass_socket_path_env() {
-	environment_variable "SHARED_SOCKET_PATH=/run/nginx/sockets"
+	environment_variable "SHARED_SOCKET_PATH=/run/sockets"
 }
 function shared_sockets_use() {
 	_pass_socket_path_env
 	if ! echo "${_S_VOLUME_ARG[*]}" | grep "${SHARED_SOCKET_PATH}"; then
-		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/nginx/sockets
+		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/sockets
 	fi
 }
 function shared_sockets_provide() {
 	_pass_socket_path_env
 	if ! echo "${_S_VOLUME_ARG[*]}" | grep "${SHARED_SOCKET_PATH}"; then
-		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/nginx/sockets
+		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/sockets
 	fi
 	local -a FULLPATH=() ARGS=()
 	local i

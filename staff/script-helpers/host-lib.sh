@@ -23,6 +23,39 @@ else
 	}
 fi
 
+function _SERVICE_exit_handler() {
+	local _EXIT_CODE=$?
+	set +xEeuo pipefail
+	trap - ERR
+
+	_CURRENT_INDENT='[exit] '
+
+	info_note "call handler: last-return=${_EXIT_CODE}, ERRNO=${ERRNO}, EXIT_CODE=${EXIT_CODE-missing}, pid=$$"
+
+	call_exit_handlers
+
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
+		info_error "command return code ${_EXIT_CODE}"
+	elif [[ ${EXIT_CODE-0} -ne 0 ]]; then
+		info_error "service script exit with error code ${EXIT_CODE}"
+		_EXIT_CODE=${EXIT_CODE}
+	elif [[ ${ERRNO} -ne 0 ]]; then
+		info_error "unclean errno ${ERRNO}"
+		_EXIT_CODE=${ERRNO}
+	fi
+
+	if [[ ${_EXIT_CODE} -ne 0 ]]; then
+		if [[ -e ${ERRSTACK_FILE-not exists} ]]; then
+			cat "${ERRSTACK_FILE}"
+		else
+			info_warn "stack not available"
+		fi
+	fi
+
+	exit $EXIT_CODE
+}
+trap _SERVICE_exit_handler EXIT
+
 function expand_timeout() {
 	if [[ $1 -gt 0 ]]; then
 		sdnotify "EXTEND_TIMEOUT_USEC=$1"
@@ -139,4 +172,80 @@ function image_find_digist() {
 	else
 		error_with_manager_output
 	fi
+}
+
+function image_get_annotation() {
+	local IMAGE=$1 ANNO_NAME="$2"
+	podman image inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${IMAGE}"
+}
+
+function image_get_label() {
+	local IMAGE=$1 LABEL_NAME="$2"
+	podman image inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
+}
+
+function container_get_annotation() {
+	if [[ $# -eq 1 ]]; then
+		local -r ID=$(get_container_id) ANNO_NAME="$1"
+	elif [[ $# -eq 2 ]]; then
+		local -r ID=$1 ANNO_NAME="$2"
+	else
+		die "invalid call"
+	fi
+	podman container inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${ID}"
+}
+
+function container_get_label() {
+	if [[ $# -eq 1 ]]; then
+		local -r ID=$(get_container_id) LABEL_NAME="$1"
+	elif [[ $# -eq 2 ]]; then
+		local -r ID=$1 LABEL_NAME="$2"
+	else
+		die "invalid call"
+	fi
+	podman container inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${ID}"
+}
+
+# "configured",  "created",  "exited", "healthy", "initialized", "paused", "removing", "running", "stopped", "stopping", "unhealthy"
+#    + "removed"
+function container_get_status() {
+	local OUTPUT ID=${1-"$(get_container_id)"}
+	OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${ID}" 2>&1 || true)"
+	if [[ ${OUTPUT} == *"no such container"* ]]; then
+		printf "removed"
+	else
+		printf '%s' "${OUTPUT}"
+	fi
+}
+
+function is_running_state() {
+	case "$1" in
+	healthy | removing | running | stopping | paused)
+		return 0
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
+
+function wait_removal() {
+	local ID=${1-"$(get_container_id)"} STATE
+	sleep 1s
+
+	info_note "wait container ${ID} to remove:"
+	while podman container exists "${ID}"; do
+		sleep 1s
+		STATE=$(container_get_status "${ID}")
+
+		if is_running_state "${STATE}"; then
+			info_note "  * still runining. (I'll not stop it)"
+		elif [[ ${STATE} == 'removed' ]]; then
+			info_note "  - success."
+			return
+		else
+			info_note "  * stopped but not remove, remove it now. (I'll not add --force or --depend)"
+			podman container rm "${ID}"
+		fi
+	done
 }

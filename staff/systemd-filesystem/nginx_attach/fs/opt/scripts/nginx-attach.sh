@@ -22,13 +22,13 @@ apply_gateway() {
 	fi
 	if command -v curl &>/dev/null; then
 		echo "notify using curl"
-		curl --unix-socket /run/nginx/sockets/nginx.reload.sock http://_/
+		curl --unix-socket /run/sockets/nginx.reload.sock http://_/
 	elif command -v nc &>/dev/null; then
 		echo "notify using nc"
-		make_http | nc -U /run/nginx/sockets/nginx.reload.sock
+		make_http | nc -U /run/sockets/nginx.reload.sock
 	elif command -v socat &>/dev/null; then
 		echo "notify using socat"
-		make_http | socat - UNIX-CONNECT:/run/nginx/sockets/nginx.reload.sock
+		make_http | socat - UNIX-CONNECT:/run/sockets/nginx.reload.sock
 	else
 		echo "no supported communication tool" >&2
 		return 1

@@ -10,7 +10,7 @@ function make_arguments() {
 	detect_host_ip
 
 	readonly COMMAND_LINE
-	local COMBINED_ARGS=("${ENGINE_PARAMS[@]}" "${PODMAN_IMAGE_NAME[@]}" "${COMMAND_LINE[@]}")
+	local COMBINED_ARGS=("${ENGINE_PARAMS[@]}")
 
 	local i
 	for i in "${COMBINED_ARGS[@]}"; do
@@ -42,4 +42,7 @@ function make_arguments() {
 
 	dns_finalize
 	mount_nginx_shared_config
+
+	push_engine_param "${PODMAN_IMAGE_NAME}"
+	push_engine_param "${COMMAND_LINE[@]}"
 }

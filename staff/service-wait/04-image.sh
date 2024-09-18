@@ -1,25 +1,18 @@
-_IMAGE_LABEL_JSON
-function inspect_image() {
+function current_image_find_annotation() {
 	if ! variable_exists _IMAGE_LABEL_JSON; then
 		_IMAGE_LABEL_JSON=$(podman image inspect "${PODMAN_IMAGE_NAME}")
 	fi
-	jq -r '$ARGS.named.INPUT[0]' --argjson INPUT "${_IMAGE_LABEL_JSON}"
+	parse_json "${_IMAGE_LABEL_JSON}" '.[0].Annotations[$tag]' --arg tag "$1" || echo ''
 }
-function get_image_annotation() {
+function current_image_find_label() {
 	if ! variable_exists _IMAGE_LABEL_JSON; then
 		_IMAGE_LABEL_JSON=$(podman image inspect "${PODMAN_IMAGE_NAME}")
 	fi
-	jq -r '$ARGS.named.INPUT[0].Annotations[$tag]' --arg tag "$1" --argjson INPUT "${_IMAGE_LABEL_JSON}"
-}
-function get_image_label() {
-	if ! variable_exists _IMAGE_LABEL_JSON; then
-		_IMAGE_LABEL_JSON=$(podman image inspect "${PODMAN_IMAGE_NAME}")
-	fi
-	jq -r '$ARGS.named.INPUT[0].Labels[$tag]' --arg tag "$1" --argjson INPUT "${_IMAGE_LABEL_JSON}"
+	parse_json "${_IMAGE_LABEL_JSON}" '.[0].Labels[$tag]' --arg tag "$1" || echo ''
 }
 
 declare SYSTEMD_DEFINATION=''
-function is_image_using_systemd() {
-	SYSTEMD_DEFINATION=$(get_image_label "${LABELID_USE_SYSTEMD}")
-	[[ -n ${SYSTEMD_DEFINATION} && ${SYSTEMD_DEFINATION} != null ]]
+function current_image_is_using_systemd() {
+	SYSTEMD_DEFINATION=$(current_image_find_label "${LABELID_USE_SYSTEMD}")
+	[[ -n ${SYSTEMD_DEFINATION} ]]
 }

@@ -73,7 +73,7 @@ function execute_service_waiter_main() {
 	if [[ ${START_WAIT_DEFINE} == auto ]]; then
 		if is_image_has_healthcheck; then
 			START_WAIT_DEFINE=healthy
-		elif is_image_using_systemd; then
+		elif current_image_is_using_systemd; then
 			START_WAIT_DEFINE=pass
 		else
 			START_WAIT_DEFINE=sleep:10

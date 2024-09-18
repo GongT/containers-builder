@@ -4,8 +4,9 @@ source "../../package/include.sh"
 use_normal
 
 function JQ() {
-	local -r FILTER="\$ARGS.positional[0]$1"
-	filtered_jq --null-input "${FILTER}" --jsonargs "${JSON}"
+	# use parse_json
+	local -r FILTER="\$ARGS.named.JSON${1}"
+	filtered_jq --null-input "${FILTER}" --argjson JSON "${JSON}"
 }
 
 function try_resolve() {

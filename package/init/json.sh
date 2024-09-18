@@ -9,8 +9,8 @@ function filtered_jq() {
 	echo "${INPUT}"
 }
 function parse_json() {
-	local -r INPUT=$1 QUERY='$ARGS.positional[0] | '"$2"
-	jq "${JQ_ARGS[@]}" --null-input "${QUERY}" --jsonargs "${INPUT}"
+	local -r INPUT=$1 QUERY="\$ARGS.named.INPUT | ${2}"
+	jq "${JQ_ARGS[@]}" --null-input "${QUERY}" --argjson INPUT "${INPUT}" "${@:3}"
 }
 function json_map() {
 	local -nr VARREF=$1
@@ -59,7 +59,7 @@ function json_array_get_back() {
 
 	local -i SIZE i
 	local CODE
-	CODE=$(jq "${JQ_ARGS[@]}" --null-input '$ARGS.positional[0]|@sh' --jsonargs "$JSON")
+	CODE=$(jq "${JQ_ARGS[@]}" --null-input '$ARGS.named.JSON | @sh' --argjson JSON "$JSON")
 	if [[ ${CODE} == null ]]; then
 		eval "${_VARNAME}=()"
 		return

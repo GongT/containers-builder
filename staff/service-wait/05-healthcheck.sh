@@ -1,6 +1,7 @@
 function apply_container_healthcheck() {
 	declare -r ANNO_MY_HEALTHCHECK="healthcheck"
-	DEF=$(get_image_annotation "${ANNO_MY_HEALTHCHECK}" 2>/dev/null)
+	DEF=$(current_image_find_annotation "${ANNO_MY_HEALTHCHECK}")
+	info_note "health check define: ${DEF}"
 	declare -a HC_ARGS=()
 	json_array_get_back HC_ARGS "${DEF}"
 	if [[ ${#HC_ARGS[@]} -gt 0 ]]; then
