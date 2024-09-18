@@ -27,12 +27,12 @@ function finalize_daemon_reloaded() {
 
 register_exit_handler finalize_daemon_reloaded
 
-uptime_sec() {
+function uptime_sec() {
 	local T
 	T=$(awk '{print $1}' /proc/uptime)
 	printf "%.0f" "${T}"
 }
-timespan_seconds() {
+function timespan_seconds() {
 	local span=$1
 	local -i us
 	if [[ $span == infinity ]]; then
@@ -43,7 +43,7 @@ timespan_seconds() {
 		printf '-1'
 	fi
 }
-seconds_timespan() {
+function seconds_timespan() {
 	local -i sec=$1
 	local h
 

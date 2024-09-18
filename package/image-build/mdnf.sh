@@ -183,6 +183,7 @@ function dnf_list_version() {
 
 	control_ci summary "<details>
   <summary>DNF Install</summary>
+
 \`\`\`text
 ${RET}
 \`\`\`

@@ -25,6 +25,8 @@ function buildah_cache() {
 		unset STEP
 	fi
 
+	local -r START_TIME=$(uptime_sec)
+
 	local -r CACHE_NAME=$1
 	# no arg callback
 	local -r BUILDAH_HASH_CALLBACK=$2
@@ -144,12 +146,23 @@ _buildah_cache_done() {
 		info_note "[${CACHE_NAME}] STEP ${WORK_STAGE} DONE | result: ${BUILT_ID}\n"
 	fi
 
+	local -r END_TIME=$(uptime_sec)
+
 	SUMMARY=$(
 		echo "## ${CACHE_NAME} step ${WORK_STAGE} - ${_STITLE}"
+		echo ""
 		echo " - cache status: ${CACHE_STATE}"
 		echo " - cache hash: ${WANTED_HASH}"
-		echo "### Base Image"
+		echo " - time elapsed: $(seconds_timespan $((END_TIME - START_TIME)))"
+		echo ""
+		echo "<details>"
+		echo "<summary>## Base Image</summary>"
+		echo ""
+		echo ""
 		_image_summary "${PREV_STAGE_IMAGE_ID}"
+		echo ""
+		echo "</details>"
+		echo ""
 		echo "### Built Result"
 		_image_summary "${BUILT_ID}"
 		echo ""

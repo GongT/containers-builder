@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function add_after() {
 	cat >>/etc/systemd/system/success.service.d/after.conf <<-EOF
 		[Unit]
