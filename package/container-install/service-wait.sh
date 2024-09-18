@@ -31,6 +31,7 @@ _debugger_file_write() {
 	{
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
+		echo 'declare -xr IN_DEBUG_MODE=yes'
 		call_script_emit
 		__concat_wait_files
 		cat_source_file "${SRC}"

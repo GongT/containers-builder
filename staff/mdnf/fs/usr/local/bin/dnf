@@ -64,3 +64,20 @@ if [[ ${ACTION} == install && ${RUNMODE-} == guest ]]; then
 		info_log "no busybox."
 	fi
 fi
+
+if [[ ${RUNMODE-} == guest ]]; then
+	POST_SCRIPT_FILE='/tmp/dnf.postscript.sh'
+	if [[ -e ${POST_SCRIPT_FILE} ]]; then
+		info "execute post install script:"
+		read -r FIRST_LINE <"${POST_SCRIPT_FILE}"
+		if [[ ${FIRST_LINE} != '#!'* ]]; then
+			CMD='/usr/bin/bash'
+		else
+			CMD="${FIRST_LINE:2}"
+		fi
+		#shellcheck disable=SC2086
+		x chroot /install-root ${CMD} <"${POST_SCRIPT_FILE}"
+	else
+		info_note "no post install script."
+	fi
+fi

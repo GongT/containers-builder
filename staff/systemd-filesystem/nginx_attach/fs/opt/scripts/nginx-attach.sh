@@ -18,6 +18,7 @@ apply_gateway() {
 		rm -v "${CFG_FNAME}"
 	else
 		echo "copy config file: $NGINX_CONFIG (to $CFG_FNAME)"
+		mkdir -p "$(dirname "${CFG_FNAME}")"
 		cp -v "$NGINX_CONFIG" "${CFG_FNAME}"
 	fi
 	if command -v curl &>/dev/null; then
@@ -38,8 +39,8 @@ apply_gateway() {
 	fi
 }
 
-if [[ ! -d /run/nginx/config/vhost.d/ ]]; then
-	echo "missing mount folder: /run/nginx/config/vhost.d/" >&2
+if [[ ! -d /run/nginx ]]; then
+	echo "missing mounted folder: /run/nginx" >&2
 	exit 66
 fi
 

@@ -8,7 +8,7 @@ if [[ -e /etc/fedora-release ]]; then
 	rm -vf ./*.mount ./*.path ./systemd-firstboot.service ./systemd-machine-id-commit.service ./systemd-sysusers.service ./systemd-tpm2-* ./systemd-update-*
 fi
 
-systemctl enable console-getty || true
+systemctl disable console-getty.service || true
 systemctl mask systemd-networkd-wait-online.service
 
 systemctl enable success.service

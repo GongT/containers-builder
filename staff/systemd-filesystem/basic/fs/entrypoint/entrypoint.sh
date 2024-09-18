@@ -22,6 +22,10 @@ echo "[entrypoint.sh]: environments: (save to /run/.userenvironments)"
 
 unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS
 
+if [[ ${IN_DEBUG_MODE-} == yes ]]; then
+	systemctl enable console-getty.service
+fi
+
 if [[ -e ${NOTIFY_SOCKET-not exists} ]]; then
 	echo "__NOTIFY_SOCKET__=${NOTIFY_SOCKET}" >>/run/.userenvironments
 	systemd-notify "--status=system boot up"

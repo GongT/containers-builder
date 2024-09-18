@@ -83,7 +83,7 @@ function alternative_buffer_execute() {
 			return ${ERRNO}
 		fi
 	else
-		control_ci group "DNF run (worker: ${WORKING_CONTAINER}, dnf worker: ${DNF})"
+		control_ci group "${TITLE}"
 		_run_group
 		control_ci groupEnd
 	fi
