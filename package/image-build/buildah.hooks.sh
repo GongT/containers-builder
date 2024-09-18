@@ -145,6 +145,7 @@ function buildah() {
 			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
 		fi
 		xbuildah "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}" </dev/null
+		return
 		;;
 	*) ;;
 	esac

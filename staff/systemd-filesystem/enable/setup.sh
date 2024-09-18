@@ -1,34 +1,4 @@
-function enable_all() {
-	PATHS=(
-		/usr/local/lib/systemd/system
-		/etc/systemd/system
-	)
-
-	ALL_FILES=()
-	for PAT in "${PATHS[@]}"; do
-		if [[ ! -d $I ]]; then
-			continue
-		fi
-
-		find "$PAT" -maxdepth 1 '(' -type f -o type l ')' -print0 | while read -d '' -r FILE; do
-			if [[ $(readlink "${FILE}" || true) == '/dev/null' ]]; then
-				continue
-			fi
-
-			if ! grep -qF "[Install]" "${FILE}"; then
-				continue
-			fi
-
-			NAME="$(basename "${FILE}")"
-			ALL_FILES+=("$NAME")
-		done
-	done
-
-	x systemctl enable "${ALL_FILES[@]}" || true
-	add_after "${ALL_FILES[*]}"
-}
 function add_after() {
-	mkdir -p /etc/systemd/system/success.service.d
 	cat >>/etc/systemd/system/success.service.d/after.conf <<-EOF
 		[Unit]
 		After=$*
@@ -36,11 +6,24 @@ function add_after() {
 	EOF
 }
 
-if [[ -n ${UNITS} ]]; then
-	# shellcheck disable=SC2086
-	x systemctl enable ${UNITS}
-	# shellcheck disable=SC2086
-	add_after ${UNITS}
-else
-	enable_all
+mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE}")
+mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT}")
+
+mkdir -p /etc/systemd/system/success.service.d
+OVERWRITE=/etc/systemd/system/success.service.d/plugin-enable.conf
+echo '[Unit]' >"${OVERWRITE}"
+
+if [[ ${#REQ_ARR[@]} -eq 0 && ${#WANT_ARR[@]} -eq 0 ]]; then
+	die "systemd enable must have params (REQUIRE/WANT)"
+fi
+x systemctl enable "${REQ_ARR[@]}" "${WANT_ARR[@]}"
+
+if [[ ${#REQ_ARR[@]} -ne 0 ]]; then
+	echo "After=${REQ_ARR[*]}" >>"${OVERWRITE}"
+	echo "Requires=${REQ_ARR[*]}" >>"${OVERWRITE}"
+fi
+
+if [[ ${#WANT_ARR[@]} -ne 0 ]]; then
+	echo "After=${WANT_ARR[*]}" >>"${OVERWRITE}"
+	echo "Wants=${WANT_ARR[*]}" >>"${OVERWRITE}"
 fi

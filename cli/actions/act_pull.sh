@@ -13,7 +13,7 @@ do_pull() {
 	cd "${SYSTEM_UNITS_DIR}"
 	local -a SERVICE_NAMES=()
 	if [[ ${#LIST[@]} -eq 0 ]]; then
-		expand_service_file '' | mapfile -t SERVICE_NAMES
+		expand_service_file | mapfile -t SERVICE_NAMES
 	else
 		for I in "${LIST[@]}"; do
 			local SRVN
@@ -23,7 +23,9 @@ do_pull() {
 		done
 	fi
 
-	printf '%s\n' "${SERVICE_NAMES[@]}" | sort | uniq | mapfile -t SERVICE_NAMES
+	local UNIQ
+	UNIQ=$(printf '%s\n' "${SERVICE_NAMES[@]}" | sort | uniq)
+	printf '%s' "$UNIQ" | mapfile -t SERVICE_NAMES
 
 	go_home
 

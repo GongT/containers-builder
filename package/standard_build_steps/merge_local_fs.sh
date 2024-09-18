@@ -29,6 +29,7 @@ function merge_local_fs() {
 	fi
 	___merge_local_fs_hash() {
 		hash_path fs
+		echo "${ARGS[*]}"
 		if [[ -n ${EXTRA_SCRIPT} ]]; then
 			printf "\0\0\0\0"
 			cat "${EXTRA_SCRIPT}"

@@ -22,11 +22,12 @@ echo "[entrypoint.sh]: environments: (save to /run/.userenvironments)"
 
 unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS
 
-if [[ -e ${NOTIFY_SOCKET} ]]; then
+if [[ -e ${NOTIFY_SOCKET-not exists} ]]; then
 	echo "__NOTIFY_SOCKET__=${NOTIFY_SOCKET}" >>/run/.userenvironments
 	systemd-notify "--status=system boot up"
 	echo "NOTIFY_SOCKET=${NOTIFY_SOCKET}" >>/root/.bashrc
 else
+	echo "NOTIFY_SOCKET is not exists, disable success notify service."
 	systemctl disable success.service
 	systemctl mask success.service
 	rm -f /usr/local/lib/systemd/system/multi-user.target.d/require-success.conf

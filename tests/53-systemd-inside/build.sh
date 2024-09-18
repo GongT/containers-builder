@@ -13,6 +13,6 @@ dnf_install_step "$PROJECT_NAME" scripts/requirements.lst
 merge_local_fs "$PROJECT_NAME" scripts/prepare-fs.sh
 
 setup_systemd "$PROJECT_NAME" \
-	enable UNITS="sleep.service" X=fail.service
+	enable REQUIRE="sleep.service" WANT=fail.service
 
 buildah_finalize_image "$PROJECT_NAME" "$PROJECT_NAME"

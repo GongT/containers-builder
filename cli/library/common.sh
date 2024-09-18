@@ -49,9 +49,9 @@ function go_home() {
 }
 
 function expand_service_file() {
-	local NAME_HINT=$1
+	local NAME_HINT=${1-}
 	_ls_all_with_cache | while read -r NAME; do
-		if [[ ${NAME} == "${NAME_HINT}"* ]]; then
+		if [[ -z ${NAME_HINT} || ${NAME} == "${NAME_HINT}"* ]]; then
 			if [[ ${NAME} == *@* ]]; then
 				echo "${NAME%@*}@.service"
 			else
