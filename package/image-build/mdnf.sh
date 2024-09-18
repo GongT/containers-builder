@@ -181,6 +181,14 @@ function dnf_list_version() {
 	indent_multiline "${RET}"
 	info_log "================================================="
 
+	control_ci summary "<details>
+  <summary>DNF Install</summary>
+\`\`\`text
+${RET}
+\`\`\`
+</details>
+"
+
 	echo "${RET}"
 }
 
