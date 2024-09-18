@@ -149,7 +149,7 @@ _buildah_cache_done() {
 		echo " - cache status: ${CACHE_STATE}"
 		echo " - cache hash: ${WANTED_HASH}"
 		echo "### Base Image"
-		_image_summary "${PREVIOUS_ID}"
+		_image_summary "${PREV_STAGE_IMAGE_ID}"
 		echo "### Built Result"
 		_image_summary "${BUILT_ID}"
 		echo ""
@@ -165,7 +165,7 @@ _buildah_cache_done() {
 function _image_summary() {
 	local -r ID=$1
 	if [[ ${ID} == none ]]; then
-		echo " - scrach"
+		echo " - scratch"
 		return
 	fi
 
