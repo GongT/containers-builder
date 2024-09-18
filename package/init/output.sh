@@ -41,9 +41,9 @@ function control_ci() {
 		else
 			printf "\e[2m"
 			printf '=%.0s' $(seq 1 ${COLUMNS-80})
-			printf '%s' "$1"
+			printf '%s\n' "$1"
 			printf '=%.0s' $(seq 1 ${COLUMNS-80})
-			printf "\e[0m"
+			printf "\e[0m\n\n"
 		fi
 		;;
 	group)
