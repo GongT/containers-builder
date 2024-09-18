@@ -61,8 +61,8 @@ function dnf_use_environment() {
 		fi
 	done
 	local CACHE_ID=''
-	CACHE_ID=$(echo "${DNF_ENVIRONMENT_ENABLES[*]} ${DNF_ENVIRONMENT_REPOS[*]} ${DNF_ENVIRONMENT_RPMDB}" | md5sum | awk '{print "dnf-" $1}')
-	info "create dnf environment: ${CACHE_ID} with ${#DNF_ENVIRONMENT_ENABLES[@]} repos in ${#DNF_ENVIRONMENT_REPOS[@]} package, rpmdb=${DNF_ENVIRONMENT_RPMDB}"
+	CACHE_ID=$(echo "${DNF_ENVIRONMENT_ENABLES[*]} ${DNF_ENVIRONMENT_REPOS[*]}" | md5sum | awk '{print "dnf-" $1}')
+	info "create dnf environment: ${CACHE_ID} with ${#DNF_ENVIRONMENT_ENABLES[@]} repos in ${#DNF_ENVIRONMENT_REPOS[@]} package"
 
 	if container_exists "${CACHE_ID}"; then
 		DNF=$(container_get_digist "${CACHE_ID}")

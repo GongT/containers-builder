@@ -2,7 +2,6 @@
 
 source "../../package/include.sh"
 
-declare -xr LABELID_STOP_COMMAND="me.gongt.cmd.stop"
 use_normal
 
 get_label() {

@@ -12,7 +12,7 @@ Accept: */*
 }
 
 apply_gateway() {
-	local CFG_FNAME="/run/nginx/vhost.d/${PROJECT}.conf"
+	local CFG_FNAME="/run/nginx/config/vhost.d/${PROJECT}.conf"
 	if [[ $1 -eq 0 ]]; then
 		echo "remove config file: $CFG_FNAME"
 		rm -v "${CFG_FNAME}"
@@ -22,21 +22,21 @@ apply_gateway() {
 	fi
 	if command -v curl &>/dev/null; then
 		echo "notify using curl"
-		curl --unix-socket /run/sockets/nginx.reload.sock http://_/
+		curl --unix-socket /run/nginx/sockets/nginx.reload.sock http://_/
 	elif command -v nc &>/dev/null; then
 		echo "notify using nc"
-		make_http | nc -U /run/sockets/nginx.reload.sock
+		make_http | nc -U /run/nginx/sockets/nginx.reload.sock
 	elif command -v socat &>/dev/null; then
 		echo "notify using socat"
-		make_http | socat - UNIX-CONNECT:/run/sockets/nginx.reload.sock
+		make_http | socat - UNIX-CONNECT:/run/nginx/sockets/nginx.reload.sock
 	else
 		echo "no supported communication tool" >&2
 		return 1
 	fi
 }
 
-if [[ ! -d /run/nginx/vhost.d/ ]]; then
-	echo "missing mount folder: /run/nginx/vhost.d/" >&2
+if [[ ! -d /run/nginx/config/vhost.d/ ]]; then
+	echo "missing mount folder: /run/nginx/config/vhost.d/" >&2
 	exit 66
 fi
 

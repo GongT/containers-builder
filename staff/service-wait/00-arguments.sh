@@ -41,4 +41,5 @@ function make_arguments() {
 	done
 
 	dns_finalize
+	mount_nginx_shared_config
 }

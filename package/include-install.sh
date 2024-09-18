@@ -21,3 +21,9 @@ source "${COMMON_LIB_ROOT}/package/container-install/install-script.sh"
 source "${COMMON_LIB_ROOT}/package/container-install/capability.sh"
 source "${COMMON_LIB_ROOT}/package/container-install/services.sh"
 source "${COMMON_LIB_ROOT}/package/container-install/service-wait.sh"
+
+find "${COMMON_LIB_ROOT}/staff/systemd-filesystem" -mindepth 2 -maxdepth 2 -name 'install.hook.sh' -print0 | while read -d '' -r FILE; do
+	# shellcheck source=/dev/null
+	source "${FILE}"
+done
+unset FILE

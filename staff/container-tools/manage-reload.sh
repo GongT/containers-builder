@@ -3,7 +3,6 @@
 source "../../package/include.sh"
 
 use_normal
-declare -xr LABELID_RELOAD_COMMAND="me.gongt.cmd.reload"
 
 get_label() {
 	TMPL=$(printf '{{index .Config.Labels "%s"}}' "$1")
