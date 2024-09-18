@@ -7,19 +7,24 @@ function _ls_all_with_cache() {
 		return
 	fi
 
-	printf 'Analyzing system services...\r' >&2
+	(
+		flock --exclusive --nonblock 1 || die "failed acquire file lock."
 
-	{
-		systemctl list-units --all --no-pager --no-legend --type=service 2>/dev/null | sed 's/●//g' | awk '{print $1}'
-		systemctl list-unit-files --no-legend --no-pager --type=service 2>/dev/null | awk '{print $1}'
-	} | sort | uniq | while read -r NAME; do
-		printf 'Analyzing %s...\e[K\r' "${NAME}" >&2
-		if systemctl cat "${NAME}" 2>/dev/null | grep -qF '[X-Containers]'; then
-			echo "${NAME%.service}"
-		fi
-	done >"${CACHE_FILE}"
+		printf 'Analyzing system services...\r' >&2
 
-	printf '\e[K' >&2
+		{
+			systemctl list-units --all --no-pager --no-legend --type=service 2>/dev/null | sed 's/●//g' | awk '{print $1}'
+			systemctl list-unit-files --no-legend --no-pager --type=service 2>/dev/null | awk '{print $1}'
+		} | sort | uniq | while read -r NAME; do
+			printf 'Analyzing %s...\e[K\r' "${NAME}" >&2
+			if systemctl cat "${NAME}" 2>/dev/null | grep -qF '[X-Containers]'; then
+				echo "${NAME%.service}"
+			fi
+		done >"${CACHE_FILE}"
+
+		printf '\e[K' >&2
+	) >"${CACHE_FILE}"
+
 	cat "${CACHE_FILE}"
 }
 
