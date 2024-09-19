@@ -165,6 +165,7 @@ function create_temp_file() {
 }
 
 function image_find_digist() {
+	info_note ' +' podman image inspect --format '{{.ID}}' "$1"
 	if OUTPUT=$(podman image inspect --format '{{.ID}}' "$1" 2>&1); then
 		digist_to_short "${OUTPUT}"
 	elif echo "${OUTPUT}" | grep -qF 'image not known'; then
@@ -176,12 +177,12 @@ function image_find_digist() {
 
 function image_get_annotation() {
 	local IMAGE=$1 ANNO_NAME="$2"
-	podman image inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${IMAGE}"
+	x podman image inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${IMAGE}"
 }
 
 function image_get_label() {
 	local IMAGE=$1 LABEL_NAME="$2"
-	podman image inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
+	x podman image inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${IMAGE}"
 }
 
 function container_get_annotation() {
@@ -192,7 +193,7 @@ function container_get_annotation() {
 	else
 		die "invalid call"
 	fi
-	podman container inspect -f "{{index .Annotations \"${ANNO_NAME}\"}}" "${ID}"
+	x podman container inspect -f "{{index .Config.Annotations \"${ANNO_NAME}\"}}" "${ID}"
 }
 
 function container_get_label() {
@@ -203,13 +204,14 @@ function container_get_label() {
 	else
 		die "invalid call"
 	fi
-	podman container inspect -f "{{index .Labels \"${LABEL_NAME}\"}}" "${ID}"
+	x podman container inspect -f "{{index .Config.Labels \"${LABEL_NAME}\"}}" "${ID}"
 }
 
 # "configured",  "created",  "exited", "healthy", "initialized", "paused", "removing", "running", "stopped", "stopping", "unhealthy"
 #    + "removed"
 function container_get_status() {
 	local OUTPUT ID=${1-"$(get_container_id)"}
+	info_note ' +' podman container inspect -f '{{.State.Status}}' "${ID}"
 	OUTPUT="$(podman container inspect -f '{{.State.Status}}' "${ID}" 2>&1 || true)"
 	if [[ ${OUTPUT} == *"no such container"* ]]; then
 		printf "removed"
@@ -245,7 +247,7 @@ function wait_removal() {
 			return
 		else
 			info_note "  * stopped but not remove, remove it now. (I'll not add --force or --depend)"
-			podman container rm "${ID}"
+			x podman container rm "${ID}"
 		fi
 	done
 }

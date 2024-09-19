@@ -13,7 +13,7 @@ if ! is_running_state "${STATE}"; then
 fi
 info_log "found container running..."
 
-CMD=$(image_get_label "$LABELID_STOP_COMMAND" | jq '.[]' | tr '\n' ' ')
+CMD=$(container_get_label "$LABELID_STOP_COMMAND" | jq '.[]' | tr '\n' ' ' || true)
 if [[ -n ${CMD} ]]; then
 	eval "CMDS=(${CMD})"
 

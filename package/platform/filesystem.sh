@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-declare -a _REG_FILES=()
+declare -a ALL_CHANGED_FILES=()
 
-function get_written_files() {
-	echo "${_REG_FILES[@]}"
+function emit_file_changes() {
+	ALL_CHANGED_FILES+=("$@")
 }
 
 function output_file() {
@@ -65,7 +65,8 @@ function delete_file() {
 
 	if [[ -e ${TARGET} ]]; then
 		info_note "  * remove file: ${TARGET}"
-		[[ -e ${TARGET} ]] && unlink "${TARGET}"
+		unlink "${TARGET}"
+		emit_file_changes "${TARGET}"
 	fi
 
 	if [[ ${MKDIR} -eq 1 ]]; then
@@ -89,22 +90,27 @@ function copy_file() {
 	if [[ ${TARGET} != /* ]]; then
 		die "copy_file target must be absolute path"
 	fi
+	if [[ -d ${TARGET} ]]; then
+		die "copy_file target is already exists, but it's directory"
+	fi
 
 	if is_uninstalling; then
 		delete_file "${MKDIR}" "${TARGET}"
 		return
 	fi
 
-	_REG_FILES+=("${TARGET}")
-
 	ensure_parent "${MKDIR}" "${TARGET}"
-	info_note "  * copy file: ${TARGET}"
-	cp -fpT "${FILE}" "${TARGET}"
+
+	if cmp --quiet "${FILE}" "${TARGET}"; then
+		info_note "  * copy file: ${TARGET} - same"
+	else
+		cp -fpT "${FILE}" "${TARGET}"
+		emit_file_changes "${TARGET}"
+		info_note "  * copy file: ${TARGET} - ok"
+	fi
 
 	if [[ -n ${MODE-} ]]; then
 		chmod "$(bit_mask "${MODE}")" "${TARGET}"
-	else
-		chmod a-w "${TARGET}"
 	fi
 }
 function write_file() {
@@ -126,8 +132,6 @@ function write_file() {
 		return
 	fi
 
-	_REG_FILES+=("${TARGET}")
-
 	ensure_parent "${MKDIR}" "${TARGET}"
 
 	if [[ -e ${TARGET} ]] && [[ ${DATA} == "$(<"${TARGET}")" ]]; then
@@ -137,12 +141,11 @@ function write_file() {
 			rm -f "${TARGET}"
 		fi
 		echo "${DATA}" >"${TARGET}"
+		emit_file_changes "${TARGET}"
 		info_note "  * write file: ${TARGET} - ok"
 	fi
 	if [[ -n ${MODE-} ]]; then
 		chmod "$(bit_mask "${MODE}")" "${TARGET}"
-	else
-		chmod a-w "${TARGET}"
 	fi
 }
 function bit_mask() {
@@ -170,6 +173,7 @@ function ensure_symlink() {
 
 	mkdir -p "$(dirname "${LINK_FILE}")"
 	ln -s "${TARGET}" "${LINK_FILE}"
+	emit_file_changes "${LINK_FILE}"
 }
 
 function read_list_file() {

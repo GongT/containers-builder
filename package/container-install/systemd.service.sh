@@ -12,9 +12,13 @@ function unit_body() {
 		# very special config
 		custom_stop_command "$@"
 		;;
-	RestartPreventExitStatus)
+	RestartPreventExitStatus | AmbientCapabilities | CapabilityBoundingSet)
 		# multiple directive, no escape
-		_S_BODY_CONFIG[RestartPreventExitStatus]+=" $*"
+		if [[ -z ${_S_BODY_CONFIG["$K"]-} ]]; then
+			_S_BODY_CONFIG["$K"]="$*"
+		else
+			_S_BODY_CONFIG["$K"]+=" $*"
+		fi
 		;;
 	Environment*)
 		# multiple directive, not command

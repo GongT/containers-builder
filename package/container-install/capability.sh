@@ -13,11 +13,20 @@ function ___reset_cap_pri_param() {
 }
 register_unit_reset ___reset_cap_pri_param
 
+function ___add_cap_body() {
+	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
+		unit_body AmbientCapabilities "${_S_LINUX_CAP[0]}"
+	fi
+}
+register_unit_emit ___add_cap_body
+
 function ___pass_cap_privilege_param() {
 	local CAP_LIST
 	if [[ ${#_S_LINUX_CAP[@]} -gt 0 ]]; then
 		CAP_LIST=$(printf ",%s" "${_S_LINUX_CAP[@]}")
 		add_run_argument "--cap-add=${CAP_LIST:1}"
 	fi
+
+	add_run_argument "--cgroup-parent=${_S_BODY_CONFIG[Slice]-'machine.slice'}"
 }
 register_argument_config ___pass_cap_privilege_param

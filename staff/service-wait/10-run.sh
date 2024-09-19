@@ -32,7 +32,8 @@ function __podman_run_container() {
 }
 
 function wait_for_pid_and_notify() {
-	local -r PIDFile=$(mktemp --dry-run "/tmp/wait.${CONTAINER_ID}.conmon.XXXX.pid")
+	mkdir --mode 0777 -p '/tmp/service-wait'
+	local -r PIDFile=$(mktemp --dry-run "/tmp/service-wait/${CONTAINER_ID}.conmon.XXXX.pid")
 	push_engine_param "--conmon-pidfile=${PIDFile}"
 
 	rm -f "${PIDFile}"

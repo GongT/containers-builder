@@ -11,13 +11,8 @@ else
 	}
 fi
 
-SYSTEMD_SHOULD_RELOAD=0
-SYSTEMD_SHOULD_ENABLED=()
+declare -a SYSTEMD_SHOULD_ENABLED=()
 function systemctl() {
-	if [[ $1 == 'daemon-reload' ]]; then
-		SYSTEMD_SHOULD_RELOAD=1
-		return
-	fi
 	x "${SYSTEMCTL}" "$_SYSC_TYPE" "$@"
 }
 function add_service_to_enable() {
@@ -27,7 +22,7 @@ function add_service_to_enable() {
 function host_systemd_enable_service() {
 	local UN=$1
 	if is_installing; then
-		if systemctl ! is-enabled -q "$UN"; then
+		if ! systemctl is-enabled -q "$UN"; then
 			systemctl enable "${UN}" &>/dev/null || true
 		fi
 	else
@@ -39,9 +34,15 @@ function host_systemd_enable_service() {
 }
 
 function ___finalize_daemon_reloaded() {
-	if [[ $SYSTEMD_SHOULD_RELOAD -eq 1 && ${SYSTEMD_RELOAD:-yes} == yes ]]; then
-		x "${SYSTEMCTL}" "$_SYSC_TYPE" daemon-reload
-	fi
+	local FILE
+	for FILE in "${ALL_CHANGED_FILES[@]}"; do
+		if file_in_folder "${FILE}" "${SYSTEM_UNITS_DIR}"; then
+			info_success "systemd units file changed, auto reload."
+			systemctl daemon-reload
+			delete_file 0 "${PRIVATE_CACHE}/remember-service-list.txt"
+			break
+		fi
+	done
 
 	if [[ ${#SYSTEMD_SHOULD_ENABLED[@]} -gt 0 ]]; then
 		local UN

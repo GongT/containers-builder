@@ -10,7 +10,7 @@ if ! is_running_state "${STATE}"; then
 	exit 1
 fi
 
-CMD=$(image_get_label "$LABELID_RELOAD_COMMAND" | jq '.[]' | tr '\n' ' ')
+CMD=$(container_get_label "$LABELID_RELOAD_COMMAND" | jq '.[]' | tr '\n' ' ')
 if [[ -n ${CMD} ]]; then
 	eval "CMDS=(${CMD})"
 

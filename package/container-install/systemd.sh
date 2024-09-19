@@ -110,7 +110,6 @@ function apply_systemd_service() {
 	_arg_ensure_finish
 	local UN="$1"
 
-	delete_file 0 "${PRIVATE_CACHE}/remember-service-list.txt"
 	if is_installing; then
 		if [[ ${DISABLE_SYSTEMD_ENABLE:-no} != "yes" ]]; then
 			if [[ -n ${_S_AT_} ]]; then
