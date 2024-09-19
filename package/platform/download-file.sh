@@ -218,8 +218,8 @@ function _join_git_path() {
 }
 
 function hash_git_result() {
-	local REPO="$1" BRANCH="$2" WT
-	printf '%s:%s>' "${REPO}" "${BRANCH}"
+	local NAME="$1" BRANCH="$2" WT
+	printf '%s:%s>' "${NAME}" "${BRANCH}"
 	WT="$(_join_git_path "${NAME}" "${BRANCH}")"
 	git -C "${WT}" log --format="%H" -n 1
 }
