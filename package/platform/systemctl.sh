@@ -12,6 +12,7 @@ else
 fi
 
 SYSTEMD_SHOULD_RELOAD=0
+SYSTEMD_SHOULD_ENABLED=()
 function systemctl() {
 	if [[ $1 == 'daemon-reload' ]]; then
 		SYSTEMD_SHOULD_RELOAD=1
@@ -19,13 +20,38 @@ function systemctl() {
 	fi
 	x "${SYSTEMCTL}" "$_SYSC_TYPE" "$@"
 }
-function finalize_daemon_reloaded() {
-	if [[ $SYSTEMD_SHOULD_RELOAD -eq 1 ]]; then
-		x "${SYSTEMCTL}" "$_SYSC_TYPE" daemon-reload
+function add_service_to_enable() {
+	SYSTEMD_SHOULD_ENABLED+=("$@")
+}
+
+function host_systemd_enable_service() {
+	local UN=$1
+	if is_installing; then
+		if systemctl ! is-enabled -q "$UN"; then
+			systemctl enable "${UN}" &>/dev/null || true
+		fi
+	else
+		if systemctl is-enabled -q "$UN"; then
+			systemctl disable --now "${UN}" &>/dev/null || true
+			systemctl reset-failed "${UN}" &>/dev/null || true
+		fi
 	fi
 }
 
-register_exit_handler finalize_daemon_reloaded
+function ___finalize_daemon_reloaded() {
+	if [[ $SYSTEMD_SHOULD_RELOAD -eq 1 && ${SYSTEMD_RELOAD:-yes} == yes ]]; then
+		x "${SYSTEMCTL}" "$_SYSC_TYPE" daemon-reload
+	fi
+
+	if [[ ${#SYSTEMD_SHOULD_ENABLED[@]} -gt 0 ]]; then
+		local UN
+		for UN in "${SYSTEMD_SHOULD_ENABLED[@]}"; do
+			host_systemd_enable_service "${UN}"
+		done
+	fi
+}
+
+register_exit_handler ___finalize_daemon_reloaded
 
 function uptime_sec() {
 	local T

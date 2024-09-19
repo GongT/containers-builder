@@ -106,54 +106,32 @@ function unit_finish() {
 
 	_unit_init
 }
-function _systemctl_disable() {
-	local UN=$1
-	if systemctl is-enabled -q "$UN"; then
-		systemctl disable "${UN}" &>/dev/null || true
-		systemctl reset-failed "${UN}" &>/dev/null || true
-	fi
-}
 function apply_systemd_service() {
 	_arg_ensure_finish
 	local UN="$1"
 
 	delete_file 0 "${PRIVATE_CACHE}/remember-service-list.txt"
 	if is_installing; then
-		if [[ ${SYSTEMD_RELOAD:-yes} == yes ]]; then
-			local AND_ENABLED=''
-			systemctl daemon-reload
-			info "systemd unit ${UN} created${AND_ENABLED}."
-		fi
-
 		if [[ ${DISABLE_SYSTEMD_ENABLE:-no} != "yes" ]]; then
 			if [[ -n ${_S_AT_} ]]; then
 				if [[ -n ${SYSTEM_AUTO_ENABLE-} ]]; then
 					local i='' N
 					for i in "${SYSTEM_AUTO_ENABLE[@]}"; do
 						N=$(_create_unit_name "${i}")
-						if ! systemctl is-enabled -q "${N}"; then
-							systemctl enable "${N}"
-						fi
+						add_service_to_enable "${N}"
 					done
-					AND_ENABLED=" and enabled ${SYSTEM_AUTO_ENABLE[*]}"
 				fi
 			else
-				if ! systemctl is-enabled -q "${UN}"; then
-					systemctl enable "${UN}"
-					AND_ENABLED=' and enabled'
-				fi
+				add_service_to_enable "${UN}"
 			fi
 		fi
 	else
 		if [[ -n ${_S_AT_} ]]; then
 			local LIST I
 			mapfile -t LIST < <(systemctl list-units --all --no-legend "${UN%.service}*.service" | sed 's/●//g' | awk '{print $1}')
-			for I in "${LIST[@]}"; do
-				info_log "  disable ${I}..."
-				_systemctl_disable "${I}"
-			done
+			add_service_to_enable "${LIST[@]}"
 		else
-			_systemctl_disable "${UN}"
+			add_service_to_enable "${UN}"
 		fi
 		info "systemd unit ${UN} disabled."
 	fi

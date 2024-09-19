@@ -41,6 +41,7 @@ function install_common_system_support() {
 	_install_common_script_service containers-ensure-health
 	_copy_common_static_unit containers-ensure-health.timer
 
+	local ENTRY=''
 	if is_root; then
 		_copy_common_static_unit services.timer
 		_copy_common_static_unit services@root.target services.target
@@ -51,17 +52,11 @@ function install_common_system_support() {
 		service_dropin systemd-networkd alias-nameserver.conf
 		edit_system_service dnsmasq create-dnsmasq-config
 
-		if ! systemctl is-enabled --quiet services.timer; then
-			systemctl daemon-reload
-			systemctl enable services.timer
-		fi
+		add_service_to_enable "services.timer"
 	else
 		_copy_common_static_unit services@user.target services.target
 
-		if ! systemctl is-enabled --quiet services.target; then
-			systemctl daemon-reload
-			systemctl enable services.target
-		fi
+		add_service_to_enable "services.target"
 	fi
 
 	local BODY
