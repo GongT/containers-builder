@@ -92,7 +92,7 @@ function buildah() {
 
 			COMMIT_CONFIGS+=(
 				"--author=${AUTHOR}"
-				"--comment="
+				"--comment=final image"
 			)
 
 			if is_ci; then
