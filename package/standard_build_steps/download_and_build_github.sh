@@ -20,7 +20,7 @@ function download_and_build_github() {
 		MNT=$(create_temp_dir "git-${PROJ_ID}-${BRANCH}")
 
 		download_github "${REPO}" "${BRANCH}"
-		download_git_result_copy "${MNT}" "${REPO}" "${BRANCH}"
+		download_git_result_copy "${MNT}" "${REPO}" "origin/${BRANCH}"
 
 		buildah copy "$1" "${MNT}" "/opt/projects/${PROJ_ID}"
 	}

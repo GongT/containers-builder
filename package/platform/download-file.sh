@@ -124,6 +124,13 @@ function __github_api() {
 	echo "${API_RESULT}"
 }
 
+function http_get_github_tag_commit() {
+	local REPO="$1"
+	local URL="repos/${REPO}/tags"
+	info_log " * fetching tags from ${URL}"
+	__github_api "${URL}" | filtered_jq '.[0].commit.sha'
+}
+
 LAST_GITHUB_RELEASE_JSON=""
 function http_get_github_release() {
 	local REPO="$1"
@@ -219,7 +226,7 @@ function hash_git_result() {
 
 function download_github() {
 	local REPO="$1" BRANCH="$2"
-	perfer_proxy download_git "https://github.com/${REPO}.git" "$@"
+	perfer_proxy download_git "https://github.com/${REPO}.git" "$REPO" "$BRANCH"
 }
 function download_git() {
 	local URL="$1" NAME="$2" BRANCH="$3" CWD
@@ -290,7 +297,7 @@ function download_git_result_copy() {
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
 	mkdir -p "${DIST}"
-	x git -C "${DIST}" "--git-dir=${GIT_DIR}" checkout --recurse-submodules "origin/${BRANCH}" -- .
+	x git -C "${DIST}" "--git-dir=${GIT_DIR}" checkout --recurse-submodules "${BRANCH}" -- .
 	# git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
 	unset GIT_DIR
 }

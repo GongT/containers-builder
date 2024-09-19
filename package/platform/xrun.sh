@@ -25,8 +25,10 @@ function execute_tip() {
 
 	local ARGS=("$@")
 	local -r ACT="${ARGS[*]:0:ACT_CNT}"
-	local -r EXTRA="${ARGS[*]:ACT_CNT}"
-	printf '%s \e[4m%s\e[24m %s' "${CMD}" "${ACT}" "${EXTRA}"
+	local -ar EXTRA=("${ARGS[@]:ACT_CNT}")
+
+	printf '%s \e[4m%s\e[24m' "${CMD}" "${ACT}"
+	printf ' %q' "${EXTRA[@]}"
 }
 
 function xpodman() {
