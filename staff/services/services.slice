@@ -1,2 +1,3 @@
 [Slice]
 #　DevicePolicy=closed
+ManagedOOMPreference=avoid

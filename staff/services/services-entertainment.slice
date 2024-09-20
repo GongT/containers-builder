@@ -1,5 +1,5 @@
 [Slice]
 StartupCPUWeight=1
-CPUWeight=100
+CPUWeight=50
 StartupIOWeight=1
 IOWeight=100
