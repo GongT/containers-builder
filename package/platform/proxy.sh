@@ -11,7 +11,7 @@ declare -xr PROXY
 info_note "using PROXY=${PROXY-*not set*}"
 
 function SHELL_USE_PROXY() {
-	if [[ ${PROXY+found} == found ]]; then
+	if [[ -n ${PROXY-} ]]; then
 		echo "PROXY=${PROXY}"
 	else
 		echo "PROXY="
@@ -26,7 +26,7 @@ fi
 }
 
 function perfer_proxy() {
-	if [[ ${PROXY+found} == "found" ]]; then
+	if [[ -n ${PROXY-} ]]; then
 		info_note "[proxy] using proxy ${PROXY}"
 		http_proxy="${PROXY}" https_proxy="${PROXY}" HTTP_PROXY="${PROXY}" HTTPS_PROXY="${PROXY}" "$@"
 	else
@@ -46,3 +46,14 @@ function buildah_run_perfer_proxy() {
 function buildah_run_deny_proxy() {
 	deny_proxy buildah run "$@"
 }
+if is_ci; then
+	function SHELL_USE_PROXY() {
+		echo "PROXY="
+	}
+	function perfer_proxy() {
+		"$@"
+	}
+	function deny_proxy() {
+		"$@"
+	}
+fi
