@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE}")
-mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT}")
+mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE-}")
+mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT-}")
 
 mkdir -p /etc/systemd/system/success.service.d
 OVERWRITE=/etc/systemd/system/success.service.d/plugin-enable.conf
