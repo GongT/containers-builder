@@ -1,13 +1,5 @@
 #!/bin/bash
 
-function add_after() {
-	cat >>/etc/systemd/system/success.service.d/after.conf <<-EOF
-		[Unit]
-		After=$*
-		Requires=$*
-	EOF
-}
-
 mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE}")
 mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT}")
 

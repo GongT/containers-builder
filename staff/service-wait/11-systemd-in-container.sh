@@ -8,6 +8,7 @@ function detect_image_using_systemd() {
 		info_log "image is systemd: forced=${FORCE_SYSTEMD-false}, label=${SYSTEMD_DEFINATION}"
 		push_engine_param '--systemd=always' '--privileged=true'
 	else
+		info_log "image not systemd: forced=${FORCE_SYSTEMD-false}, label=${SYSTEMD_DEFINATION-}"
 		push_engine_param '--systemd=false'
 	fi
 }

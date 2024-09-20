@@ -36,8 +36,7 @@ function setup_systemd() {
 		echo "version:4+${THIS_FILE_HASH}"
 		set -- "${INPUT_ARGS[@]}"
 
-		info_note "check systemd:"
-		indent
+		control_ci group "---- [systemd] check stage:"
 		while [[ $# -gt 0 ]]; do
 			local PLUGIN="$1" PARAMS=() PARAMS_JSON='' VERSION=''
 			shift
@@ -67,7 +66,7 @@ function setup_systemd() {
 			PLUGIN_LIST+=("${PLUGIN}")
 			PARAMS_LIST+=("${PARAMS_JSON}")
 		done
-		dedent
+		control_ci groupEnd
 
 		declare -r PLUGIN_LIST
 		declare -r PARAMS_LIST
@@ -79,7 +78,7 @@ function setup_systemd() {
 		local -a PARAMS
 		local -i INDX
 
-		info "setup systemd:"
+		info_note "---- [systemd] execute stage:"
 		for ((INDX = 0; INDX < "${#PLUGIN_LIST[@]}"; INDX++)); do
 			PLUGIN="${PLUGIN_LIST[${INDX}]}"
 			json_array_get_back PARAMS "${PARAMS_LIST[${INDX}]}"
