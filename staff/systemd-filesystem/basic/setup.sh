@@ -12,7 +12,7 @@ systemctl disable console-getty.service || true
 systemctl mask systemd-networkd-wait-online.service
 
 systemctl enable success.service
-systemctl set-default multi-user.target
+systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime
