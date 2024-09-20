@@ -95,6 +95,12 @@ function network_use_manual() {
 	info_warn "using manual network type."
 	_unit_podman_network_arg "$@"
 }
+function network_use_void() {
+	# do not do any network related job
+	_net_set_type "void"
+	info_warn "using void network type."
+	_unit_podman_network_arg "--network=private"
+}
 
 # function network_use_macvlan() {
 # create macvlan and pass one end into container
