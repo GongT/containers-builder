@@ -15,7 +15,7 @@ fi
 
 declare -r CROOT_DIR="/run/nginx/contribute"
 declare -r MASTER_CONTROL_DIR="${CROOT_DIR}/.master"
-declare -r CONF_DIR="${CROOT_DIR}/${CONTAINER_ID}"
+declare -r CONF_DIR="${CROOT_DIR}/${CONTAINER_DIGIST_LONG}"
 declare -r CONTROL_DIR="${CONF_DIR}/.control"
 
 if [[ $* == 'create' ]]; then
@@ -41,7 +41,7 @@ fi
 
 if [[ -e "${MASTER_CONTROL_DIR}/request.fifo" ]]; then
 	echo "notify synchronized nginx reload"
-	echo "${CONTAINER_ID}" >"${MASTER_CONTROL_DIR}/request.fifo" &
+	echo "${CONTAINER_DIGIST_LONG}" >"${MASTER_CONTROL_DIR}/request.fifo" &
 	sleep 2
 else
 	echo "master control did not exists, means nginx not started."

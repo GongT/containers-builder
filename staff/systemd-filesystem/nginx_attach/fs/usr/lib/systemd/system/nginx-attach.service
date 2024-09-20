@@ -1,7 +1,5 @@
 [Unit]
 Description=Inject nginx service to main nginx container
-FailureAction=exit
-FailureActionExitStatus=233
 
 [Service]
 Type=oneshot

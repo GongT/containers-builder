@@ -40,7 +40,8 @@ unset NOTIFY_SOCKET
 
 env | grep -vE '^(SHLVL|PATH|_|container_uuid)=' >>/run/.userenvironments
 
-printf 'CONTAINER_DIGIST_LONG=%s\n' "$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}')" >>/etc/environment
+CONTAINER_DIGIST_LONG=$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}' || true)
+printf 'CONTAINER_DIGIST_LONG=%s\n' "${CONTAINER_DIGIST_LONG}" >>/etc/environment
 printf 'CONTAINER_DIGIST_SHORT=%s\n' "$(echo "${CONTAINER_DIGIST_LONG}" | grep -oE '^[0-9a-f]{12}')" >>/etc/environment
 
 # this variable is set by `podman --systemd=always`, 32 digits
@@ -53,6 +54,7 @@ if [[ $* == '--systemd' ]]; then
 fi
 
 if [[ $* == 'bash' ]]; then
+	export DEBUG_SHELL=yes
 	set -- bash --login -i
 fi
 
