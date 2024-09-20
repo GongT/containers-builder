@@ -121,6 +121,8 @@ function buildah() {
 				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGIST}-")
 			fi
 
+			COMMIT_CONFIGS+=("--created-by=RUN build-script # finalize: $(get_current_commit_message_first_line)")
+
 			call_argument_config
 
 			xbuildah config "${COMMIT_CONFIGS[@]}" "${CID}"
