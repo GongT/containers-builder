@@ -78,8 +78,5 @@ function get_current_commit_message_first_line() {
 		echo "not running in CI"
 		return 0
 	fi
-	(
-		cd "${GITHUB_WORKSPACE}" || return 1
-		x git log -n 1 --format=%s | head -n1 || echo "failed get commit at ${GITHUB_WORKSPACE}"
-	)
+	x git log -n 1 --format=%s | head -n1 || true
 }
