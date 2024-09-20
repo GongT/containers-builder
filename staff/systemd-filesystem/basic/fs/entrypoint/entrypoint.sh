@@ -38,10 +38,14 @@ else
 fi
 unset NOTIFY_SOCKET
 
-env | grep -vE '^(SHLVL|PATH|_)=' >>/run/.userenvironments
+env | grep -vE '^(SHLVL|PATH|_|container_uuid)=' >>/run/.userenvironments
 
-echo "$container_uuid" >/etc/machine-id
-echo "$container_uuid" >/run/machine-id
+printf 'CONTAINER_DIGIST_LONG=%s\n' "$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}')" >>/etc/environment
+printf 'CONTAINER_DIGIST_SHORT=%s\n' "$(echo "${CONTAINER_DIGIST_LONG}" | grep -oE '^[0-9a-f]{12}')" >>/etc/environment
+
+# this variable is set by `podman --systemd=always`, 32 digits
+echo "${container_uuid}" >/etc/machine-id
+echo "${container_uuid}" >/run/machine-id
 
 if [[ $* == '--systemd' ]]; then
 	capsh --print

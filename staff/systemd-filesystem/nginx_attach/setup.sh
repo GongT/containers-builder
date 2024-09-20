@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
 
-if [[ -z ${NGINX_CONFIG-} ]]; then
-	NGINX_CONFIG=/opt/nginx.conf
+if [[ -z ${CONFIG_FILE-} ]]; then
+	CONFIG_FILE=/opt/nginx.conf
 fi
 
-mkdir -p /etc/systemd/system/nginx-attach.service.d/
-cat <<EOF >/etc/systemd/system/nginx-attach.service.d/path-config.conf
-[Service]
-Environment=NGINX_CONFIG=${NGINX_CONFIG}
-Environment=PROJECT=${PROJECT}
-EOF
-
-if ! command -v curl &>/dev/null; then
-	echo "[nginx-attach] missing curl"
-	exit 1
-fi
+echo "NGINX_CONFIG_SOURCE=${CONFIG_FILE}" >>/etc/environment
+echo "PROJECT_NAME=${PP}" >>/etc/environment
 
 systemctl enable nginx-attach.service

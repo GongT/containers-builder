@@ -46,7 +46,7 @@ if [[ -n ${http_proxy-} ]]; then
 fi
 
 # cat /etc/dnf/dnf.conf
-x /usr/bin/dnf --assumeyes "${D_ARGS[@]}" --nodocs --nogpgcheck "--releasever=${FEDORA_VERSION}" "$@" </dev/null &
+x /usr/bin/dnf --assumeyes "${D_ARGS[@]}" --nodocs "--releasever=${FEDORA_VERSION}" "$@" </dev/null &
 
 trap 'info_error "get sigint"; exit 233' INT
 wait $!

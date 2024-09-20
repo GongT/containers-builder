@@ -119,11 +119,6 @@ function setup_systemd() {
 				local EXTRA
 				EXTRA=$(
 					printf 'declare -xr WHO_AM_I=%q\n' "${SETUP_SRC}"
-					if [[ ${PROJECT_NAME} == "${CACHE_BRANCH}" ]]; then
-						printf 'declare -xr PROJECT=%q\n' "${PROJECT_NAME}"
-					else
-						printf 'declare -xr PROJECT=%q\n' "${PROJECT_NAME}:${CACHE_BRANCH}"
-					fi
 					if [[ ${#PARAMS[@]} -gt 0 ]]; then
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi
