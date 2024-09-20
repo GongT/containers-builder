@@ -1,5 +1,6 @@
 [Unit]
 Description=Inject nginx service to main nginx container
+ConditionEnvironment=CONTAINER_ID
 
 [Service]
 Type=oneshot

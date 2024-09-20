@@ -44,6 +44,8 @@ CONTAINER_DIGIST_LONG=$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[
 printf 'CONTAINER_DIGIST_LONG=%s\n' "${CONTAINER_DIGIST_LONG}" >>/etc/environment
 printf 'CONTAINER_DIGIST_SHORT=%s\n' "$(echo "${CONTAINER_DIGIST_LONG}" | grep -oE '^[0-9a-f]{12}')" >>/etc/environment
 
+printf 'CONTAINER_ID=%s\n' "${CONTAINER_ID-}" >>/etc/environment
+
 # this variable is set by `podman --systemd=always`, 32 digits
 echo "${container_uuid}" >/etc/machine-id
 echo "${container_uuid}" >/run/machine-id
