@@ -80,7 +80,6 @@ function setup_systemd() {
 		local -i INDX
 
 		info "setup systemd:"
-		indent
 		for ((INDX = 0; INDX < "${#PLUGIN_LIST[@]}"; INDX++)); do
 			PLUGIN="${PLUGIN_LIST[${INDX}]}"
 			json_array_get_back PARAMS "${PARAMS_LIST[${INDX}]}"
@@ -91,7 +90,7 @@ function setup_systemd() {
 			local SETUP_ARGS=()
 			local -i ACT=0
 
-			info_log "setup ${PLUGIN}"
+			control_ci group "setup ${PLUGIN}"
 			if [[ -d ${FILES} ]]; then
 				ACT+=1
 				info_log " -> copy filesystem"
@@ -133,8 +132,8 @@ function setup_systemd() {
 			if [[ $ACT -eq 0 ]]; then
 				die "plugin have no action: ${PLUGIN}"
 			fi
+			control_ci groupEnd
 		done
-		dedent
 		info_note "setup systemd done."
 	}
 
