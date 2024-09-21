@@ -15,8 +15,10 @@ function buildah_cache_start() {
 		LAST_KNOWN_BASE=
 		info_note "  - using empty base"
 		record_last_image "scratch"
+		LAST_CACHE_COMES_FROM=base
 		return
 	fi
+	LAST_CACHE_COMES_FROM=base
 
 	RESULT_ID=$(image_find_digist "${BASE_IMG}")
 	if [[ -n ${RESULT_ID} ]]; then

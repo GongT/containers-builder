@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 declare -A _CURRENT_STAGE_STORE=()
-declare LAST_CACHE_COMES_FROM=build # or pull
+declare LAST_CACHE_COMES_FROM=pull
 
 function buildah_cache_increament_count() {
 	local NAME=$1
@@ -92,7 +92,7 @@ function buildah_cache() {
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
 	elif [[ ${SHORT_CACHE_TEST} == yes ]]; then
-		info_log "skip cache fetch (last layer is built)"
+		info_log "skip cache fetch (LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM})"
 	elif image_exists "${STEP_RESULT_IMAGE}"; then
 		local EXISTS_PREVIOUS_ID EXISTS_HASH
 		EXISTS_PREVIOUS_ID="$(image_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_PREV_STAGE}")"
