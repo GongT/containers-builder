@@ -19,8 +19,7 @@ oci-archive:* | dir:* | docker-archive:*)
 *)
 	declare -rx CACHE_CENTER_TYPE="network"
 	CACHE_CENTER_URL_BASE="${DOCKER_CACHE_CENTER}"
-	CACHE_CENTER_NAME_BASE="${DOCKER_CACHE_CENTER#*:}"
-	CACHE_CENTER_NAME_BASE="${CACHE_CENTER_NAME_BASE##/}"
+	CACHE_CENTER_NAME_BASE=$(echo "${DOCKER_CACHE_CENTER}" | sed -E 's#^.+://##g' )
 	;;
 esac
 declare -xr CACHE_CENTER_URL_BASE CACHE_CENTER_NAME_BASE
