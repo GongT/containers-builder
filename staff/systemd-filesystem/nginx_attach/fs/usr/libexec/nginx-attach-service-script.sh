@@ -22,7 +22,7 @@ if [[ $* == 'create' ]]; then
 	echo "write config files into: ${CONF_DIR}"
 	if [[ -f ${NGINX_CONFIG_SOURCE} ]]; then
 		mkdir -p "${CONF_DIR}/vhost.d"
-		cp "${NGINX_CONFIG_SOURCE}" "${CONF_DIR}/vhost.d"
+		cp "${NGINX_CONFIG_SOURCE}" "${CONF_DIR}/vhost.d/${CONTAINER_ID}.conf"
 	elif [[ -d ${NGINX_CONFIG_SOURCE} ]]; then
 		mkdir -p "${CONF_DIR}"
 		cp -r "${NGINX_CONFIG_SOURCE}/." "${CONF_DIR}"
