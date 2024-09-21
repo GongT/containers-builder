@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 declare -A _CURRENT_STAGE_STORE=()
-declare LAST_CACHE_COMES_FROM=pull
+declare LAST_CACHE_COMES_FROM
+if [[ -z ${LAST_CACHE_COMES_FROM-} ]]; then
+	LAST_CACHE_COMES_FROM=never
+fi
 
 function buildah_cache_increament_count() {
 	local NAME=$1
