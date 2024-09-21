@@ -96,6 +96,7 @@ function record_last_image() {
 	fi
 
 	control_ci set-env "LAST_BUILT_IMAGE_ID" "${_ID}"
+	control_ci set-env "LAST_CACHE_COMES_FROM" "${LAST_CACHE_COMES_FROM}"
 }
 function get_last_image_id() {
 	if variable_exists LAST_BUILT_IMAGE_ID; then

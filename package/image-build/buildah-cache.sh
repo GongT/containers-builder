@@ -51,6 +51,11 @@ function buildah_cache() {
 		return
 	fi
 
+	local SHORT_CACHE_TEST=no
+	if [[ ${LAST_CACHE_COMES_FROM} == build ]]; then
+		SHORT_CACHE_TEST=yes
+	fi
+
 	if [[ ${DONE_STAGE} -gt 0 ]]; then
 		if ! image_exists "${PREV_STEP_IMAGE}"; then
 			cache_try_pull "${CACHE_NAME}" "${DONE_STAGE}"
@@ -86,6 +91,8 @@ function buildah_cache() {
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
+	elif [[ ${SHORT_CACHE_TEST} == build ]]; then
+		info_log "skip cache fetch (last layer is built)"
 	elif image_exists "${STEP_RESULT_IMAGE}"; then
 		local EXISTS_PREVIOUS_ID EXISTS_HASH
 		EXISTS_PREVIOUS_ID="$(image_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_PREV_STAGE}")"
