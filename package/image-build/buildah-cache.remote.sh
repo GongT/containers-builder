@@ -19,7 +19,7 @@ oci-archive:* | dir:* | docker-archive:*)
 *)
 	declare -rx CACHE_CENTER_TYPE="network"
 	CACHE_CENTER_URL_BASE="${DOCKER_CACHE_CENTER}"
-	CACHE_CENTER_NAME_BASE=$(echo "${DOCKER_CACHE_CENTER}" | sed -E 's#^.+://##g' )
+	CACHE_CENTER_NAME_BASE=$(echo "${DOCKER_CACHE_CENTER}" | sed -E 's#^.+://##g')
 	;;
 esac
 declare -xr CACHE_CENTER_URL_BASE CACHE_CENTER_NAME_BASE
@@ -43,6 +43,9 @@ function cache_try_pull() {
 	local -r NAME=$(cache_create_name "$@")
 
 	info_log "pull cache image ${URL}"
+	if [[ ${LAST_CACHE_COMES_FROM} == build ]]; then
+		info_log "  - skip pull: LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM}"
+	fi
 
 	try xpodman_capture image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}"
 
@@ -64,7 +67,7 @@ function cache_try_pull() {
 			info_note " - failed: not exists."
 		else
 			info_stream <"${MANAGER_TMP_STDERR}"
-			info_warn " - failed, not able to pull."
+			info_warn "  - failed, not able to pull."
 			die "failed pull cache image!"
 		fi
 	fi

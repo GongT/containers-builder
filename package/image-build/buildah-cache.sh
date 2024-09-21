@@ -54,28 +54,24 @@ function buildah_cache() {
 		return
 	fi
 
-	if [[ ${LAST_CACHE_COMES_FROM} == build ]]; then
-		info_log "skip cache fetch (LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM})"
-	else
-		if [[ ${DONE_STAGE} -gt 0 ]]; then
-			if ! image_exists "${PREV_STEP_IMAGE}"; then
-				cache_try_pull "${CACHE_NAME}" "${DONE_STAGE}"
+	if [[ ${DONE_STAGE} -gt 0 ]]; then
+		if ! image_exists "${PREV_STEP_IMAGE}"; then
+			cache_try_pull "${CACHE_NAME}" "${DONE_STAGE}"
 
-				if ! image_exists "${PREV_STEP_IMAGE}"; then
-					info_error "required previous stage [${PREV_STEP_IMAGE}] did not exists"
-					return 1
-				fi
-			fi
-			local -r PREVIOUS_ID=$(image_get_long_id "${PREV_STEP_IMAGE}" || true)
-			if [[ -z ${PREVIOUS_ID} ]]; then
-				info_error "failed get id from image (${PREV_STEP_IMAGE}) cache state is invalid."
+			if ! image_exists "${PREV_STEP_IMAGE}"; then
+				info_error "required previous stage [${PREV_STEP_IMAGE}] did not exists"
 				return 1
 			fi
-		else
-			local -r PREVIOUS_ID="none"
 		fi
-		cache_try_pull "${CACHE_NAME}" "${WORK_STAGE}"
+		local -r PREVIOUS_ID=$(image_get_long_id "${PREV_STEP_IMAGE}" || true)
+		if [[ -z ${PREVIOUS_ID} ]]; then
+			info_error "failed get id from image (${PREV_STEP_IMAGE}) cache state is invalid."
+			return 1
+		fi
+	else
+		local -r PREVIOUS_ID="none"
 	fi
+	cache_try_pull "${CACHE_NAME}" "${WORK_STAGE}"
 
 	local -r HASH_TMP="${TMPDIR}/cache.hash.input.step${WORK_STAGE}.dat"
 
