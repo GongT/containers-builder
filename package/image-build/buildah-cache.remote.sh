@@ -45,6 +45,7 @@ function cache_try_pull() {
 	info_log "pull cache image ${URL}"
 	if [[ ${LAST_CACHE_COMES_FROM} == build ]]; then
 		info_log "  - skip pull: LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM}"
+		return
 	fi
 
 	try xpodman_capture image pull --log-level=info --retry-delay 5s --retry 10 "${CACHE_REGISTRY_ARGS[@]}" "${URL}"

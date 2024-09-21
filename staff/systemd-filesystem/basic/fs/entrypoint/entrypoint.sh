@@ -27,13 +27,14 @@ if [[ ${IN_DEBUG_MODE-} == yes ]]; then
 fi
 
 if [[ -e ${NOTIFY_SOCKET-not exists} ]]; then
+	export __NOTIFY_SOCKET__="${NOTIFY_SOCKET}"
 	echo "__NOTIFY_SOCKET__=${NOTIFY_SOCKET}" >>/run/.userenvironments
 	systemd-notify "--status=system boot up"
 	echo "NOTIFY_SOCKET=${NOTIFY_SOCKET}" >>/root/.bashrc
 else
 	echo "NOTIFY_SOCKET is not exists, disable success notify service."
-	systemctl disable success.service
-	systemctl mask success.service
+	systemctl disable success.service notify-stop.service
+	systemctl mask success.service notify-stop.service
 	rm -f /usr/local/lib/systemd/system/multi-user.target.d/require-success.conf
 fi
 unset NOTIFY_SOCKET
@@ -51,7 +52,7 @@ echo "${container_uuid}" >/etc/machine-id
 echo "${container_uuid}" >/run/machine-id
 
 if [[ $* == '--systemd' ]]; then
-	capsh --print
+	# capsh --print
 	exec /usr/lib/systemd/systemd --system "--show-status=yes" --crash-reboot=no
 fi
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
+
 if [[ -e /etc/fedora-release ]]; then
 	rm -rvf /usr/lib/systemd/system/local-fs.target.wants /usr/lib/systemd/system/graphical.target.wants /usr/lib/systemd/system/multi-user.target.wants
 	rm -rvf /etc/systemd/system/*.target.wants
@@ -10,9 +12,7 @@ fi
 
 systemctl disable console-getty.service || true
 systemctl mask systemd-networkd-wait-online.service
-
-systemctl enable success.service
-systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
+systemctl enable dbus.socket notify-stop.service success.service || true
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime

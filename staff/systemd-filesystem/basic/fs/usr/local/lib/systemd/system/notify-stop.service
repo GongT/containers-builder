@@ -1,0 +1,16 @@
+[Unit]
+Description=notify stopping message to host systemd
+After=success.service
+RefuseManualStart=yes
+RefuseManualStop=yes
+
+[Install]
+WantedBy=success.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStop=/usr/local/bin/systemd-host-notify --stopping --status="container is stopping"
+StandardInput=null
+StandardOutput=journal+console
+StandardError=journal+console

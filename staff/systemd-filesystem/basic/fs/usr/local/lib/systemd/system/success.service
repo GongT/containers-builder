@@ -1,15 +1,16 @@
 [Unit]
 Description=notify successfull message to host systemd
-Before=multi-user.target
-OnFailure=poweroff.target
+RefuseManualStart=yes
+RefuseManualStop=yes
+After=multi-user.target graphical.target
 
 [Install]
-RequiredBy=multi-user.target
+WantedBy=multi-user.target
+WantedBy=graphical.target
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
+RemainAfterExit=no
 ExecStart=/usr/local/bin/systemd-host-notify --ready --status="container is initialized"
-ExecStop=/usr/local/bin/systemd-host-notify --stopping --status="container is stopping"
 StandardOutput=journal+console
 StandardError=journal+console
