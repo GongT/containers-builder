@@ -107,8 +107,10 @@ function get_last_image_id() {
 	fi
 }
 
+KNOWN_BASE_IMAGES=()
 function record_last_base_name() {
 	local -r NAME=$1
+	KNOWN_BASE_IMAGES+=("${NAME}")
 	control_ci set-env "BASE_IMAGE_NAME" "${NAME}"
 }
 

@@ -4,9 +4,9 @@ function buildah_cache_start() {
 	local RESULT_ID BASE_NAME
 
 	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
-		BASE_IMG="registry.fedoraproject.org/${BASE_IMG}"
+		BASE_IMG="quay.io/fedora/${BASE_IMG}"
 	fi
-	if [[ ${BASE_IMG} == "registry.fedoraproject.org/fedora" || ${BASE_IMG} == "registry.fedoraproject.org/fedora-minimal" ]]; then
+	if [[ ${BASE_IMG} == "quay.io/fedora/fedora" || ${BASE_IMG} == "quay.io/fedora/fedora-minimal" ]]; then
 		BASE_IMG+=":${FEDORA_VERSION}"
 	fi
 

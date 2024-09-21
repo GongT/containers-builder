@@ -69,7 +69,7 @@ function dnf_use_environment() {
 		info_note "use exists: ${DNF}"
 	else
 		control_ci group "prepare new dnf container"
-		DNF=$(new_container "${CACHE_ID}-work" "registry.fedoraproject.org/fedora:${FEDORA_VERSION}")
+		DNF=$(new_container "${CACHE_ID}-work" "quay.io/fedora/fedora:${FEDORA_VERSION}")
 		collect_temp_container "${CACHE_ID}-work"
 		buildah copy "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/fs" /
 		buildah config "--env=PATH=/usr/local/bin:/usr/bin:/usr/sbin" "${DNF}"

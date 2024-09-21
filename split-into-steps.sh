@@ -82,6 +82,7 @@ OUTPUT=$(
 	echo "${FILE_PREFIX}"
 	printf "  SOURCE_FILE: %s\n" "${SOURCE_FILE_REL}"
 	printf "  PROJECT_DIR: %s\n" "${REL_DIR}"
+	printf "  KNOWN_BASE_IMAGES: %s\n" "${KNOWN_BASE_IMAGES[*]}"
 	echo "${FILE_MIDDLE}"
 	declare -A STEPDEF=()
 	for JSON in "${STEPS_DEFINE[@]}"; do
