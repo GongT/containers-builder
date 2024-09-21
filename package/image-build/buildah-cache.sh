@@ -91,7 +91,7 @@ function buildah_cache() {
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
 		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
-	elif [[ ${SHORT_CACHE_TEST} == build ]]; then
+	elif [[ ${SHORT_CACHE_TEST} == yes ]]; then
 		info_log "skip cache fetch (last layer is built)"
 	elif image_exists "${STEP_RESULT_IMAGE}"; then
 		local EXISTS_PREVIOUS_ID EXISTS_HASH
