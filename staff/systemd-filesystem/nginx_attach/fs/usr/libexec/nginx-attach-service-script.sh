@@ -39,12 +39,14 @@ else
 	echo "delete" >"${CONTROL_DIR}/state"
 fi
 
-if [[ -e "${MASTER_CONTROL_DIR}/request.fifo" ]]; then
-	echo "notify synchronized nginx reload"
-	echo "${CONTAINER_ID}" >"${MASTER_CONTROL_DIR}/request.fifo" &
-	sleep 2
-else
-	echo "master control did not exists, means nginx not started."
-fi
+echo "notify async nginx reload..."
+mkdir -p "${MASTER_CONTROL_DIR}/requests"
+mkfifo --mode=0777 "${MASTER_CONTROL_DIR}/requests/${CONTAINER_ID}.fifo"
+(
+	cat "${MASTER_CONTROL_DIR}/requests/${CONTAINER_ID}.fifo" | grep success
+) &
+wait $!
+RET=$?
+echo "notify return ${RET}"
 
-exit 0
+exit ${RET}

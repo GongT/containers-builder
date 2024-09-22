@@ -1,8 +1,6 @@
 function detect_image_using_systemd() {
 	# push_engine_param "--log-driver=passthrough"
-	push_engine_param "--attach=stdin,stdout,stderr"
-	# push_engine_param "--log-driver=none"
-	push_engine_param "--tty"
+	push_engine_param "--tty" "--attach=stdin,stdout,stderr" "--log-driver=none"
 
 	if [[ ${FORCE_SYSTEMD-} == "true" ]] || current_image_is_using_systemd; then
 		info_log "image is systemd: forced=${FORCE_SYSTEMD-false}, label=${SYSTEMD_DEFINATION}"

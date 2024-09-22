@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 
-echo "reloading..."
+echo "[systemd] reloading..."
 
-cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-cd reload.d
-
+declare -i RET=0
 for I in *; do
-	if [[ $I == "README.md" ]]; then
-		continue
-	fi
-
 	if [[ -s $I ]]; then
-		echo "execute $I" || true
+		echo "[systemd] execute script: $I"
 		bash "$I"
+		if [[ $? -ne 0 ]]; then
+			RET=$?
+		fi
 	else
-		echo "systemctl reload $I"
-		systemctl reload --no-block "$I" || true
+		echo "[systemd] reload service: $I"
+		systemctl reload --no-block "$I"
+		if [[ $? -ne 0 ]]; then
+			RET=$?
+		fi
 	fi
-done
-echo "reload complete"
+done < <(find /entrypoint/reload.d -maxdepth 1 -type f -print0 | sort | grep -vF README.md)
+echo "[systemd] reload complete"
+
+exit $RET
