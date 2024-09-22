@@ -159,7 +159,7 @@ _buildah_cache_done() {
 		echo " - time elapsed: $(seconds_timespan $((END_TIME - START_TIME)))"
 		echo ""
 		echo "<details>"
-		echo "<summary><h3>Base Image</h3></summary>"
+		echo "<summary><h5>Base Image</h5></summary>"
 		echo ""
 		echo ""
 		_image_summary "${PREV_STAGE_IMAGE_ID}"
