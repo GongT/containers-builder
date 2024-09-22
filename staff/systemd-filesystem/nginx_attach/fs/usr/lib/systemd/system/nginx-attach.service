@@ -1,12 +1,16 @@
 [Unit]
 Description=Inject nginx service to main nginx container
 ConditionEnvironment=CONTAINER_ID
+OnFailure=nginx-attach-retry.timer
+Requires=nginx-attach-build-package.service
+After=nginx-attach-build-package.service
+CollectMode=inactive-or-failed
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 Restart=no
-TimeoutStartSec=30s
+TimeoutStartSec=20s
 ExecStart=/bin/bash /usr/libexec/nginx-attach-service-script.sh create
 ExecStop=-/bin/bash /usr/libexec/nginx-attach-service-script.sh delete
 

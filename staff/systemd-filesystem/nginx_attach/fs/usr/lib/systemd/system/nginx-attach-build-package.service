@@ -1,0 +1,11 @@
+[Unit]
+Description=compress config files to be attached
+RefuseManualStop=yes
+RefuseManualStart=yes
+FailureAction=exit
+FailureActionExitStatus=233
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bash /usr/libexec/nginx-attach-prepare.sh

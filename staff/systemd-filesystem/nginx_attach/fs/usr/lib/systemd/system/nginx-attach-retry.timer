@@ -1,0 +1,7 @@
+[Unit]
+Description=retry nginx-attach.service when it fails after 5min
+RefuseManualStart=yes
+
+[Timer]
+OnActiveSec=5min
+RemainAfterElapse=no

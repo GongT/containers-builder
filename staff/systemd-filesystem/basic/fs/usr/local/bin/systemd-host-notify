@@ -5,7 +5,7 @@ if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
 		source /run/.userenvironments
 	fi
 	if [[ -e /etc/environment ]]; then
-		source /run/.userenvironments
+		source /etc/environment
 	fi
 fi
 if [[ -z ${__NOTIFY_SOCKET__-} ]]; then

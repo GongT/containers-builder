@@ -1,0 +1,9 @@
+[Unit]
+Description=restart nginx-attach.service
+RefuseManualStart=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=-/usr/bin/systemctl --no-block reset-failed nginx-attach.service
+ExecStart=-/usr/bin/systemctl --no-block start nginx-attach.service
