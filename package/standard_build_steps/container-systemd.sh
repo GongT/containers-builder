@@ -120,6 +120,7 @@ function setup_systemd() {
 					if [[ ${#PARAMS[@]} -gt 0 ]]; then
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi
+					cat "${COMMON_LIB_ROOT}/staff/script-helpers/systemd-setup-lib.sh"
 				)
 				construct_child_shell_script "${TMPF}" "${SETUP_SRC}" "${EXTRA}"
 
