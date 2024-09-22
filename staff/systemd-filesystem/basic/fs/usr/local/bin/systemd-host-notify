@@ -9,7 +9,7 @@ if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
 	fi
 fi
 if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-	echo "Failed to notify init system: missing __NOTIFY_SOCKET__" >&2
+	echo "failed notify: missing __NOTIFY_SOCKET__" >&2
 	exit 1
 fi
 
