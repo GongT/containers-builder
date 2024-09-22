@@ -41,9 +41,12 @@ cat /etc/machine-id >/run/machine-id
 
 log "prestart:"
 while read -d '' -r FILE; do
+	if [[ $FILE == *.md ]]; then
+		continue
+	fi
 	log "    execute script: ${FILE}"
 	source "${FILE}"
-done < <(find /entrypoint/prestart.d -maxdepth 1 -type f -print0 | sort | grep -vF README.md)
+done < <(find /entrypoint/prestart.d -maxdepth 1 -type f -print0 | sort --zero-terminated)
 log "prestart complete"
 
 #####
