@@ -41,7 +41,6 @@ function make_arguments() {
 	done
 
 	dns_finalize
-	mount_nginx_shared_config
 
 	push_engine_param "${PODMAN_IMAGE_NAME}"
 	push_engine_param "${COMMAND_LINE[@]}"

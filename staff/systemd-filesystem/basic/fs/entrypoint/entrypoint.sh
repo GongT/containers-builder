@@ -7,6 +7,8 @@ unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS
 if [[ ${IN_DEBUG_MODE-} == yes ]]; then
 	log "debug mode detected"
 	systemctl enable console-getty.service
+	cp /entrypoint/nofail.service /usr/local/lib/systemd/system/service.d/00-nofail.conf
+	cp /entrypoint/nofail.service /usr/local/lib/systemd/system/socket.d/00-nofail.conf
 	export IN_DEBUG_MODE
 fi
 
