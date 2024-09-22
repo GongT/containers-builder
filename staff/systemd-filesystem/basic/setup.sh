@@ -11,7 +11,7 @@ if [[ -e /etc/fedora-release ]]; then
 fi
 
 systemctl disable console-getty.service || true
-systemctl mask systemd-networkd-wait-online.service
+systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service kbrequest.target
 systemctl enable dbus.socket notify-stop.service success.service || true
 
 if [[ ! -e /etc/localtime ]]; then

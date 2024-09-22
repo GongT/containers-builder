@@ -9,3 +9,5 @@ FailureActionExitStatus=233
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/usr/bin/bash /usr/libexec/nginx-attach-prepare.sh
+StandardOutput=journal+console
+StandardError=journal+console
