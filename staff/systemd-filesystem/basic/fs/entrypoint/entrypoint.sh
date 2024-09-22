@@ -1,5 +1,9 @@
 #!/bin/bash
 
+function log() {
+	echo "[entry] $*" >&2
+}
+
 log "arguments: $# - $*"
 
 unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS
