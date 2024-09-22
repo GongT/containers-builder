@@ -10,6 +10,11 @@ echo "    container id: ${CONTAINER_ID-}"
 echo "    package: ${NGINX_CONFIG_PACKAGE-}"
 echo "    control script: ${NGINX_UPLOAD_SCRIPT}"
 
+if [[ -n ${IN_DEBUG_MODE-} ]]; then
+	echo "in debug mode, fail to run."
+	exit 233
+fi
+
 if [[ -e ${NGINX_CONFIG_PACKAGE} ]]; then
 	echo "missing compressed nginx config file."
 	exit 66

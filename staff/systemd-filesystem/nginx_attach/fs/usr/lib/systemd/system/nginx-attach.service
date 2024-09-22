@@ -1,6 +1,5 @@
 [Unit]
 Description=Inject nginx service to main nginx container
-ConditionEnvironment=CONTAINER_ID
 OnFailure=nginx-attach-retry.timer
 Requires=nginx-attach-build-package.service
 After=nginx-attach-build-package.service

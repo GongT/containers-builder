@@ -156,7 +156,6 @@ function unit_get_scopename() {
 function _export_base_envs() {
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
-	echo "declare -r UNIT_NAME='${_S_CURRENT_UNIT_NAME}'"
 	echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
 }
 register_script_emit _export_base_envs

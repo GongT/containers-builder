@@ -63,14 +63,13 @@ done < <(find /entrypoint/prestart.d -maxdepth 1 -type f -print0 | sort --zero-t
 log "prestart complete"
 
 #####
-log "CONTAINER_ID=${CONTAINER_ID-*not set*}"
-log "CONTAINER_DIGIST_SHORT=${CONTAINER_DIGIST_SHORT}"
-log "container_uuid=${container_uuid}"
+declare -p CONTAINER_ID CONTAINER_DIGIST_SHORT container_uuid
 #####
 
 if [[ $* == '--systemd' || $# -eq 0 ]]; then
 	log "executing systemd!"
 	# capsh --print
+	unset SHLVL PATH PWD
 	exec /usr/lib/systemd/systemd --system "--show-status=yes" --crash-reboot=no
 fi
 

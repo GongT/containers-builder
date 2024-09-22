@@ -10,23 +10,30 @@ function do_attach() {
 	if [[ $# -gt 0 ]]; then
 		CMD="$1"
 		shift
+	else
+		set -- --login -i
 	fi
 
-	local SERVICE_FULL_NAME=$(systemctl list-units '*.pod@.service' '*.pod.service' --no-pager --no-legend | grep "$TARGET" | grep -E '(running|activating)' | awk '{print $1}' | head -n1)
-	if [[ $SERVICE_FULL_NAME ]]; then
-		TARGET=$(get_container_by_service "$SERVICE_FULL_NAME")
-		if [[ -z ${CMD} ]]; then
-			ROOT=$(podman mount nginx || true)
-			if [[ -n ${ROOT} && -e "${ROOT}/usr/bin/bash" ]]; then
-				CMD='/usr/bin/bash'
-			else
-				CMD='/bin/sh'
-			fi
-		fi
-		echo -e " + podman exec -it \e[38;5;11m$TARGET\e[0m $CMD $*" >&2
-		exec podman exec -it "$TARGET" "$CMD" "$@"
-	else
-		systemctl list-units '*.pod@.service' '*.pod.service' --no-pager --no-legend | grep "$TARGET"
-		die "target service ($TARGET) is not exists or not running"
+	local -a CONTAINER_IDNAMES
+	mapfile -t CONTAINER_IDNAMES < <(podman container list --format '{{.ID}} {{.Names}}' | grep -F "${TARGET}")
+	if [[ ${#CONTAINER_IDNAMES[@]} -gt 1 ]]; then
+		printf "  - %s\n" "${CONTAINER_IDNAMES[@]}"
+		die "can not filter unique container by ${TARGET}"
 	fi
+	if [[ ${#CONTAINER_IDNAMES[@]} -eq 0 ]]; then
+		die "no container match ${TARGET}"
+	fi
+
+	read -r CID NAME < <(echo "${CONTAINER_IDNAMES[0]}")
+	if [[ -z ${CMD} ]]; then
+		ROOT=$(podman mount "${CID}" || true)
+		if [[ -n ${ROOT} && -e "${ROOT}/usr/bin/bash" ]]; then
+			CMD='/usr/bin/bash'
+		else
+			CMD='/bin/sh'
+		fi
+	fi
+	echo -e " + podman exec -it \e[38;5;11m${NAME}\e[0m ${CMD} $*" >&2
+	_PS1=$(printf '\[\][\[\e[38;5;14m\]%s\[\e[0m\]:\W]# \[\]' "${NAME}")
+	exec podman exec "--env=PS1=$_PS1" -it "${CID}" "${CMD}" "$@"
 }

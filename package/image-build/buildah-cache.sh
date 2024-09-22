@@ -166,7 +166,7 @@ _buildah_cache_done() {
 		echo ""
 		echo "</details>"
 		echo ""
-		echo "### Built Result"
+		echo "#### Built Result"
 		_image_summary "${BUILT_ID}"
 		echo ""
 	)
