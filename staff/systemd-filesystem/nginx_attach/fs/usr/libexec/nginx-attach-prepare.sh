@@ -27,3 +27,5 @@ tar -c -f "${NGINX_CONFIG_PACKAGE}" .
 
 echo "config files content:"
 tar -t -f "${NGINX_CONFIG_PACKAGE}"
+
+echo "package save to: ${NGINX_CONFIG_PACKAGE}"

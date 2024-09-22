@@ -15,7 +15,7 @@ if [[ -n ${IN_DEBUG_MODE-} ]]; then
 	exit 233
 fi
 
-if [[ -e ${NGINX_CONFIG_PACKAGE} ]]; then
+if [[ ! -e ${NGINX_CONFIG_PACKAGE} ]]; then
 	echo "missing compressed nginx config file."
 	exit 66
 fi
