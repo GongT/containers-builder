@@ -63,8 +63,6 @@ while true; do
 	sleep 3s
 done
 
-sdnotify "--status=pull complete"
-
 NEW_ID=$(image_find_digist "${PODMAN_IMAGE_NAME}")
 
 if [[ ${OLD_ID} == "${NEW_ID}" ]]; then
@@ -80,9 +78,9 @@ if [[ ${SKIP_REMOVE+found} != found ]]; then
 		| grep --fixed-strings '<none>' \
 		| awk '{print $3}' \
 		| while read -r IMAGE_ID; do
-			sdnotify "--status=[${TRIES}/${MAX_TRY}] pull ${PODMAN_IMAGE_NAME}" "EXTEND_TIMEOUT_USEC=$((30 * 1000000))"
+			sdnotify "--status=delete ${IMAGE_ID}" "EXTEND_TIMEOUT_USEC=$((30 * 1000000))"
 			podman image rm "${IMAGE_ID}" || true
 		done
 fi
 
-sdnotify "EXTEND_TIMEOUT_USEC=$((10 * 1000000))"
+sdnotify "--status=pull-complete" "EXTEND_TIMEOUT_USEC=$((10 * 1000000))"

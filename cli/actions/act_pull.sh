@@ -33,6 +33,7 @@ do_pull() {
 	unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
 	export SKIP_REMOVE=yes
 
+	SUCCESS=()
 	FAILED=()
 	for SRV_FILE in "${SERVICE_NAMES[@]}"; do
 		info "\e[7;38;5;3m  $SRV_FILE  \e[0m"
@@ -43,8 +44,9 @@ do_pull() {
 			continue
 		fi
 
-		if env -i "FORCE_PULL=${FORCE_PULL}" "${TARGET_SCRIPT_DIR}/pull-image" always; then
+		if env -i "FORCE_PULL=${FORCE_PULL}" "SKIP_REMOVE=yes" "${TARGET_SCRIPT_DIR}/pull-image" always; then
 			info_success "\e[38;5;10mDone!\e[0m"
+			SUCCESS+=("$SRV_FILE")
 		else
 			info_error "\e[38;5;9mFailed!\e[0m"
 			FAILED+=("$SRV_FILE")
@@ -53,5 +55,13 @@ do_pull() {
 
 	if [[ ${#FAILED[@]} -gt 0 ]]; then
 		info_error "\e[38;5;9mFailed: ${FAILED[*]}\e[0m"
+	fi
+
+	if [[ ${#SUCCESS[@]} -gt 0 ]]; then
+		info_note "removing unused images:"
+		podman image list --noheading \
+			| grep --fixed-strings '<none>' \
+			| awk '{print $3}' \
+			| xargs --no-run-if-empty -t podman image rm || true
 	fi
 }
