@@ -6,10 +6,15 @@ set -Eeuo pipefail
 
 declare -r NGINX_UPLOAD_SCRIPT="${SHARED_SOCKET_PATH-}/.nginx.upload.sh"
 
-echo "$1 nginx:"
-echo "    container id: ${CONTAINER_ID-}"
-echo "    package: ${NGINX_CONFIG_PACKAGE-}"
-echo "    control script: ${NGINX_UPLOAD_SCRIPT}"
+echo "$1 nginx:" >&2
+echo "    container id: ${CONTAINER_ID-}" >&2
+echo "    package: ${NGINX_CONFIG_PACKAGE-}" >&2
+echo "    control script: ${NGINX_UPLOAD_SCRIPT}" >&2
+
+if [[ -z ${SHARED_SOCKET_PATH-} || -z ${NGINX_CONFIG_PACKAGE-} || -z ${NGINX_UPLOAD_SCRIPT-} ]]; then
+	echo "missing required environment!!!" >&2
+	exit 233
+fi
 
 if [[ $1 == attach ]]; then
 	if [[ -n ${IN_DEBUG_MODE-} ]]; then

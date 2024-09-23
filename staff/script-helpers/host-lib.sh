@@ -132,6 +132,11 @@ function try_resolve_file() {
 	echo "$*"
 }
 function get_container_id() {
+	if variable_exists CONTAINER_ID; then
+		# must be in Exec*= in a service
+		echo "${CONTAINER_ID}"
+		return
+	fi
 	# shellcheck disable=SC2155
 	local CONTAINER_ID=$(systemctl cat "${UNIT_FILE_NAME}" 2>&1 | grep -F Environment=CONTAINER_ID= | sed 's#^Environment=CONTAINER_ID=##g')
 	if [[ ${CONTAINER_ID} == *%* ]]; then
