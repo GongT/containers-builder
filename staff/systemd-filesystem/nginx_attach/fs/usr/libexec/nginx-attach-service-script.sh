@@ -16,11 +16,7 @@ if [[ $1 == attach ]]; then
 		echo "in debug mode, fail to run."
 		exit 233
 	fi
-
-	if [[ ! -e ${NGINX_CONFIG_PACKAGE} ]]; then
-		echo "missing compressed nginx config file."
-		exit 66
-	fi
+	bash /usr/libexec/nginx-attach-prepare.sh
 
 	declare -i I=0
 	while ! [[ -e ${NGINX_UPLOAD_SCRIPT} ]]; do
@@ -32,7 +28,9 @@ if [[ $1 == attach ]]; then
 		I+=1
 	done
 
-	exec bash "${NGINX_UPLOAD_SCRIPT}" "${CONTAINER_ID}" "${NGINX_CONFIG_PACKAGE}"
+	bash "${NGINX_UPLOAD_SCRIPT}" "${CONTAINER_ID}" "${NGINX_CONFIG_PACKAGE}"
+
+	rm -f "${NGINX_CONFIG_PACKAGE}"
 else
 	echo "Not Impl"
 	exit 1
