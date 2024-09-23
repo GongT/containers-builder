@@ -132,6 +132,8 @@ function try_resolve_file() {
 	echo "$*"
 }
 function get_container_id() {
+	# shellcheck disable=SC2155
+	local CONTAINER_ID=$(systemctl cat "${UNIT_FILE_NAME}" 2>&1 | grep -F Environment=CONTAINER_ID= | sed 's#^Environment=CONTAINER_ID=##g')
 	if [[ ${CONTAINER_ID} == *%* ]]; then
 		if [[ -z ${template_id-} ]]; then
 			die "for template (instantiated / ending with @) service, must have environment variable: template_id"

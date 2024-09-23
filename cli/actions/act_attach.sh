@@ -34,6 +34,6 @@ function do_attach() {
 		fi
 	fi
 	echo -e " + podman exec -it \e[38;5;11m${NAME}\e[0m ${CMD} $*" >&2
-	_PS1=$(printf '\[\][\[\e[38;5;14m\]%s\[\e[0m\]:\W]# \[\]' "${NAME}")
+	_PS1=$(printf '\[\][\[\e[38;5;14m\]%s\[\e[0m\]:\W]# \[\]' "${NAME#managed_}")
 	exec podman exec "--env=PS1=$_PS1" -it "${CID}" "${CMD}" "$@"
 }

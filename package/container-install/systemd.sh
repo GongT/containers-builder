@@ -70,7 +70,7 @@ function _create_service_lib() {
 		_create_common_lib
 		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
 
-		printf "if [[ -z \${CONTAINER_ID-} ]] ; then declare CONTAINER_ID=%q ; fi\n" "$(unit_get_scopename)"
+		printf "declare UNIT_FILE_NAME=%q\n" "$(_create_unit_name)"
 
 		call_script_emit
 	)
@@ -195,7 +195,7 @@ NotifyAccess=all"
 
 	_print_unit_service_section
 
-	echo "Environment=CONTAINER_ID=$(unit_get_scopename)"
+	echo "Environment=CONTAINER_ID=managed_$(unit_get_scopename)"
 	echo "Environment=UNIT_NAME=%n"
 	echo "Environment=template_id=%i"
 	echo "RuntimeDirectory=containers/services/$(unit_get_scopename)"
