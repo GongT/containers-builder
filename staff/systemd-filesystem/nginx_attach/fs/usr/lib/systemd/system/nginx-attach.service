@@ -10,8 +10,10 @@ Type=oneshot
 RemainAfterExit=yes
 Restart=no
 TimeoutStartSec=20s
-ExecStart=/bin/bash /usr/libexec/nginx-attach-service-script.sh create
-ExecStop=-/bin/bash /usr/libexec/nginx-attach-service-script.sh delete
+ExecStart=/bin/bash /usr/libexec/nginx-attach-service-script.sh attach
+ExecStop=-/bin/bash /usr/libexec/nginx-attach-service-script.sh detach
+StandardOutput=journal+console
+StandardError=journal+console
 
 [Install]
 WantedBy=default.target

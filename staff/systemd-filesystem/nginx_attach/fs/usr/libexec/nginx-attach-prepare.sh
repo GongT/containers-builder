@@ -13,16 +13,17 @@ fi
 declare -r CONF_DIR="/tmp/nginx-package"
 if [[ -f ${NGINX_CONFIG_SOURCE} ]]; then
 	mkdir -p "${CONF_DIR}/vhost.d"
-	cp "${NGINX_CONFIG_SOURCE}" "${CONF_DIR}/vhost.d/${CONTAINER_ID}.conf"
+	cp -f "${NGINX_CONFIG_SOURCE}" "${CONF_DIR}/vhost.d/${CONTAINER_ID}.conf"
 elif [[ -d ${NGINX_CONFIG_SOURCE} ]]; then
 	mkdir -p "${CONF_DIR}"
-	cp -r "${NGINX_CONFIG_SOURCE}/." "${CONF_DIR}"
+	cp -rf "${NGINX_CONFIG_SOURCE}/." "${CONF_DIR}"
 else
 	echo "invalid type must be file or folder: ${NGINX_CONFIG_SOURCE}"
 	exit 1
 fi
 
 cd "${CONF_DIR}"
+rm -f "${NGINX_CONFIG_PACKAGE}"
 tar -c -f "${NGINX_CONFIG_PACKAGE}" .
 
 echo "config files content:"
