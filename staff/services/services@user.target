@@ -1,5 +1,5 @@
 [Unit]
 Description=System Worker Services
-Requires=default.target
-After=default.target
+Requires=default.target services-pull-all-images.service
+After=default.target services-pull-all-images.service
 AllowIsolate=no

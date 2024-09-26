@@ -71,7 +71,7 @@ function __reset_body_config() {
 	declare -gA _S_BODY_CONFIG=()
 
 	_S_BODY_CONFIG[WorkingDirectory]="/tmp"
-	_S_BODY_CONFIG[RestartPreventExitStatus]="233"
+	_S_BODY_CONFIG[RestartPreventExitStatus]="233 126"
 	_S_BODY_CONFIG[Restart]="${DEFAULT_RESTART:-always}"
 	_S_BODY_CONFIG[RestartSec]="1"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"

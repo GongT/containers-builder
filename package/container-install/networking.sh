@@ -281,6 +281,7 @@ function network_define_macvlan_interface() {
 
 	CONTENT="[Unit]
 After=systemd-networkd.service network-online.target
+RequiresMountsFor=/var/lib/containers/storage
 
 [Network]
 NetworkName=${NET_NAME}
@@ -297,6 +298,8 @@ PodmanArgs=--interface-name=${NET_NAME}
 
 [Service]
 Slice=services.slice
+Restart=on-failure
+RestartSec=30s
 "
 
 	write_file "${PODMAN_QUADLET_DIR}/service-${NET_NAME}.network" "${CONTENT}"

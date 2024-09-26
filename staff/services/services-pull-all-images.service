@@ -1,0 +1,11 @@
+[Unit]
+Description=pull all images before start any container
+After=network-online.target services-pre.target
+Requires=services-pre.target
+Before=services.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/env bash "__SCRIPT__"
+Slice=services.slice

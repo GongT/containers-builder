@@ -40,6 +40,7 @@ function install_common_system_support() {
 	_install_common_script_service cleanup-stopped-containers
 	_install_common_script_service containers-ensure-health
 	_copy_common_static_unit containers-ensure-health.timer
+	_install_common_script_service services-pull-all-images
 
 	local ENTRY=''
 	if is_root; then
@@ -50,7 +51,6 @@ function install_common_system_support() {
 		_copy_common_static_unit services-spin-up.service
 		_install_common_script_service services-boot
 		service_dropin systemd-networkd alias-nameserver.conf
-		edit_system_service dnsmasq create-dnsmasq-config
 
 		add_service_to_enable "services.timer"
 	else
@@ -73,7 +73,7 @@ function _install_common_script_service() {
 		SRV_FILE="${SRV}.service"
 	fi
 
-	SCRIPT=$(install_script "${SERVICES_DIR}/${SRV}.sh")
+	SCRIPT=$(install_common_script "${SERVICES_DIR}/${SRV}.sh")
 
 	cat "${SERVICES_DIR}/${SRV_FILE}" \
 		| sed "s#__SCRIPT__#${SCRIPT}#g" \
