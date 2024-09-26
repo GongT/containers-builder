@@ -9,12 +9,24 @@ function buildah_cache_start() {
 	if [[ ${BASE_IMG} == "quay.io/fedora/fedora" || ${BASE_IMG} == "quay.io/fedora/fedora-minimal" ]]; then
 		BASE_IMG+=":${FEDORA_VERSION}"
 	fi
+	if [[ ${BASE_IMG} != *":"* ]]; then
+		BASE_IMG+=":latest"
+	fi
 
 	info_success "\nCache Branch Start"
 	if [[ ${BASE_IMG} == scratch ]]; then
 		LAST_KNOWN_BASE=
 		info_note "  - using empty base"
 		record_last_image "scratch"
+		return
+	fi
+
+	if is_recording_steps; then
+		info "  - fake (recording)"
+		record_last_image scratch
+
+		record_last_base_name "${BASE_IMG}"
+		BASE_NAME=fake
 		return
 	fi
 

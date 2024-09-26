@@ -41,6 +41,7 @@ declare -a DNF_ENVIRONMENT_REPOS=()
 declare DNF_ENVIRONMENT_RPMDB=keep
 function dnf_use_environment() {
 	if is_recording_steps; then
+		info "create dnf environment: fake (recording)"
 		_DNF_ENVIRONMENT_CID=fake
 		return
 	fi
