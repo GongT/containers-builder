@@ -1,0 +1,11 @@
+[Match]
+Name=eth0
+
+[Network]
+Description=Any interface
+DHCP=yes
+
+[DHCPv4]
+SendHostname=yes
+ClientIdentifier=mac
+SendRelease=yes
