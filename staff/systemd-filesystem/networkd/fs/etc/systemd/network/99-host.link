@@ -1,0 +1,7 @@
+[Match]
+OriginalName=*
+
+[Link]
+Description=container network interface
+NamePolicy=mac
+# RequiredForOnline=yes

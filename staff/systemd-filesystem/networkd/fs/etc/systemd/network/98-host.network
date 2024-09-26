@@ -1,8 +1,8 @@
 [Match]
-Name=eth0
+Name=*
 
 [Network]
-Description=Any interface
+Description=container network interface
 DHCP=yes
 
 [DHCPv4]
