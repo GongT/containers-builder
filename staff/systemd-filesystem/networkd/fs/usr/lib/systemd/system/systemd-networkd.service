@@ -1,8 +1,11 @@
 [Unit]
+DefaultDependencies=no
 After=systemd-networkd.socket systemd-udevd.service network-pre.target systemd-sysusers.service systemd-sysctl.service dbus.socket
-Before=network.target multi-user.target
+Before=network.target network.target shutdown.target initrd-switch-root.target
 Wants=systemd-networkd.socket network.target systemd-networkd-persistent-storage.service dbus.socket
+Conflicts=shutdown.target initrd-switch-root.target
 AssertCapability=CAP_NET_ADMIN
+AssertCapability=CAP_NET_RAW
 
 [Service]
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW
