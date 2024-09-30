@@ -34,10 +34,11 @@ for PORTDEF in "${PORTS_ARR[@]}"; do
 	else
 		FNAME="${PROJECT_NAME}.${NAME}"
 	fi
+	SERVICE_NAME="proxy-to-${PROTO}-${PORT}.service"
 
 	cat >"/etc/systemd/system/${FNAME}.socket" <<-EOF
 		[Unit]
-		Description=proxy socket proxy for ${PROJECT_NAME} (${PROTO} ${NAME} ${PORT})
+		Description=proxy socket proxy at /run/sockets/${FNAME}.sock (${PROTO})
 		FailureAction=exit
 		FailureActionExitStatus=233
 		Before=success.service
@@ -48,9 +49,11 @@ for PORTDEF in "${PORTS_ARR[@]}"; do
 
 		[Socket]
 		${LISTEN_NAME}=/run/sockets/${FNAME}.sock
+		Service=${SERVICE_NAME}
 	EOF
-	cat >"/etc/systemd/system/${FNAME}.service" <<-EOF
+	cat >"/etc/systemd/system/${SERVICE_NAME}" <<-EOF
 		[Unit]
+		Description=proxy to ${PORT} (${PROTO})
 		FailureAction=exit
 		FailureActionExitStatus=233
 
