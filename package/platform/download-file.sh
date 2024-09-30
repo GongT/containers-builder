@@ -14,7 +14,10 @@ function download_file_force() {
 	FORCE_DOWNLOAD=yes download_file "${URL}" "${FILE}"
 }
 function download_file() {
-	local URL="$1" NAME="$2"
+	local URL="$1" NAME="${2-}"
+	if [[ -z ${NAME} ]]; then
+		NAME=$(basename "${URL}")
+	fi
 	local OUTFILE="${PRIVATE_CACHE}/download/${NAME}"
 	local ARGS=()
 
@@ -104,7 +107,8 @@ function extract_zip() {
 	done
 	STRIPSTR+="*"
 
-	mv -f "${STRIPSTR}" -t "${TARGET}"
+	# shellcheck disable=SC2086
+	mv -f ${STRIPSTR} -t "${TARGET}"
 
 	popd &>/dev/null || die "error syscall chdir"
 }

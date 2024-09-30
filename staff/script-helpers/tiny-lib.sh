@@ -33,3 +33,29 @@ function create_temp_file() {
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
 	mktemp "--tmpdir=${TMPDIR}" "${FILE_BASE}.XXXXX.${FILE_EXT}"
 }
+
+function ensure_user() {
+	local U_ID=$1 U_NAME=$2 G_ID=$3
+	if cat /etc/passwd | grep -- "$U_NAME" | grep -q -- ":$U_ID:$G_ID:"; then
+		echo "Group $U_NAME exists with id $U_ID"
+	else
+		useradd --gid "$G_ID" --no-create-home --no-user-group --uid "$U_ID" "$U_NAME"
+		echo "Created $U_NAME."
+	fi
+}
+
+function ensure_group() {
+	local G_ID=$1 G_NAME=$2
+	if cat /etc/group | grep -- "$G_NAME" | grep -q -- ":$G_ID:"; then
+		echo "Group $G_NAME exists with id $G_ID"
+	else
+		groupadd -g "$G_ID" "$G_NAME"
+		echo "Created $G_NAME."
+	fi
+}
+
+function create_user() {
+	local NAME=$1 ID=$2
+	ensure_group "${ID}" "${NAME}"
+	ensure_user "${ID}" "${NAME}" "${ID}"
+}

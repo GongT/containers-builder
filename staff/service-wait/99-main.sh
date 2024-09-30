@@ -63,12 +63,13 @@ function service_wait_thread() {
 function execute_service_waiter_main() {
 	detect_image_using_systemd
 
+	push_engine_param "--log-level=warn" "--log-driver=none"
 	push_engine_param "--name=${CONTAINER_ID}" "--replace=true"
 	push_engine_param "--env=INVOCATION_ID=${INVOCATION_ID}"
 	push_engine_param "--env=CONTAINER_ID=$(get_container_id)"
 	push_engine_param "--annotation=systemd.unit.invocation_id=${INVOCATION_ID}"
 	push_engine_param "--annotation=systemd.unit.name=${UNIT_NAME}"
-	
+
 	ensure_mounts
 	remove_old_socks
 

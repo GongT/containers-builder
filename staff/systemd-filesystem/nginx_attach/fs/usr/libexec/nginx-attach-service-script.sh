@@ -18,8 +18,8 @@ fi
 
 if [[ $1 == attach ]]; then
 	if [[ -n ${IN_DEBUG_MODE-} ]]; then
-		echo "in debug mode, fail to run."
-		exit 233
+		echo "in debug mode, refuse to run."
+		exit 0
 	fi
 	bash /usr/libexec/nginx-attach-prepare.sh
 

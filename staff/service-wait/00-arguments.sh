@@ -3,7 +3,6 @@ function push_engine_param() {
 	# info_note "add argument '$*'"
 	PODMAN_EXEC_ARGS+=("$@")
 }
-push_engine_param "--log-level=info"
 push_engine_param "--restart=no"
 
 function make_arguments() {

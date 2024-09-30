@@ -24,6 +24,8 @@ function buildah_run_shell_script() {
 	fi
 	ARGS+=("--env=BUILDAH_RUN_HOST_SCRIPT=${SCRIPT_FILE}")
 
+	ARGS+=("--cap-add=CAP_LINUX_IMMUTABLE")
+
 	# shellcheck disable=SC2086
 	indent_stream buildah run "${ARGS[@]}" "--volume=${SCRIPT_FILE}:/tmp/_script:ro" "${CONTAINER}" ${SH} /tmp/_script
 	unset WHO_AM_I
@@ -81,7 +83,7 @@ function construct_child_shell_script() {
 			echo "unset CI"
 		fi
 		declare -fp is_ci control_ci
-		declare -p _CURRENT_INDENT
+		declare -p _CURRENT_INDENT PROJECT_NAME
 		echo '
 function try_resolve_file() {
 	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"

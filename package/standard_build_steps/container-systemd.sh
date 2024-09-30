@@ -97,7 +97,7 @@ function setup_systemd() {
 			fi
 			if [[ -e ${CONFIG_SRC} ]]; then
 				ACT+=1
-				info_log " -> prepare run"
+				info_log " -> execute config"
 
 				function add_setup_arg() {
 					SETUP_ARGS+=("$@")

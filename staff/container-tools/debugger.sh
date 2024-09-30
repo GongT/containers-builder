@@ -13,7 +13,7 @@ function xpodman() {
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	printf "\e[0m\n"
 
-	exec podman "${ARGS[@]}"
+	podman "${ARGS[@]}"
 }
 
 declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_template "${UNIT_NAME}")_${RANDOM}"
@@ -70,8 +70,20 @@ unset I A RESULT
 
 detect_image_using_systemd
 
+push_engine_param "--log-level=info" "--log-driver=k8s-file"
+push_engine_param "--env=CONTAINER_ID=${CONTAINER_ID}"
+
 ensure_mounts
 
 make_arguments
+
+X=("${PODMAN_EXEC_ARGS[@]}")
+PODMAN_EXEC_ARGS=()
+for I in "${X[@]}"; do
+	if [[ ${I} == "--cgroup-parent="* ]]; then
+		continue
+	fi
+	PODMAN_EXEC_ARGS+=("${I}")
+done
 
 xpodman run -it "${PODMAN_EXEC_ARGS[@]}"
