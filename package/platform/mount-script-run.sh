@@ -74,7 +74,7 @@ function construct_child_shell_script() {
 		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
 		export_common_libs
 		cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
-		SHELL_USE_PROXY
+		# SHELL_USE_PROXY
 
 		printf '%s\n' "${EXTRA_CONTENT}"
 		if [[ -n ${CI-} ]]; then

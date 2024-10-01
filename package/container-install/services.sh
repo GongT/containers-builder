@@ -20,7 +20,7 @@ function _create_common_lib() {
 	declare -fp is_long_digist is_digist digist_to_short
 	declare -p microsecond_unit
 
-	SHELL_USE_PROXY
+	# SHELL_USE_PROXY
 	export_array CONTROL_SERVICES "${_RECORD_COMMON_SERVICES[@]}"
 
 	cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/host-lib.sh"
