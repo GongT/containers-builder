@@ -159,18 +159,19 @@ function http_get_github_release_id() {
 	__github_release_json_id
 }
 
-function http_get_github_unstable_release() {
-	local REPO="$1"
-	local URL="repos/${REPO}/releases?per_page=1"
-	info_log " * fetching UNSTABLE release from ${URL}"
-	LAST_GITHUB_RELEASE_JSON=$(__github_api "${URL}" | filtered_jq '.[0]')
-}
-
-function http_get_github_unstable_release_id() {
-	local REPO="$1" ID
-	http_get_github_unstable_release "${REPO}"
-	__github_release_json_id
-}
+# latest always first, this not work
+# function http_get_github_unstable_release() {
+# 	local REPO="$1"
+# 	local URL="repos/${REPO}/releases?per_page=1"
+# 	info_log " * fetching UNSTABLE release from ${URL}"
+# 	LAST_GITHUB_RELEASE_JSON=$(__github_api "${URL}" | filtered_jq '.[0]')
+# }
+#
+# function http_get_github_unstable_release_id() {
+# 	local REPO="$1" ID
+# 	http_get_github_unstable_release "${REPO}"
+# 	__github_release_json_id
+# }
 
 function github_release_asset_download_url() {
 	local -r NAME="$1"

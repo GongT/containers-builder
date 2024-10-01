@@ -47,9 +47,6 @@ fi
 
 COPY=()
 for A in "${ENGINE_PARAMS[@]}"; do
-	if [[ $A == "--mac-address="* || $A == "--pod="* ]]; then
-		continue
-	fi
 	COPY+=("$(filter_systemd_template "$A")")
 done
 ENGINE_PARAMS=("${COPY[@]}")
@@ -81,6 +78,10 @@ X=("${PODMAN_EXEC_ARGS[@]}")
 PODMAN_EXEC_ARGS=()
 for I in "${X[@]}"; do
 	if [[ ${I} == "--cgroup-parent="* ]]; then
+		continue
+	fi
+	if [[ ${REAL_NETWORK-} != 1 ]] && [[ ${I} == "--mac-address="* || ${I} == "--pod="* ]]; then
+		info "remove ${I} from podman exec arguments, set REAL_NETWORK=1 to prevent this."
 		continue
 	fi
 	PODMAN_EXEC_ARGS+=("${I}")

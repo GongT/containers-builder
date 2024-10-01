@@ -8,7 +8,7 @@ function is_root() {
 	return "${UID}"
 }
 function is_tty() {
-	[[ -t ${1:-2} ]]
+	[[ -t ${1-2} ]]
 }
 function function_exists() {
 	declare -fp "$1" &>/dev/null

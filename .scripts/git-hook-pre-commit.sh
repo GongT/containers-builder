@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.."
+
 function hash_every_systemd_plugin() {
 	set -Eeuo pipefail
 	cd "staff/systemd-filesystem"

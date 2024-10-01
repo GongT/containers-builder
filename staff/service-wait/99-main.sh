@@ -38,7 +38,7 @@ function service_wait_thread() {
 		elif [[ ${RET} -eq 251 ]]; then
 			exit 0 # no need wait
 		else
-			info_log "failed wait container '${CONTAINER_ID}' to stable running."
+			info_log "failed wait container '$(get_container_id)' to stable running."
 
 			sdnotify --stopping "wait fail"
 
@@ -53,7 +53,7 @@ function service_wait_thread() {
 	}
 	trap _wait_exit EXIT
 
-	info_log "wait container ${CONTAINER_ID}, type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
+	info_log "wait container $(get_container_id), type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
 
 	core_switch
 
@@ -64,7 +64,7 @@ function execute_service_waiter_main() {
 	detect_image_using_systemd
 
 	push_engine_param "--log-level=warn" "--log-driver=none"
-	push_engine_param "--name=${CONTAINER_ID}" "--replace=true"
+	push_engine_param "--name=$(get_container_id)" "--replace=true"
 	push_engine_param "--env=INVOCATION_ID=${INVOCATION_ID}"
 	push_engine_param "--env=CONTAINER_ID=$(get_container_id)"
 	push_engine_param "--annotation=systemd.unit.invocation_id=${INVOCATION_ID}"

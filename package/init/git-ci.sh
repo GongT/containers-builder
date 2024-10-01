@@ -1,4 +1,5 @@
 declare -i INSIDE_GROUP=
+
 function control_ci() {
 	local -r ACTION="$1"
 	shift
@@ -30,15 +31,11 @@ function control_ci() {
 		fi
 		;;
 	summary)
-		if is_ci; then
-			echo "$1" >>"${GITHUB_STEP_SUMMARY}"
-		else
-			printf "\e[2m"
-			printf '=%.0s' $(seq 1 ${COLUMNS-80})
-			printf '%s\n' "$1"
-			printf '=%.0s' $(seq 1 ${COLUMNS-80})
-			printf "\e[0m\n\n"
+		if [[ -z ${GITHUB_STEP_SUMMARY-} ]]; then
+			GITHUB_STEP_SUMMARY="${CURRENT_DIR}/.BUILD.md"
+			echo > "${GITHUB_STEP_SUMMARY}"
 		fi
+		echo "$1" >>"${GITHUB_STEP_SUMMARY}"
 		;;
 	group)
 		INSIDE_GROUP=$((INSIDE_GROUP + 1))

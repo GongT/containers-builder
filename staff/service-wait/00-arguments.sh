@@ -4,6 +4,7 @@ function push_engine_param() {
 	PODMAN_EXEC_ARGS+=("$@")
 }
 push_engine_param "--restart=no"
+push_engine_param "--env=PROJECT_NAME=${PROJECT_NAME}"
 
 function make_arguments() {
 	detect_host_ip

@@ -39,7 +39,7 @@ else
 fi
 unset NOTIFY_SOCKET
 
-env | grep -vE '^(SHLVL|PATH|_|container_uuid)=' >>/run/.userenvironments
+env | grep -vE '^(SHLVL|PATH|_|container_uuid|HOME|PWD|TERM)=' >>/run/.userenvironments
 
 CONTAINER_DIGIST_LONG=$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}' || true)
 CONTAINER_DIGIST_SHORT="$(echo "${CONTAINER_DIGIST_LONG}" | grep -oE '^[0-9a-f]{12}')"

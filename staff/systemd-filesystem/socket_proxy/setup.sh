@@ -4,7 +4,10 @@ if [[ -z ${PORTS} ]]; then
 	die "missing required config: PORTS=[sock1:]12345[/tcp] ..."
 fi
 
-mapfile -t PORTS_ARR < <(echo "${PORTS}")
+declare -r SOURCE_DIR="/etc/systemd/my/sockets"
+
+# shellcheck disable=SC2206
+PORTS_ARR=(${PORTS})
 
 for PORTDEF in "${PORTS_ARR[@]}"; do
 	NAME="${PORTDEF%:*}"
@@ -21,46 +24,24 @@ for PORTDEF in "${PORTS_ARR[@]}"; do
 	fi
 
 	if [[ ${PROTO} == tcp ]]; then
-		LISTEN_NAME="ListenStream"
+		# LISTEN_NAME="ListenStream"
+		:
 	elif [[ ${PROTO} == udp ]]; then
-		LISTEN_NAME="ListenDatagram"
+		# LISTEN_NAME="ListenDatagram"
 		die "udp forwarding currently not implement"
 	else
-		die "invalid port proto: ${PORTDEF}"
+		die "invalid port proto: ${PORTDEF}: ${NAME} - ${PORT} - ${PROTO}"
 	fi
 
 	if [[ -z ${NAME} ]]; then
-		FNAME="${PROJECT_NAME}"
+		FNAME="unnamed"
 	else
-		FNAME="${PROJECT_NAME}.${NAME}"
+		FNAME="${NAME}"
 	fi
-	SERVICE_NAME="proxy-to-${PROTO}-${PORT}.service"
 
-	cat >"/etc/systemd/system/${FNAME}.socket" <<-EOF
-		[Unit]
-		Description=proxy socket proxy at /run/sockets/${FNAME}.sock (${PROTO})
-		FailureAction=exit
-		FailureActionExitStatus=233
-		Before=success.service
-
-		[Install]
-		WantedBy=sockets.target
-		RequiredBy=success.service
-
-		[Socket]
-		${LISTEN_NAME}=/run/sockets/${FNAME}.sock
-		Service=${SERVICE_NAME}
-	EOF
-	cat >"/etc/systemd/system/${SERVICE_NAME}" <<-EOF
-		[Unit]
-		Description=proxy to ${PORT} (${PROTO})
-		FailureAction=exit
-		FailureActionExitStatus=233
-
-		[Service]
-		Type=notify
-		ExecStart=/usr/lib/systemd/systemd-socket-proxyd 127.0.0.1:${PORT}
-	EOF
-
-	systemctl enable "${FNAME}.socket"
+	mkdir -p "${SOURCE_DIR}"
+	if [[ -e "${SOURCE_DIR}/${FNAME}" ]]; then
+		die "duplicate proxy socket name: ${FNAME}"
+	fi
+	declare -p PROTO PORT NAME >"${SOURCE_DIR}/${FNAME}"
 done

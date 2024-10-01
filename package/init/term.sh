@@ -38,6 +38,46 @@ function soft_clear() {
 	done
 }
 
+function no_scroll_logging() {
+	local TITLE="$1"
+	shift
+
+	if is_ci; then
+		control_ci group "${TITLE}"
+		"$@"
+		control_ci groupEnd
+	fi
+
+	local TMP_OUT
+	TMP_OUT=$(create_temp_file "screen.output.txt")
+	save_cursor_position
+	info "${TITLE}"
+	save_indent
+
+	touch "${TMP_OUT}"
+	(
+		tail -f "${TMP_OUT}" | while read -r LINE; do
+			printf "\eK%s\r" "${LINE}"
+		done
+	) &
+	local -i PID=$!
+
+	try "$@" &>"${TMP_OUT}"
+	local -i RET=${ERRNO}
+
+	restore_indent
+	restore_cursor_position
+	printf "\eJ"
+	if [[ ${RET} -eq 0 ]]; then
+		info_success "${TITLE}"
+	else
+		info_error "${TITLE}"
+		indent_stream cat "${TMP_OUT}"
+		info_error "${TITLE}"
+	fi
+	return "${RET}"
+}
+
 function alternative_buffer_execute() {
 	local TITLE="$1" RET
 	shift
@@ -53,7 +93,8 @@ function alternative_buffer_execute() {
 		info_warn "$TITLE"
 		restore_cursor_position
 		{
-			stty -echo
+			stty -echo || true
+			tput civis
 			tput smcup
 			tput home
 			tput ed
@@ -65,14 +106,14 @@ function alternative_buffer_execute() {
 
 		ALTERNATIVE_BUFFER_ENABLED=no
 		{
-			stty echo
+			stty echo || true
+			tput cnorm
 			tput rmcup
 			tput ed
 		} >&2
 		restore_indent
 
 		if [[ ${ERRNO} -eq 0 ]]; then
-			collect_temp_file "${TMP_OUT}"
 			info_success "[screen] ${TITLE} (command '$*' return ${ERRNO})"
 			info_note "[screen]     to see output, set ALLOW_ALTERNATIVE_BUFFER=no"
 			return 0
@@ -94,7 +135,8 @@ function term_reset() {
 	SAVED_INDENT=()
 	if is_tty 2 && ! is_ci; then
 		{
-			stty echo
+			stty echo || true
+			tput cnorm
 			tput oc
 			tput rs2
 			printf '\e[s'

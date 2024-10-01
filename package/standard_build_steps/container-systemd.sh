@@ -29,7 +29,10 @@ function setup_systemd() {
 	local -a INPUT_ARGS=("$@")
 
 	if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
-		INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
+		# shellcheck disable=SC2312
+		if [[ -n $(image_get_label "${LABELID_USE_SYSTEMD}") ]]; then
+			INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
+		fi
 	fi
 
 	function __hash_cb() {
