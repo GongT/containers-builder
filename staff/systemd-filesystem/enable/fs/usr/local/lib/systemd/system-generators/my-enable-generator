@@ -24,7 +24,7 @@ if [[ -e "${SOURCE_DIR}/wants" ]]; then
 	AFTERS+=("${WAT_ARR[@]}")
 fi
 
-if [[ ${IN_DEBUG_MODE} == yes ]]; then
+if [[ ${IN_DEBUG_MODE-no} == yes ]]; then
 	exit 0
 fi
 
