@@ -3,7 +3,7 @@
 declare -r FORCE_CONTINUE_FILE='/run/force-continue-once'
 
 STILL_NUM=$(last reboot -F -n 2 | grep -o still | wc -l)
-if [[ ${STILL_NUM} -gt 1 ]]; then
+if [[ ${STILL_NUM} -eq 2 ]]; then
 	echo "Unexpected shutdown detected, service startup canceled." >&2
 	if [[ -e ${FORCE_CONTINUE_FILE} ]]; then
 		echo "Force continue!"

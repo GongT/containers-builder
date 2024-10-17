@@ -70,6 +70,7 @@ function __reset_body_config() {
 	declare -ga _S_BODY_RAW_LINE=()
 	declare -gA _S_BODY_CONFIG=()
 
+	# _S_BODY_CONFIG[TimeoutStartSec]=1min
 	_S_BODY_CONFIG[WorkingDirectory]="/tmp"
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233 126"
 	_S_BODY_CONFIG[Restart]="${DEFAULT_RESTART:-always}"

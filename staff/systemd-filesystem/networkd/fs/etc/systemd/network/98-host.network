@@ -4,6 +4,11 @@ Name=*
 [Network]
 Description=container network interface
 DHCP=yes
+LinkLocalAddressing=ipv6
+LLDP=yes
+EmitLLDP=yes
+IPv6AcceptRA=yes
+DNSDefaultRoute=yes
 
 [DHCPv4]
 SendHostname=yes
