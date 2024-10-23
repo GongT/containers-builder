@@ -13,7 +13,13 @@ function xpodman() {
 	printf '=%.0s' $(seq 1 ${COLUMNS-80})
 	printf "\e[0m\n"
 
-	podman "${ARGS[@]}"
+	set +e
+	/usr/bin/podman "${ARGS[@]}"
+	RET=$?
+
+	echo ""
+	echo ""
+	echo "podman exit code: ${RET}"
 }
 
 declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_template "${UNIT_NAME}")_${RANDOM}"
