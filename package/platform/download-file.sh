@@ -32,7 +32,7 @@ function download_file() {
 		ARGS+=(--progress=bar)
 	fi
 	if [[ ${FORCE_DOWNLOAD+found} == found ]] || ! [[ -e ${OUTFILE} ]]; then
-		local EXARGS=()
+		local EXARGS=('--continue')
 
 		if [[ -n ${HTTP_COOKIE-} ]]; then
 			EXARGS+=(--header "Cookie: ${HTTP_COOKIE}")
@@ -40,7 +40,7 @@ function download_file() {
 
 		control_ci group "download with wget"
 		info " * downloading ${NAME} from ${URL}"
-		x wget "${EXARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" "${ARGS[@]}" --tries=8 --continue >&2
+		x wget "${EXARGS[@]}" "${ARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" >&2
 
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
 		info_log "    downloaded."
@@ -305,6 +305,32 @@ function download_git_result_copy() {
 	x git -C "${DIST}" "--git-dir=${GIT_DIR}" checkout --recurse-submodules "${BRANCH}" -- .
 	# git clone --depth 1 --recurse-submodules --shallow-submodules --single-branch "file://$GIT_DIR" "$DIST"
 	unset GIT_DIR
+}
+
+declare LAST_HTTP_HEADER_RESULT=
+function http_get_headers() {
+	local URL="$1"
+	info_log " * fetching headers: ${URL}"
+	echo -ne "\e[2m" >&2
+	LAST_HTTP_HEADER_RESULT=$(curl_proxy -I --retry 5 --location "${URL}")
+	echo -ne "\e[0m" >&2
+	echo "${LAST_HTTP_HEADER_RESULT}"
+}
+
+function http_header_get_one() {
+	http_header_get_multiple "$@" | tail -n1
+}
+function http_header_get_multiple() {
+	local NAME=$1 KEY
+	local -i LEN"=${#NAME}+2"
+	echo "${LAST_HTTP_HEADER_RESULT}" | while read -r LINE; do
+		KEY=${LINE:0:LEN}
+		if [[ ${KEY^^} != "${NAME^^}: " ]]; then
+			continue
+		fi
+
+		echo "${LINE:LEN}" | tr -d '\r'
+	done
 }
 
 function http_get_etag() {

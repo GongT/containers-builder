@@ -28,14 +28,21 @@ function setup_systemd() {
 	local PARAMS_LIST=()
 	local -a INPUT_ARGS=("$@")
 
-	if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
-		# shellcheck disable=SC2312
-		if [[ -n $(image_get_label "${LABELID_USE_SYSTEMD}") ]]; then
-			INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
-		fi
-	fi
-
 	function __hash_cb() {
+		if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
+			# shellcheck disable=SC2312
+			if [[ -n $(image_get_label "${PREV_STAGE_IMAGE_ID}" "${LABELID_USE_SYSTEMD}") ]]; then
+				echo "[systemd] image already setup"
+				INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
+			else
+				echo "[systemd] append basic setup"
+			fi
+
+			if [[ ${#INPUT_ARGS[@]} -eq 0 ]]; then
+				die "[systemd] nothing to do!"
+			fi
+		fi
+
 		echo "version:4+${THIS_FILE_HASH}"
 		set -- "${INPUT_ARGS[@]}"
 

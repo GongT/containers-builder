@@ -20,7 +20,8 @@ function buildah_cache_increament_count() {
 }
 
 # buildah_cache "$PREVIOUS_ID" hash_function build_function
-# build_function <RESULT_CONTAINER_NAME>
+# hash_function <BASE_IMAGE_ID>
+# build_function <CONTAINER_NAME>
 function buildah_cache() {
 	local _STITLE=""
 	if [[ ${STEP+found} == found ]]; then
@@ -78,7 +79,7 @@ function buildah_cache() {
 	indent
 	{
 		printf "last image: %q" "${PREV_STAGE_IMAGE_ID}"
-		"${BUILDAH_HASH_CALLBACK}"
+		"${BUILDAH_HASH_CALLBACK}" "${PREV_STAGE_IMAGE_ID}"
 	} >"${HASH_TMP}"
 
 	local WANTED_HASH
