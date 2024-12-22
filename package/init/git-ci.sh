@@ -32,8 +32,12 @@ function control_ci() {
 		;;
 	summary)
 		if [[ -z ${GITHUB_STEP_SUMMARY-} ]]; then
-			GITHUB_STEP_SUMMARY="${CURRENT_DIR}/.BUILD.md"
-			echo > "${GITHUB_STEP_SUMMARY}"
+			if is_root; then
+				GITHUB_STEP_SUMMARY="${CURRENT_DIR}/.BUILD.md"
+			else
+				GITHUB_STEP_SUMMARY=$(create_temp_file build.md)
+			fi
+			echo >"${GITHUB_STEP_SUMMARY}"
 		fi
 		echo "$1" >>"${GITHUB_STEP_SUMMARY}"
 		;;

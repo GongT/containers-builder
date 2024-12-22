@@ -15,7 +15,7 @@ else
 fi
 
 function _unit_podman_network_arg() {
-	_N_NETWORK_ARG=("$@")
+	_N_NETWORK_ARG+=("$@")
 }
 
 function __network_settings_emit() {

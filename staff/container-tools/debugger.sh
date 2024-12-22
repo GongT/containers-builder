@@ -93,4 +93,4 @@ for I in "${X[@]}"; do
 	PODMAN_EXEC_ARGS+=("${I}")
 done
 
-xpodman run -it "${PODMAN_EXEC_ARGS[@]}"
+xpodman run --interactive --tty "${PODMAN_EXEC_ARGS[@]}"

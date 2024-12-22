@@ -16,6 +16,8 @@ declare -rx BUILDAH
 
 # shellcheck disable=SC2155
 declare -r MANAGER_TMP_STDERR="/tmp/container.manager.stderr.txt" MANAGER_TMP_STDOUT="/tmp/container.manager.stdout.txt"
+touch "${MANAGER_TMP_STDERR}" "${MANAGER_TMP_STDOUT}"
+chmod 0666 "${MANAGER_TMP_STDERR}" "${MANAGER_TMP_STDOUT}"
 
 function execute_tip() {
 	local -ri ACT_CNT=$1
