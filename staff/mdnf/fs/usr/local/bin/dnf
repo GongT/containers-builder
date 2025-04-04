@@ -22,7 +22,7 @@ if [[ ${RUNMODE-} == guest ]]; then
 	mkdir -p /install-root/etc/dnf
 	cp /etc/dnf/dnf.conf /install-root/etc/dnf/dnf.conf # todo: protect
 
-	if ! mountpoint -q /install-root/var/lib/dnf/repos || ! mountpoint -q /install-root/var/cache/dnf; then
+	if ! mountpoint -q /install-root/var/cache/libdnf5; then
 		info_error "invalid host mountpoint!"
 		exit 1
 	fi

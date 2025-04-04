@@ -30,7 +30,7 @@ function create_dnf_arguments() {
 	VARREF+=(
 		"--mount=type=tmpfs,destination=${IN_ROOT}/var/lib/dnf"
 		"--volume=${PRIVATE_CACHE}/dnf/repos:${IN_ROOT}/var/lib/dnf/repos"
-		"--volume=${PRIVATE_CACHE}/dnf/pkgs:${IN_ROOT}/var/cache/dnf"
+		"--volume=${PRIVATE_CACHE}/dnf/pkgs:${IN_ROOT}/var/cache/libdnf5"
 	)
 	mkdir -p "${PRIVATE_CACHE}/dnf/repos" "${PRIVATE_CACHE}/dnf/pkgs"
 }

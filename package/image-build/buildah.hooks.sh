@@ -143,6 +143,7 @@ function buildah() {
 		;;
 	run)
 		EXARGS+=("--mount=type=tmpfs,destination=/tmp")
+		EXARGS+=("--mount=type=tmpfs,destination=/var/log")
 		if [[ ${BUILDAH_EXTRA_ARGS+found} == found ]]; then
 			EXARGS+=("${BUILDAH_EXTRA_ARGS[@]}")
 		fi
