@@ -52,6 +52,12 @@ exportenv 'CONTAINER_ID' "${CONTAINER_ID-}"
 echo "${container_uuid-"debugger container $RANDOM"}" >/etc/machine-id
 cat /etc/machine-id >/run/machine-id
 
+if [[ $* == 'emergency' ]]; then
+	log "emergency!"
+	export DEBUG_SHELL=yes
+	set -- bash --login -i
+fi
+
 log "prestart:"
 while read -d '' -r FILE; do
 	if [[ $FILE == *.md ]]; then
