@@ -43,6 +43,7 @@ function dns_resolve() {
 
 function dns_pass() {
 	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1-}"
+	info_log "pass dns server by ${METHOD}"
 	mapfile -t RESOLVE_OPTIONS < <(grep '^options ' /etc/resolv.conf | sed 's/^options //g')
 	if [[ -n ${RESOLVE_OPTIONS[*]} ]]; then
 		if [[ ${METHOD} == 'env' ]]; then
@@ -57,15 +58,19 @@ function dns_pass() {
 		push_engine_param "--env=RESOLVE_SEARCH=${RESOLVE_SEARCH[*]}"
 	fi
 
-	mapfile -t RESOLVE_NS < <(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //g' | grep -v 127.0.0.1)
+	mapfile -t RESOLVE_NS < <(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //g' | grep -Fv 127.0.0.1)
 	dns_append "${METHOD}" "${RESOLVE_NS[@]}"
 }
 
 function dns_append() {
 	local METHOD="${1}"
 	shift
+
+	info_log "$METHOD dns servers: ${*}"
+
 	if [[ ${METHOD} == 'env' ]]; then
 		NSS+=("${@}")
+		export NSS
 	else
 		local NS
 		for NS in "${@}"; do

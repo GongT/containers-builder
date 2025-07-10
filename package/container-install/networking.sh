@@ -32,6 +32,8 @@ function _network_reset() {
 	declare -g _N_HOST=''
 	declare -ga _N_PORTS=()
 	declare -ga _N_NETWORK_ARG=()
+	declare -g _N_DEFAULT_DNS='--dns-env=p.a.s.s'
+	declare -g _N_SET_DNS=''
 }
 register_unit_reset _network_reset
 
@@ -42,6 +44,14 @@ register_script_emit _export_network_envs
 
 function ___push_network_args() {
 	add_run_argument "${_N_NETWORK_ARG[@]}"
+
+	if [[ -n ${_N_SET_DNS} ]]; then
+		info_warn "use dns: ${_N_SET_DNS}"
+		add_run_argument "${_N_SET_DNS}"
+	else
+		info_warn "use default dns: ${_N_DEFAULT_DNS}"
+		add_run_argument "${_N_DEFAULT_DNS}"
+	fi
 }
 register_argument_config ___push_network_args
 
@@ -67,6 +77,10 @@ function _net_set_type() {
 	[[ -z ${_N_TYPE} ]] || die "Network already set to ${_N_TYPE}, can not set to '${SET_TO}' again."
 	info "Network: ${SET_TO}"
 	_N_TYPE="${SET_TO}"
+}
+
+function network_use_dns(){
+	_N_SET_DNS="--dns=${1}"
 }
 
 function network_use_auto() {
@@ -162,7 +176,7 @@ function network_use_veth() {
 		unit_depend "network-online.target" "nameserver.service"
 		unit_unit After "firewalld.service"
 	else
-		podman_engine_params --dns=h.o.s.t
+		_N_DEFAULT_DNS='--dns=h.o.s.t'
 	fi
 
 	local i

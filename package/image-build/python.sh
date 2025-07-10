@@ -1,7 +1,60 @@
+USE_PYTHON_CACHE=(
+	"--volume=${SYSTEM_COMMON_CACHE}/pip:/var/cache/pip"
+)
+PIP_INSTALL_ARGS=(
+	"--cache-dir=/var/cache/pip"
+	"--no-input"
+)
+PYTHON_CHINA_PYPI="https://pypi.tuna.tsinghua.edu.cn/simple"
+if is_china; then
+	PIP_INSTALL_ARGS+=("-i" "${PYTHON_CHINA_PYPI}")
+fi
+
+function python_pip_install() {
+	local CACHE=$1 DEFINE_FILE=$2
+
+	STEP="安装python包"
+	_cat_req_file() {
+		cat "${DEFINE_FILE}"
+	}
+	_install_pip() {
+		buildah copy "$1" "${DEFINE_FILE}" "/tmp/requirements.txt"
+		buildah run "$1" python3 -m pip install "${PIP_INSTALL_ARGS[@]}" -r "/tmp/requirements.txt"
+	}
+
+	_cat_lock_file() {
+		LOCK="$(dirname "${DEFINE_FILE}")/poetry.lock"
+		if [[ -f ${LOCK} ]]; then
+			cat "${LOCK}"
+		else
+			cat "${DEFINE_FILE}"
+		fi
+	}
+	_install_poetry() {
+		buildah copy "$1" "${DEFINE_FILE}" "/tmp/pyproject.toml"
+		LOCK="$(dirname "${DEFINE_FILE}")/poetry.lock"
+		if [[ -f ${LOCK} ]]; then
+			buildah copy "$1" "${LOCK}" "/tmp/poetry.lock"
+		fi
+		buildah run "$1" poetry config virtualenvs.create false
+		if is_china; then
+			poetry source add default "${PYTHON_CHINA_PYPI}"
+		fi
+		buildah run "$1" "--env=XDG_CACHE_HOME=/var/cache/pip" poetry install --directory=/tmp --no-interaction --no-ansi --no-dev
+	}
+
+	if [[ ${DEFINE_FILE} == *.txt ]]; then
+		buildah_cache "${CACHE}" _cat_req_file _install_pip
+	else
+		buildah_cache "${CACHE}" _cat_lock_file _install_poetry
+	fi
+
+	unset -f _cat_req_file _install_pip _cat_lock_file _install_poetry
+}
+
 function make_base_image_by_alpine_pip() {
 	local BASEIMG=$1 NAME=$2 REQUIREMENTS_TXT=$3 BUILD_SYS_DEPS_FILE=$4 RT_SYS_DEPS_FILE=$5
-	local USE_CACHE="--volume=${SYSTEM_COMMON_CACHE}/pip:/var/cache/pip"
-	local BUILDAH_EXTRA_ARGS=("${USE_CACHE}")
+	local BUILDAH_EXTRA_ARGS=("${USE_PYTHON_CACHE[@]}")
 	local PIP_CMD=(pip install --cache-dir /var/cache/pip --no-input -i https://pypi.tuna.tsinghua.edu.cn/simple)
 
 	local EX_PKGS_BU=()

@@ -116,11 +116,13 @@ function extract_zip() {
 function __github_api() {
 	local URL="https://api.github.com/$*"
 	local TOKEN_PARAM=()
+	control_ci group "Github Api: ${URL}"
 	if [[ ${GITHUB_TOKEN+found} == found ]]; then
 		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
+	else
+		info_warn "GITHUB_TOKEN not set, maybe hit limit."
 	fi
 
-	control_ci group "Github Api: ${URL}"
 	API_RESULT=$(perfer_proxy curl_proxy "${TOKEN_PARAM[@]}" --location -s "${URL}")
 	echo "${API_RESULT}" >&2
 	control_ci groupEnd

@@ -10,7 +10,7 @@ declare -xr ANNOID_OPEN_IMAGE_BASE_NAME="org.opencontainers.image.base.name"
 declare -xr ANNOID_OPEN_IMAGE_BASE_DIGIST="org.opencontainers.image.base.digest"
 
 if [[ ${FEDORA_VERSION+found} != found ]]; then
-	FEDORA_VERSION="40"
+	FEDORA_VERSION="42"
 fi
 declare -xr FEDORA_VERSION
 

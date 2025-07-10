@@ -11,7 +11,7 @@ function _service_executer_write() {
 	} >"${TMPF}"
 
 	WHO_AM_I='service-waiter' \
-		install_script "${TMPF}" "execute"
+		install_script "${TMPF}" "${PROJECT_NAME}.pod"
 }
 
 __concat_wait_files() {

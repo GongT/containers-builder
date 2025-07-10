@@ -46,6 +46,40 @@ function buildah_run_perfer_proxy() {
 function buildah_run_deny_proxy() {
 	deny_proxy buildah run "$@"
 }
+
+_IS_CHINA=""
+_IS_CHINA_CACHE="${SYSTEM_COMMON_CACHE}/is_china.txt"
+if [[ -e ${_IS_CHINA_CACHE} ]]; then
+	_IS_CHINA=$(<"${_IS_CHINA_CACHE}")
+fi
+function is_china() {
+	if [[ ${_IS_CHINA} == yes ]]; then
+		return 0
+	elif [[ ${_IS_CHINA} == no ]]; then
+		return 1
+	fi
+	if is_ci; then
+		return 1
+	fi
+
+	info_note "checking if in China..."
+
+	local PING_OVERSEA PING_CHINA
+	PING_OVERSEA=$(ping www.google.com -c 4 -W 1 | tail -n1 | cut -d "/" -s -f5 | cut -d "." -f1 || echo 9999)
+	PING_CHINA=$(ping www.dnspod.cn -c 4 -W 1 | tail -n1 | cut -d "/" -s -f5 | cut -d "." -f1 || echo 9999)
+
+	if ((PING_OVERSEA > PING_CHINA)); then
+		info_note "  * found Oversea: ping ${PING_OVERSEA}ms, china ping ${PING_CHINA}ms"
+		_IS_CHINA=yes
+	else
+		info_note "  * found China: ping ${PING_CHINA}ms, oversea ping ${PING_OVERSEA}ms"
+		_IS_CHINA=no
+	fi
+	printf "%s" "${_IS_CHINA}" >"${_IS_CHINA_CACHE}"
+
+	[[ ${_IS_CHINA} == yes ]]
+}
+
 if is_ci; then
 	function SHELL_USE_PROXY() {
 		echo "PROXY="
