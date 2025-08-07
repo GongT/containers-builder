@@ -1,4 +1,4 @@
 set -a
-source /etc/environment
 source /run/.userenvironments
+source /etc/environment
 set +a
