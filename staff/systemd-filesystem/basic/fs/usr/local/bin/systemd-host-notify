@@ -1,12 +1,7 @@
 #!/bin/bash
 
 if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-	if [[ -e /run/.userenvironments ]]; then
-		source /run/.userenvironments
-	fi
-	if [[ -e /etc/environment ]]; then
-		source /etc/environment
-	fi
+	eval "$(load_env user)"
 fi
 if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
 	echo "failed notify: missing __NOTIFY_SOCKET__" >&2

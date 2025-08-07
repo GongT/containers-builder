@@ -9,9 +9,9 @@ fi
 
 if [[ -e ${NOTIFY_SOCKET-not exists} ]]; then
 	export __NOTIFY_SOCKET__="${NOTIFY_SOCKET}"
-	exportenv "__NOTIFY_SOCKET__" "${NOTIFY_SOCKET}"
 	systemd-notify "--status=system boot up"
-	echo "NOTIFY_SOCKET=${NOTIFY_SOCKET}" >>/root/.bashrc
+	systemd-notify "EXTEND_TIMEOUT_USEC=30000000"
+	echo "export NOTIFY_SOCKET=${NOTIFY_SOCKET}" >>/root/.bashrc
 	log "NOTIFY_SOCKET=${NOTIFY_SOCKET}"
 else
 	log "NOTIFY_SOCKET is not exists, disable success notify service."

@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+
+WHAT=${1:-all}
+
+declare -a CONTENT=()
+case "${WHAT}" in
+system)
+	mapfile -t CONTENT </etc/environment
+	;;
+user)
+	mapfile -t CONTENT </run/.userenvironments
+	;;
+*)
+	mapfile -t CONTENT </run/.userenvironments
+	mapfile -O "${#CONTENT[@]}" -t CONTENT </etc/environment
+	;;
+esac
+
+LINE=''
+for LINE in "${CONTENT[@]}"; do
+	if [[ -z ${LINE} || ${LINE} == '#'* ]]; then
+		continue
+	fi
+
+	NAME="${LINE%%=*}"
+	VALUE="${LINE#*=}"
+
+	printf 'export %s="%q"\n' "${NAME}" "${VALUE}"
+done

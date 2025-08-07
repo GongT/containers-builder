@@ -2,6 +2,7 @@
 
 use_normal
 
+declare -r ORIGINAL_PWD="$(pwd)"
 declare -ra ORIGINAL_ARGS=("$@")
 if [[ $# -ge 1 ]]; then
 	ACTION=${1-}
@@ -75,6 +76,12 @@ abort)
 	;;
 attach)
 	do_attach "$@"
+	;;
+mount)
+	do_mount "$@"
+	;;
+__mount_inner__)
+	do_mount_inner "$@"
 	;;
 nsenter)
 	do_nsenter "$@"
