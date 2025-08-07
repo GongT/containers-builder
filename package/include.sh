@@ -47,6 +47,7 @@ source "./platform/healthcheck.sh"
 source "./platform/start-stop-reload.sh"
 source "./platform/xrun.sh"
 source "./platform/mount-script-run.sh"
+source "./platform/users.sh"
 popd &>/dev/null
 
 _check_ci_env
