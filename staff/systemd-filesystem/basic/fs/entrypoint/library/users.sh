@@ -11,7 +11,7 @@ function system_ensure_user() {
 		local G_ID
 		G_ID=$(get_gid_of_group "${G_ID_OR_NAME}")
 
-		useradd --gid "${G_ID}" --no-create-home --no-user-group --uid "$U_ID" "${U_NAME}"
+		useradd --gid "${G_ID}" --home-dir "/home/${U_NAME}" --no-create-home --no-user-group --uid "$U_ID" "${U_NAME}"
 		log "new system user ${U_NAME} ($(get_uid_of_user "${U_NAME}"))"
 	fi
 }
