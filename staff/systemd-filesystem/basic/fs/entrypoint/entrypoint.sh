@@ -5,8 +5,11 @@ source "/entrypoint/library/log.sh"
 log "arguments: $# - $*"
 # shellcheck source=./library/env.sh
 source "/entrypoint/library/env.sh"
+# shellcheck source=./library/users.sh
+source "/entrypoint/library/users.sh"
 
 if [[ $* == 'emergency' ]]; then
+	touch /run/.userenvironments /etc/environment
 	log "emergency!"
 	export DEBUG_SHELL=yes
 	exec /usr/bin/bash --login -i
