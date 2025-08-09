@@ -1,5 +1,10 @@
 log "before modify /etc/resolv.conf, it is:"
-cat /etc/resolv.conf >&2
+if [[ -e /etc/resolv.conf ]]; then
+	cat /etc/resolv.conf >&2
+	unlink /etc/resolv.conf
+else
+	log "  * it did not exists!"
+fi
 log "====="
 
 {

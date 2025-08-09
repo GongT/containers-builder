@@ -1,0 +1,15 @@
+[Unit]
+DefaultDependencies=no
+Before=shutdown.target
+RefuseManualStart=yes
+CollectMode=inactive-or-failed
+
+[Install]
+WantedBy=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+ExecStart=/usr/bin/systemctl list-dependencies success.service
+Restart=no
+TimeoutStartSec=10s

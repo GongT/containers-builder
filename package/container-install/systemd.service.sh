@@ -48,19 +48,29 @@ function unit_body() {
 	esac
 }
 
+function set_exec_start_timeout_if_not() {
+	if [[ -z ${_S_BODY_CONFIG[TimeoutStartSec]-} ]]; then
+		_S_BODY_CONFIG[TimeoutStartSec]="$1"
+	fi
+}
+
 function systemd_slice_type() {
 	if [[ $1 == "entertainment" ]]; then
 		_S_BODY_CONFIG[Slice]="services-entertainment.slice"
 		_S_BODY_CONFIG[OOMPolicy]="stop"
+		set_exec_start_timeout_if_not 1min
 	elif [[ $1 == "idle" ]]; then
 		_S_BODY_CONFIG[Slice]="services-idle.slice"
 		_S_BODY_CONFIG[OOMPolicy]="kill"
+		set_exec_start_timeout_if_not 1min
 	elif [[ $1 == "infrastructure" ]]; then
 		_S_BODY_CONFIG[Slice]="services-infrastructure.slice"
 		_S_BODY_CONFIG[OOMPolicy]="continue"
+		set_exec_start_timeout_if_not 3min
 	elif [[ $1 == "normal" ]]; then
 		_S_BODY_CONFIG[Slice]="services-normal.slice"
 		_S_BODY_CONFIG[OOMPolicy]=stop
+		set_exec_start_timeout_if_not 1min
 	else
 		die "unknown systemd slice type: $1"
 	fi
@@ -74,7 +84,7 @@ function __reset_body_config() {
 	_S_BODY_CONFIG[WorkingDirectory]="/tmp"
 	_S_BODY_CONFIG[RestartPreventExitStatus]="233 126"
 	_S_BODY_CONFIG[Restart]="${DEFAULT_RESTART:-always}"
-	_S_BODY_CONFIG[RestartSec]="1"
+	_S_BODY_CONFIG[RestartSec]="15s"
 	_S_BODY_CONFIG[KillSignal]="SIGINT"
 	_S_BODY_CONFIG[Slice]="services-normal.slice"
 }

@@ -27,6 +27,7 @@ function do_upgrade() {
 	systemctl daemon-reload
 	do_ls enabled >/dev/null
 
+	do_ls enabled | mapfile -t LIST_RESULT
 	if [[ "${#LIST_RESULT[@]}" ]]; then
 		systemctl -q reenable "${LIST_RESULT[@]}"
 	fi
