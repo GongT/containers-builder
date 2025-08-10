@@ -47,5 +47,6 @@ function merge_local_fs() {
 	}
 	buildah_cache "${CACHE_BRANCH}" ___merge_local_fs_hash ___merge_local_fs_make
 
+	unset STEP
 	unset -f ___merge_local_fs_hash ___merge_local_fs_make
 }
