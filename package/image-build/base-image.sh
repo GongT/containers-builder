@@ -2,6 +2,7 @@ declare LAST_KNOWN_BASE=
 function buildah_cache_start() {
 	local BASE_IMG=$1
 	local RESULT_ID BASE_NAME
+	LAST_CACHE_COMES_FROM=never
 
 	if [[ ${BASE_IMG} == "fedora"* || ${BASE_IMG} == "fedora-minimal"* ]]; then
 		BASE_IMG="quay.io/fedora/${BASE_IMG}"
