@@ -1,5 +1,14 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
+
 if [[ $# -ne 3 ]]; then
 	echo "Usage: $0 <source-file> <template.yaml> <output.yaml>"
+	exit 1
+fi
+
+if [[ -z "${PROJECT_NAME}"  ]] || [[ -z "${thisfile}" ]]; then
+	echo "PROJECT_NAME and thisfile must be set"
 	exit 1
 fi
 
@@ -94,6 +103,8 @@ OUTPUT=$(
 )
 
 for var in "${ENV_VARS[@]}"; do
+echo  -n "${var} === "
+echo "${!var}"
 	OUTPUT=${OUTPUT//"{{$var}}"/${!var}}
 done
 

@@ -119,6 +119,7 @@ function arg_finish() {
 		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs --no-run-if-empty -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
 
+		local ENV_VARS
 		ENV_VARS=$(grep_safe -E '^declare ' "${USER_PRIVATE_CONFIG_FILE}" | sed 's#^declare #declare -g #g')
 		info_warn "${ENV_VARS}"
 		if [[ -n "${ENV_VARS}" ]]; then
