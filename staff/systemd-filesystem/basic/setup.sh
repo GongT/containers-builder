@@ -12,7 +12,7 @@ fi
 
 systemctl disable console-getty.service || true
 systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service kbrequest.target
-systemctl enable dbus.socket notify-stop.service success.service dump-success.service || true
+systemctl enable dbus.socket notify-stop.service success.service why-not-success.service || true
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime

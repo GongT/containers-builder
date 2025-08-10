@@ -1,0 +1,17 @@
+[Unit]
+DefaultDependencies=no
+After=ldconfig.service
+Requires=basic.target ldconfig.service
+RefuseManualStart=yes
+CollectMode=inactive-or-failed
+
+[Install]
+WantedBy=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStop=/usr/bin/systemctl list-dependencies success.service
+StandardOutput=journal+console
+StandardError=journal+console
+Restart=no
