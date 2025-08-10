@@ -215,6 +215,12 @@ NotifyAccess=all"
 	echo "PROJECT_NAME=${PROJECT_NAME}"
 	echo "SCRIPTS_DIR=${SCRIPTS_DIR}"
 }
+function unit_want() {
+	if [[ -n $* ]]; then
+		unit_unit After "$*"
+		unit_unit Wants "$*"
+	fi
+}
 function unit_depend() {
 	if [[ -n $* ]]; then
 		unit_unit After "$*"
