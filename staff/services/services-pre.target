@@ -1,4 +1,13 @@
 [Unit]
 Description=System Worker Services (Dependency)
-Requires=containers-ensure-health.timer wait-dns-working.service cleanup-stopped-containers.service services-boot.service
-After=default.target wait-dns-working.service cleanup-stopped-containers.service services-boot.service dnsmasq.service systemd-resolved.service
+Requires=containers-ensure-health.timer cleanup-stopped-containers.service services-boot.service
+After=containers-ensure-health.timer cleanup-stopped-containers.service services-boot.service
+
+Requires=name-resolve.target
+After=name-resolve.target
+
+Requires=multi-user.target
+After=multi-user.target
+
+Wants=services.timer
+Before=services.timer

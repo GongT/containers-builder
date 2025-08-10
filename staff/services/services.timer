@@ -1,10 +1,11 @@
 [Unit]
 Description=Timer for the services target
-After=default.target
+After=multi-user.target
+Requires=multi-user.target
 DefaultDependencies=no
 
 [Timer]
-OnBootSec=30s
+OnBootSec=${BOOT_WAIT_TIMER}
 Unit=services.target
 
 [Install]

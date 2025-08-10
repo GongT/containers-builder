@@ -173,8 +173,7 @@ function network_use_veth() {
 	podman_engine_params "--network=${BRIDEG_NAME}"
 
 	if is_root; then
-		unit_depend "network-online.target" "nameserver.service"
-		unit_unit After "firewalld.service"
+		unit_unit After "firewalld.service nftables.service nftables@.service"
 	else
 		_N_DEFAULT_DNS='--dns=h.o.s.t'
 	fi

@@ -5,6 +5,8 @@ declare -r SERVICES_DIR
 _COMMON_FILE_INSTALL=
 declare -a _RECORD_COMMON_SERVICES=()
 
+BOOT_WAIT_TIMER="30s"
+
 function _copy_common_static_unit() {
 	local FILE=$1 NAME="${2-"$(basename "$1")"}"
 	copy_file "${SERVICES_DIR}/${FILE}" "${SYSTEM_UNITS_DIR}/${NAME}"
@@ -12,12 +14,24 @@ function _copy_common_static_unit() {
 	_RECORD_COMMON_SERVICES+=("${NAME}")
 }
 
+function _copy_common_special_unit() {
+	local FILE=$1 NAME="${2-"$(basename "$1")"}"
+
+	BODY=$(
+		cat "${SERVICES_DIR}/${FILE}" | \
+		sed "s#\${BOOT_WAIT_TIMER}#${BOOT_WAIT_TIMER}#"
+	)
+
+	_RECORD_COMMON_SERVICES+=("${NAME}")
+	write_file "${SYSTEM_UNITS_DIR}/${NAME}" "${BODY}"
+}
+
 function _create_common_lib() {
 	declare -p SYSTEM_COMMON_CACHE SYSTEM_FAST_CACHE PRIVATE_CACHE COMMON_LIB_ROOT MONO_ROOT_DIR SHARED_SCRIPTS_DIR PODMAN_QUADLET_DIR SYSTEM_UNITS_DIR
 
 	export_common_libs
 	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
-	declare -fp is_long_digist is_digist digist_to_short
+	declare -fp is_long_digist is_digist digist_to_short grep_safe
 	declare -p microsecond_unit
 
 	# SHELL_USE_PROXY
@@ -44,12 +58,13 @@ function install_common_system_support() {
 
 	local ENTRY=''
 	if is_root; then
-		_copy_common_static_unit services.timer
+		_copy_common_special_unit services.timer
 		_copy_common_static_unit services@root.target services.target
 		_copy_common_static_unit services-pre.target
+		_copy_common_static_unit name-resolve.target
 		_copy_common_static_unit containers.target
-		_copy_common_static_unit services-spin-up.service
 		_install_common_script_service services-boot
+		service_dropin dnsmasq alias-nameserver.conf
 		service_dropin systemd-networkd alias-nameserver.conf
 
 		add_service_to_enable "services.timer"

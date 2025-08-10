@@ -112,18 +112,18 @@ function arg_finish() {
 		info_note "load arguments from ${USER_PRIVATE_CONFIG_FILE} - ${CURRENT_ACTION}"
 		local -a ENV_ARGS CMDLINE_TO_PARSE
 		CMDLINE_TO_PARSE=$(
-			(grep -E "^${PROJECT_NAME}:" "${USER_PRIVATE_CONFIG_FILE}" || [[ $? == 1 ]]) \
-				| (grep -E "${CURRENT_ACTION}" || [[ $? == 1 ]]) \
+			grep_safe -E "^${PROJECT_NAME}:" "${USER_PRIVATE_CONFIG_FILE}"  \
+				| grep_safe -E "${CURRENT_ACTION}" \
 				| sed -E 's/^[^:]+:\s*\S+\s*//g'
 		)
-		# mapfile -t ENV_ARGS < <(
-		# 	(grep -E "^$PROJECT_NAME:" "$USER_PRIVATE_CONFIG_FILE" || [[ $? == 1 ]]) \
-		# 		| (grep -E "$CURRENT_ACTION" || [[ $? == 1 ]]) \
-		# 		| sed -E 's/^[^:]+:\s*\S+\s*//g' \
-		# 		| sed -E 's/\s+/\n/g'
-		# )
 		mapfile -t ENV_ARGS < <(echo "${CMDLINE_TO_PARSE}" | xargs --no-run-if-empty -n1 printf "%s\n")
 		_PROGRAM_ARGS+=("${ENV_ARGS[@]}")
+
+		ENV_VARS=$(grep_safe -E '^declare ' "${USER_PRIVATE_CONFIG_FILE}" | sed 's#^declare #declare -g #g')
+		info_warn "${ENV_VARS}"
+		if [[ -n "${ENV_VARS}" ]]; then
+			eval "${ENV_VARS}"
+		fi
 	else
 		info_note "environment file not exists: ${USER_PRIVATE_CONFIG_FILE}"
 	fi

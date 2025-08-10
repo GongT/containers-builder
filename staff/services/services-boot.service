@@ -1,9 +1,8 @@
 [Unit]
-Description=Check unexepcted shutdown
-After=default.target containers.target
-Requires=default.target containers.target
+Description=Check unexpected shutdown
+After=containers.target local-fs.target sshd.socket name-resolve.target
+Wants=containers.target local-fs.target sshd.socket name-resolve.target
 RefuseManualStop=yes
-After=sshd.socket systemd-networkd.service systemd-resolved.service dnsmasq.service
 
 [Service]
 Type=oneshot

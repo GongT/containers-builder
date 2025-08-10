@@ -1,5 +1,5 @@
 [Unit]
 Description=System Worker Services
-Requires=services-pre.target multi-user.target services-pull-all-images.service
-After=services-pre.target services-spin-up.service multi-user.target services-pull-all-images.service
+Requires=services-pre.target
+After=services-pre.target
 AllowIsolate=no

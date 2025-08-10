@@ -1,0 +1,4 @@
+[Unit]
+After=wait-dns-working.service network-online.target nameserver.service dnsmasq.service systemd-resolved.service systemd-networkd.service
+Requires=wait-dns-working.service nameserver.service
+Wants=network-online.target

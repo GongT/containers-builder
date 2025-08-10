@@ -31,7 +31,7 @@ function ensure_container_not_running() {
 			fi
 		else
 			podman ps -a | tail -n +2 \
-				| (grep -v Up || [[ $? == 1 ]]) \
+				| grep_safe -v Up \
 				| awk '{print $1}' \
 				| xargs --no-run-if-empty --verbose --no-run-if-empty podman rm || true
 		fi

@@ -24,6 +24,10 @@ else
 fi
 declare -xr CURRENT_ACTION
 
+grep_safe() {
+	grep "$@" || [[ $? -eq 1 ]]
+}
+
 pushd "${COMMON_LIB_ROOT}/package" &>/dev/null
 source "./init/lifecycle-decoupling.sh"
 source "./init/basic.sh"
