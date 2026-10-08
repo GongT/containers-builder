@@ -11,5 +11,5 @@ if [[ -e /opt/repos ]]; then
 fi
 
 if [[ ${#DNF_ENVIRONMENT_ENABLES[@]} -gt 0 ]]; then
-	dnf config-manager --set-enabled "${DNF_ENVIRONMENT_ENABLES[@]}"
+	dnf config-manager enable "${DNF_ENVIRONMENT_ENABLES[@]}"
 fi
