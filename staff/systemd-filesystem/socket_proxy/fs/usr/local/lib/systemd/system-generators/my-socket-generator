@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 set -Eeuo pipefail
 
 declare -r TARGET_DIR="${3-/tmp}" SOURCE_DIR="/etc/systemd/my/sockets"

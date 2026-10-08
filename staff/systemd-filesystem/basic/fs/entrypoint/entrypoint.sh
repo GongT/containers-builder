@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # shellcheck source=./library/log.sh
 source "/entrypoint/library/log.sh"

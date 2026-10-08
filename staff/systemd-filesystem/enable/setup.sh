@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE-}")
 mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT-}")

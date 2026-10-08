@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 ROOT=$1
 echo "ensure systemroot at $ROOT"

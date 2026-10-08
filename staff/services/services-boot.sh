@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 declare -r FORCE_CONTINUE_FILE='/run/force-continue-once'
 

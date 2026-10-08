@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 function _exit_handle_in_script() {
 	EXIT_CODE=$?

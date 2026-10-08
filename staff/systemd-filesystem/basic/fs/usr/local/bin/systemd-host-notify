@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
 	eval "$(load_env user)"
