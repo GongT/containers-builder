@@ -41,9 +41,8 @@ function merge_local_fs() {
 			local EXTRA_SCRIPT_ABS=$(realpath -m "${EXTRA_SCRIPT}")
 			local WHO_AM_I="${EXTRA_SCRIPT}"
 			buildah_run_shell_script "${ARGS[@]}" "$1" "${EXTRA_SCRIPT_ABS}"
-		else
-			return 0
 		fi
+		buildah run "$1" /usr/bin/sh -c "find /bin /usr/bin /usr/local/bin -maxdepth 1 -exec chmod a+x {} \;"
 	}
 	buildah_cache "${CACHE_BRANCH}" ___merge_local_fs_hash ___merge_local_fs_make
 

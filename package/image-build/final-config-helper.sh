@@ -37,6 +37,7 @@ function buildah_finalize_image() {
 
 	RESULT=$(create_if_not "${NAME}" "${IMAGE}")
 
+	buildah run "$RESULT" /usr/bin/sh -c "rm -rf /tmp/* /var/log/* /var/cache/*"
 	buildah commit "${RESULT}" "${IMAGE_OUT}" >/dev/null
 
 	local SUMMARY

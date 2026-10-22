@@ -1,3 +1,3 @@
 #!/usr/bin/bash
 
-exec /bin/bash --login
+exec /usr/bin/bash --login
