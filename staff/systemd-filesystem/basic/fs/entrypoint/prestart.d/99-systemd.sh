@@ -13,6 +13,10 @@ if [[ -e ${NOTIFY_SOCKET-not exists} ]]; then
 	systemd-notify "EXTEND_TIMEOUT_USEC=30000000"
 	echo "export NOTIFY_SOCKET=${NOTIFY_SOCKET}" >>/root/.bashrc
 	log "NOTIFY_SOCKET=${NOTIFY_SOCKET}"
+
+	if ! systemctl is-enabled success.service --quiet; then
+		systemctl enable success.service
+	fi
 else
 	log "NOTIFY_SOCKET is not exists, disable success notify service."
 	systemctl disable success.service notify-stop.service

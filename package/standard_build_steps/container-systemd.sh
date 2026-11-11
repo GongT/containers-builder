@@ -1,3 +1,6 @@
+# shellcheck disable=SC2329
+# shellcheck disable=SC2312
+
 THIS_FILE_HASH=$(md5sum "${BASH_SOURCE[0]}" | awk '{print $1}')
 
 function is_systemd_plugin() {
@@ -30,29 +33,31 @@ function setup_systemd() {
 
 	function __hash_cb() {
 		if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
-			# shellcheck disable=SC2312
+			# 第一个参数不是basic，按需追加basic参数
+			# 如果有此label，说明镜像前面的层已经有systemd设置
 			if [[ -n $(image_get_label "${PREV_STAGE_IMAGE_ID}" "${LABELID_USE_SYSTEMD}") ]]; then
-				echo "[systemd] image already setup"
-				INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
+				info_note "[systemd] 镜像已经设置过systemd"
+				# 不需要修改
 			else
-				echo "[systemd] append basic setup"
+				info_note "[systemd] 本镜像首次添加systemd，前置 <基本设置>"
+				INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
 			fi
 
 			if [[ ${#INPUT_ARGS[@]} -eq 0 ]]; then
-				die "[systemd] nothing to do!"
+				die "[systemd] 无事可做！"
 			fi
 		fi
 
 		echo "version:4+${THIS_FILE_HASH}"
 		set -- "${INPUT_ARGS[@]}"
 
-		control_ci group "---- [systemd] check stage:"
+		control_ci group "---- [systemd] 检查阶段:"
 		while [[ $# -gt 0 ]]; do
 			local PLUGIN="$1" PARAMS=() PARAMS_JSON='' VERSION=''
 			shift
 
 			if ! is_systemd_plugin "${PLUGIN}"; then
-				die "missing systemd plugin: ${PLUGIN}"
+				die "缺失 systemd 组件: ${PLUGIN}"
 			fi
 			VERSION=$(tr -d '\n' <"${COMMON_LIB_ROOT}/staff/systemd-filesystem/${PLUGIN}/version.txt")
 
@@ -63,14 +68,14 @@ function setup_systemd() {
 					break
 				fi
 				if ! validate_systemd_plugin_param "${PARAM}"; then
-					die "invalid parameter: ${PARAM} (plugin: ${PLUGIN})"
+					die "无效参数: ${PARAM} (组件: ${PLUGIN})"
 				fi
 				shift
 				PARAMS+=("${PARAM}")
 			done
 
 			PARAMS_JSON="$(json_array "${PARAMS[@]}")"
-			info_note "using ${PLUGIN}, version: ${VERSION}, arguments: '${PARAMS_JSON}'"
+			info_note "组件 ${PLUGIN}, 版本: ${VERSION}, 参数: '${PARAMS_JSON}'"
 			printf "plugin: %s, version: %s, params: %s\n" "${PLUGIN}" "${VERSION}" "${PARAMS_JSON}"
 
 			PLUGIN_LIST+=("${PLUGIN}")
@@ -88,7 +93,7 @@ function setup_systemd() {
 		local -a PARAMS
 		local -i INDX
 
-		info_note "---- [systemd] execute stage:"
+		info_note "---- [systemd] 执行阶段:"
 		for ((INDX = 0; INDX < "${#PLUGIN_LIST[@]}"; INDX++)); do
 			PLUGIN="${PLUGIN_LIST[${INDX}]}"
 			json_array_get_back PARAMS "${PARAMS_LIST[${INDX}]}"
@@ -99,15 +104,15 @@ function setup_systemd() {
 			local SETUP_ARGS=()
 			local -i ACT=0
 
-			control_ci group "setup ${PLUGIN}"
+			control_ci group "设置组件 ${PLUGIN}"
 			if [[ -d ${FILES} ]]; then
 				ACT+=1
-				info_log " -> copy filesystem"
+				info_log " -> 复制文件系统"
 				buildah copy "${CONTAINER}" "${FILES}" "/"
 			fi
 			if [[ -e ${CONFIG_SRC} ]]; then
 				ACT+=1
-				info_log " -> execute config"
+				info_log " -> 执行 config.sh"
 
 				function add_setup_arg() {
 					SETUP_ARGS+=("$@")
@@ -120,7 +125,7 @@ function setup_systemd() {
 			fi
 			if [[ -e ${SETUP_SRC} ]]; then
 				ACT+=1
-				info_log " -> execute setup"
+				info_log " -> 执行 setup.sh"
 				local I TMPF
 				TMPF=$(create_temp_file "setup.systemd.${PLUGIN}.sh")
 
@@ -140,11 +145,11 @@ function setup_systemd() {
 			fi
 
 			if [[ $ACT -eq 0 ]]; then
-				die "plugin have no action: ${PLUGIN}"
+				die "组件未定义操作: ${PLUGIN}"
 			fi
 			control_ci groupEnd
 		done
-		info_note "setup systemd done."
+		info_note "setup_systemd 完成"
 	}
 
 	export BUILDAH_HISTORY=false
