@@ -10,9 +10,9 @@ if [[ -z ${CONFIG_FILE-} ]]; then
 	fi
 fi
 
-if [[ ! -e ${CONFIG_FILE} ]]; then
-	die "missing nginx config file: ${CONFIG_FILE}"
-fi
+# if [[ ! -e ${CONFIG_FILE} ]]; then
+# 	die "missing nginx config file: ${CONFIG_FILE}"
+# fi
 
 exportenv "NGINX_CONFIG_SOURCE" "${CONFIG_FILE}"
 
