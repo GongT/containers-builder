@@ -66,7 +66,7 @@ function dnf_use_environment() {
 	info "创建 dnf 环境: ${CACHE_ID} 包含 ${#DNF_ENVIRONMENT_ENABLES[@]} 个启用的仓库和 ${#DNF_ENVIRONMENT_REPOS[@]} 个包仓库"
 
 	if container_exists "${CACHE_ID}"; then
-		DNF=$(container_get_digist "${CACHE_ID}")
+		DNF=$(container_get_digits "${CACHE_ID}")
 		info_note "使用已存在的: ${DNF}"
 	else
 		control_ci group "准备新的 DNF 容器"

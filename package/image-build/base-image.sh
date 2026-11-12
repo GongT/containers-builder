@@ -31,7 +31,7 @@ function buildah_cache_start() {
 		return
 	fi
 
-	RESULT_ID=$(image_find_digist "${BASE_IMG}")
+	RESULT_ID=$(image_find_digits "${BASE_IMG}")
 	if [[ -n ${RESULT_ID} ]]; then
 		if is_ci; then
 			if [[ ${NO_PULL_BASE-} == yes ]]; then
@@ -43,7 +43,7 @@ function buildah_cache_start() {
 			fi
 		fi
 
-		info_note "  - 使用传入的完整名称: ${BASE_NAME}"
+		info_note "  - 使用传入的完整名称: ${RESULT_ID}"
 	else
 		info_note "  - 基础镜像不存在，拉取: ${BASE_IMG}"
 		RESULT_ID=$(xpodman image pull "${BASE_IMG}")

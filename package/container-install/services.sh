@@ -31,7 +31,7 @@ function _create_common_lib() {
 
 	export_common_libs
 	declare -fp uptime_sec timespan_seconds seconds_timespan systemd_service_property
-	declare -fp is_long_digist is_digist digist_to_short grep_safe
+	declare -fp is_long_digits is_digits digits_to_short grep_safe
 	declare -p microsecond_unit
 
 	# SHELL_USE_PROXY

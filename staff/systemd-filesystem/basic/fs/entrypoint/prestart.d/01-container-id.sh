@@ -3,7 +3,7 @@
 # 容器ID相对难以调试，实际和名称用起来一样
 # 鉴于名称更加常用，所以将它写入了 /run/machine-id 文件
 
-CONTAINER_DIGITS_LONG=$( grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}') || true
+CONTAINER_DIGITS_LONG=$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}') || true
 log  "  -> ${CONTAINER_DIGITS_LONG}"
 if [[ ${#CONTAINER_DIGITS_LONG} -ne 64 ]]; then
 	die "容器 ID 长度不正确，应为 64，实为 ${#CONTAINER_DIGITS_LONG}: ${CONTAINER_DIGITS_LONG}"

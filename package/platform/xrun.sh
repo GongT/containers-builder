@@ -93,13 +93,13 @@ function xbuildah() {
 	return "${X}"
 }
 
-function is_long_digist() {
+function is_long_digits() {
 	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]]
 }
-function is_digist() {
+function is_digits() {
 	[[ $1 =~ ^[0-9a-fA-F]{64}$ ]] || [[ $1 =~ ^[0-9a-fA-F]{12}$ ]]
 }
-function digist_to_short() {
+function digits_to_short() {
 	if [[ $1 =~ ^[0-9a-fA-F]{64}$ || $1 =~ ^[0-9a-fA-F]{12}$ ]]; then
 		echo "${1:0:12}"
 	elif [[ -z $1 ]]; then

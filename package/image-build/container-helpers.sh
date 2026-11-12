@@ -1,6 +1,6 @@
 function container_exists() {
 	local ID
-	ID=$(container_find_digist "$1")
+	ID=$(container_find_digits "$1")
 	[[ -n ${ID} ]]
 }
 
@@ -42,18 +42,18 @@ function image_find_full_name() {
 		echo "${LIST}" | head -n1
 	fi
 }
-function image_get_digist() {
+function image_get_digits() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
-		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+		digits_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
 		die "缺失所需镜像: $1"
 	else
 		error_with_manager_output
 	fi
 }
-function image_find_digist() {
+function image_find_digits() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
-		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+		digits_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
 		return 0
 	else
@@ -61,18 +61,18 @@ function image_find_digist() {
 	fi
 }
 
-function container_get_digist() {
+function container_get_digits() {
 	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
-		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+		digits_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		die "缺失所需构建容器: $1"
 	else
 		error_with_manager_output
 	fi
 }
-function container_find_digist() {
+function container_find_digits() {
 	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
-		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+		digits_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		return 0
 	else
@@ -81,7 +81,7 @@ function container_find_digist() {
 }
 function container_get_base_image_id() {
 	if xbuildah_capture inspect --type=container --format '{{.FromImageID}}' "$1"; then
-		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
+		digits_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
 		die "缺失所需构建容器: $1"
 	else

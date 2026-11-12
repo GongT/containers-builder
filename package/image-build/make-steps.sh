@@ -91,7 +91,7 @@ function record_last_image() {
 	fi
 	local _ID=$1
 
-	if ! is_long_digist "${_ID}" && [[ ${_ID} != 'scratch' ]]; then
+	if ! is_long_digits "${_ID}" && [[ ${_ID} != 'scratch' ]]; then
 		_ID=$(image_get_long_id "${_ID}")
 	fi
 

@@ -13,7 +13,7 @@ fi
 
 info "pull image '${PODMAN_IMAGE_NAME}' with policy '${PULL_POLICY}'"
 
-OLD_ID=$(image_find_digist "${PODMAN_IMAGE_NAME}")
+OLD_ID=$(image_find_digits "${PODMAN_IMAGE_NAME}")
 if [[ ${PULL_POLICY} != "always" && -n ${OLD_ID} ]]; then
 	info_success "done, exists: ${OLD_ID}"
 	exit 0
@@ -63,7 +63,7 @@ while true; do
 	sleep 3s
 done
 
-NEW_ID=$(image_find_digist "${PODMAN_IMAGE_NAME}")
+NEW_ID=$(image_find_digits "${PODMAN_IMAGE_NAME}")
 
 if [[ ${OLD_ID} == "${NEW_ID}" ]]; then
 	info_success "image is up to date: ${OLD_ID}"

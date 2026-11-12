@@ -1,13 +1,13 @@
 function new_container() {
 	local NAME=$1
 	local EXISTS
-	EXISTS=$(container_find_digist "${NAME}")
+	EXISTS=$(container_find_digits "${NAME}")
 	if [[ -n ${EXISTS} ]]; then
 		info_log "删除已存在的容器 '${EXISTS}'"
 		buildah rm "${EXISTS}" >/dev/null
 	fi
 	local FROM="${2-scratch}"
-	if [[ ${FROM} != scratch ]] && ! is_digist "${FROM}"; then
+	if [[ ${FROM} != scratch ]] && ! is_digits "${FROM}"; then
 		if is_ci; then
 			info_note "[CI] 使用基础镜像 ${FROM}, 从镜像仓库拉取 (proxy=${http_proxy:-'*notset'})..."
 			buildah pull "${FROM}" >&2
@@ -28,7 +28,7 @@ function create_if_not() {
 	elif [[ ${BASE} == "scratch" ]]; then
 		if container_exists "${NAME}"; then
 			info_log "使用已存在的容器 '${NAME}'."
-			container_get_digist "${NAME}"
+			container_get_digits "${NAME}"
 		else
 			info_log "容器 '${NAME}' 不存在, 从 scratch 创建."
 			new_container "${NAME}" "scratch"
@@ -40,13 +40,13 @@ function create_if_not() {
 		fi
 
 		local EXISTS_CID GOT EXPECT
-		EXISTS_CID=$(container_find_digist "${NAME}")
+		EXISTS_CID=$(container_find_digits "${NAME}")
 		if [[ -n ${EXISTS_CID} ]]; then
 			GOT=$(container_get_base_image_id "${EXISTS_CID}")
-			EXPECT=$(image_get_digist "${BASE}")
+			EXPECT=$(image_get_digits "${BASE}")
 			if [[ ${EXPECT} == "${GOT}" ]]; then
 				info_log "使用已存在的容器 '${NAME}'."
-				container_get_digist "${NAME}"
+				container_get_digits "${NAME}"
 			else
 				info_log "不使用已存在的容器: ${BASE} 已更新"
 				info_log "    当前镜像:      ${EXPECT}"

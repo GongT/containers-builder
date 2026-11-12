@@ -171,10 +171,10 @@ function create_temp_file() {
 	mktemp "--tmpdir" "--dry-run" "${FILE_BASE}.XXXXX.${FILE_EXT}"
 }
 
-function image_find_digist() {
+function image_find_digits() {
 	info_note ' +' podman image inspect --format '{{.ID}}' "$1"
 	if OUTPUT=$(podman image inspect --format '{{.ID}}' "$1" 2>&1); then
-		digist_to_short "${OUTPUT}"
+		digits_to_short "${OUTPUT}"
 	elif echo "${OUTPUT}" | grep -qF 'image not known'; then
 		return 0
 	else

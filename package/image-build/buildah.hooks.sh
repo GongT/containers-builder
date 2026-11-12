@@ -70,10 +70,10 @@ function buildah() {
 		control_ci "set-env" "BASE_IMAGE_NAME" "${PASSARGS[*]: -1}"
 		xbuildah_capture "${ACTION}" "${EXARGS[@]}" "${PASSARGS[@]}"
 		local NAME_OR_ID="$(<"${MANAGER_TMP_STDOUT}")"
-		if is_digist "$NAME_OR_ID"; then
+		if is_digits "$NAME_OR_ID"; then
 			echo "$NAME_OR_ID"
 		else
-			container_get_digist "$NAME_OR_ID"
+			container_get_digits "$NAME_OR_ID"
 		fi
 		return
 		;;
@@ -109,7 +109,7 @@ function buildah() {
 				BASE_FULL_NAME=$(image_find_full_name "${LAST_KNOWN_BASE}")
 			fi
 			if [[ -n ${BASE_FULL_NAME} ]]; then
-				BASE_DIGITS=$(image_get_digist "${BASE_FULL_NAME}")
+				BASE_DIGITS=$(image_get_digits "${BASE_FULL_NAME}")
 			fi
 			LAST_KNOWN_BASE=
 			if [[ -n ${BASE_FULL_NAME} && -n ${BASE_DIGITS} ]]; then
@@ -134,7 +134,7 @@ function buildah() {
 		OUTPUT=$(xbuildah commit "--format=oci" --rm --quiet "${PASSARGS[@]}")
 		info_note "commit: ${OUTPUT}"
 		control_ci set-env "LAST_COMMITED_IMAGE" "${OUTPUT}"
-		if ! is_digist "${OUTPUT}"; then
+		if ! is_digits "${OUTPUT}"; then
 			die "output wrong"
 		fi
 		echo "${OUTPUT}"
