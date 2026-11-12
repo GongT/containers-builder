@@ -1,5 +1,14 @@
 #!/usr/bin/bash
 
+# 大部分时候直接用 eval "$(load_env)" 即可加载环境变量
+# 为了支持复制输出且不污染子进程，没有直接使用 set -a / cat 等功能
+
+VERB="export"
+if [[ ${1-} == "--local" ]]; then
+	VERB=""
+	shift
+fi
+
 WHAT=${1:-all}
 
 declare -a CONTENT=()
@@ -25,5 +34,5 @@ for LINE in "${CONTENT[@]}"; do
 	NAME="${LINE%%=*}"
 	VALUE="${LINE#*=}"
 
-	printf 'export %s="%q"\n' "${NAME}" "${VALUE}"
+	printf '%s %s="%q"\n' "${VERB}" "${NAME}" "${VALUE}"
 done

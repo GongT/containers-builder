@@ -5,7 +5,7 @@ TMPREPODIR=
 function create_dnf_arguments() {
 	local -nr VARREF="$1"
 	if ! variable_is_array "$1"; then
-		die "$1 is not array"
+		die "参数不是数组: $1"
 	fi
 	shift
 
@@ -41,7 +41,7 @@ declare -a DNF_ENVIRONMENT_REPOS=()
 declare DNF_ENVIRONMENT_RPMDB=keep
 function dnf_use_environment() {
 	if is_recording_steps; then
-		info "create dnf environment: fake (recording)"
+		info "创建 dnf 环境: 假的 (因正在记录中而跳过)"
 		_DNF_ENVIRONMENT_CID=fake
 		return
 	fi
@@ -58,18 +58,18 @@ function dnf_use_environment() {
 		elif [[ $ARG == '--rpmdb=remove' || $ARG == '--rpmdb=keep' ]]; then
 			DNF_ENVIRONMENT_RPMDB=$(split_assign_argument_value "${ARG}")
 		else
-			die "invalid argument: ${ARG}"
+			die "参数异常: ${ARG}"
 		fi
 	done
 	local CACHE_ID=''
 	CACHE_ID=$(echo "${DNF_ENVIRONMENT_ENABLES[*]} ${DNF_ENVIRONMENT_REPOS[*]}" | md5sum | awk '{print "dnf-" $1}')
-	info "create dnf environment: ${CACHE_ID} with ${#DNF_ENVIRONMENT_ENABLES[@]} repos in ${#DNF_ENVIRONMENT_REPOS[@]} package"
+	info "创建 dnf 环境: ${CACHE_ID} 包含 ${#DNF_ENVIRONMENT_ENABLES[@]} 个启用的仓库和 ${#DNF_ENVIRONMENT_REPOS[@]} 个包仓库"
 
 	if container_exists "${CACHE_ID}"; then
 		DNF=$(container_get_digist "${CACHE_ID}")
-		info_note "use exists: ${DNF}"
+		info_note "使用已存在的: ${DNF}"
 	else
-		control_ci group "prepare new dnf container"
+		control_ci group "准备新的 DNF 容器"
 		DNF=$(new_container "${CACHE_ID}-work" "quay.io/fedora/fedora:${FEDORA_VERSION}")
 		collect_temp_container "${CACHE_ID}-work"
 		buildah copy "${DNF}" "${COMMON_LIB_ROOT}/staff/mdnf/fs" /
@@ -85,7 +85,7 @@ function dnf_use_environment() {
 			elif [[ -e ${NAME} ]]; then
 				buildah copy "${DNF}" "$(realpath -m "${NAME}")" /opt/repos/
 			else
-				die "unknown DNF repo type: ${NAME} (allow rpm/repo file)"
+				die "未知的 DNF 仓库类型: ${NAME} (允许 rpm/repo 文件)"
 			fi
 		done
 
@@ -104,14 +104,14 @@ function dnf_use_environment() {
 }
 function call_dnf_install() {
 	if ! variable_bounded _DNF_ENVIRONMENT_CID; then
-		die "no call to dnf_use_environment"
+		die "没有调用 dnf_use_environment 就使用 DNF 环境"
 	fi
 	local -r WORKING_CONTAINER="$1" PACKAGE_FILE="$2" POST_SCRIPT="${3-}" DNF="${_DNF_ENVIRONMENT_CID}"
 
 	local TMPSCRIPT ROOT
 
 	if [[ ! -e ${PACKAGE_FILE} ]]; then
-		die "missing list file: ${PACKAGE_FILE}"
+		die "缺失列表文件: ${PACKAGE_FILE}"
 	fi
 
 	local -a PKGS=()
@@ -126,7 +126,7 @@ function call_dnf_with_guest() {
 
 	if [[ -n ${POST_SCRIPT} ]]; then
 		if [[ ! -e ${POST_SCRIPT} ]]; then
-			die "missing script file: ${POST_SCRIPT}"
+			die "缺失脚本文件: ${POST_SCRIPT}"
 		fi
 		local POST_SCRIPT_ABS
 		POST_SCRIPT_ABS=$(realpath -e "${POST_SCRIPT}")
@@ -136,7 +136,7 @@ function call_dnf_with_guest() {
 	function _run_group() {
 		local INSTALL_ROOT
 		INSTALL_ROOT=$(buildah mount "${WORKING_CONTAINER}")
-		info_note "working root physical location: ${INSTALL_ROOT}"
+		info_note "工作目录物理位置: ${INSTALL_ROOT}"
 		create_dnf_arguments CONTAINER_ARGS "${INSTALL_ROOT}"
 
 		buildah run "${CONTAINER_ARGS[@]}" "${_DNF_ENVIRONMENT_CID}" \
@@ -144,18 +144,18 @@ function call_dnf_with_guest() {
 
 		buildah unmount "${WORKING_CONTAINER}"
 
-		info_note "DNF run FINISH"
+		info_note "DNF 运行完成"
 	}
 
 	alternative_buffer_execute \
-		"run for: ${WORKING_CONTAINER}, script: ${POST_SCRIPT}, cmdline: dnf ${DNF_ARGS[*]}" \
+		"为镜像 ${WORKING_CONTAINER} 运行脚本: ${POST_SCRIPT}, 命令行: dnf ${DNF_ARGS[*]}" \
 		_run_group
 	unset -f _run_group
 }
 
 function call_dnf_without_guest() {
 	if ! variable_bounded _DNF_ENVIRONMENT_CID; then
-		die "no call to dnf_use_environment"
+		die "没有调用 dnf_use_environment 就使用 DNF 环境"
 	fi
 
 	local -a CONTAINER_ARGS=()
@@ -172,9 +172,9 @@ function dnf_list_version() {
 
 	try call_dnf_without_guest list --quiet "${PKGS[@]}" >"${TMPF}"
 	if [[ $ERRNO -ne 0 ]]; then
-		info_error "[dnf:${ERRNO}] failed list package versions"
+		info_error "[dnf:${ERRNO}] 列出软件包版本失败"
 		cat "${TMPF}"
-		info_error "[dnf:${ERRNO}] failed list package versions"
+		info_error "[dnf:${ERRNO}] 列出软件包版本失败"
 		return 1
 	fi
 	RET=$(grep -v --fixed-strings i686 "${TMPF}" | grep --fixed-strings '.' | awk '{print $1 " = " $2}')
@@ -183,7 +183,7 @@ function dnf_list_version() {
 	info_log "================================================="
 
 	control_ci summary "<details>
-  <summary>DNF Install</summary>
+  <summary>DNF 安装</summary>
 
 \`\`\`text
 ${RET}
@@ -200,16 +200,16 @@ function dnf_install_step() {
 	local POST_SCRIPT="${3-}"
 
 	if [[ ! -e ${PKG_LIST_FILE} ]]; then
-		die "missing install list file: ${PKG_LIST_FILE}"
+		die "缺失安装列表文件: ${PKG_LIST_FILE}"
 	fi
 	if [[ -n ${POST_SCRIPT} && ! -e ${POST_SCRIPT} ]]; then
-		die "missing post install script: ${POST_SCRIPT}"
+		die "缺失安装后脚本: ${POST_SCRIPT}"
 	fi
 
 	_dnf_hash_cb() {
-		info_log "dnf install (list file: ${PKG_LIST_FILE})..."
+		info_log "dnf 安装 (包列表: ${PKG_LIST_FILE})..."
 		cat "${PKG_LIST_FILE}"
-		info_note "   listing versions..."
+		info_note "   列出版本..."
 		dnf_list_version "${PKG_LIST_FILE}"
 		if [[ -n ${POST_SCRIPT} ]]; then cat "${POST_SCRIPT}"; fi
 	}
@@ -231,5 +231,5 @@ function dnf_install_step() {
 }
 
 function dnf() {
-	die "deny run dnf on host!"
+	die "禁止在主机上运行 DNF!"
 }

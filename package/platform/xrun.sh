@@ -3,14 +3,14 @@ declare -xr BUILDAH_FORMAT=oci
 if [[ -e "/usr/bin/podman" ]]; then
 	PODMAN="/usr/bin/podman"
 else
-	PODMAN=$(find_command podman || die "podman not installed")
+	PODMAN=$(find_command podman || die "podman 命令未安装")
 fi
 declare -rx PODMAN
 
 if [[ -e "/usr/bin/buildah" ]]; then
 	BUILDAH="/usr/bin/buildah"
 else
-	BUILDAH=$(find_command buildah || die "buildah not installed")
+	BUILDAH=$(find_command buildah || die "buildah 命令未安装")
 fi
 declare -rx BUILDAH
 
@@ -82,7 +82,7 @@ function xbuildah() {
 		X=0
 	else
 		X=$?
-		info_warn "buildah execute failed with ${X}"
+		info_warn "buildah 运行失败: 返回码: ${X}"
 	fi
 
 	if [[ -n ${SGROUP} ]]; then
@@ -105,7 +105,7 @@ function digist_to_short() {
 	elif [[ -z $1 ]]; then
 		echo
 	else
-		die "invalid digist: $1"
+		die "无效的对象ID，必须是 64 位或 12 位的十六进制字符串: $1"
 	fi
 }
 
@@ -123,7 +123,7 @@ else
 		shift
 
 		if function_exists "$1"; then
-			die "retry_execute do not support bash function"
+			die "retry_execute 不支持 bash 函数"
 		fi
 
 		local -i TRY

@@ -1,6 +1,6 @@
 function use_apt_cache() {
 	local -r SYSTEM="$1"
-	info_log "using ${SYSTEM} apt cache: ${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages"
+	info_log "使用 ${SYSTEM} apt 缓存: ${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages"
 	mkdir -p "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages" "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/lists"
 	rm -f "${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/lists/lock"
 	echo "--volume=${SYSTEM_COMMON_CACHE}/apt/${SYSTEM}/packages:/var/cache/apt"
@@ -17,7 +17,7 @@ function apt_get_install() {
 	local NAME=$1
 	shift
 
-	control_ci group "apt-get install packages"
+	control_ci group "apt-get 安装软件包"
 
 	{
 		cat <<-'APT'
@@ -35,18 +35,18 @@ function apt_get_install() {
 				apt update || true
 
 				if [ "$I" -ge 10 ]; then
-					die "can not install packages by apt-get."
+					die "无法通过apt-get安装软件包."
 				fi
 
 				I=$(($I + 1))
-				echo "failed... retry: $I"
+				echo "安装失败... 重试: $I"
 			done
 		APT
 		if ! is_tty 0; then
-			echo "### post scripts:"
+			echo "### apt后处理脚本:"
 			cat
 		fi
-	} | buildah run $(_use_apt_cache "${BASE_TYPE}") "${NAME}" sh -s- -- "$@"
+	} | buildah run $(use_apt_cache "${BASE_TYPE}") "${NAME}" sh -s- -- "$@"
 	control_ci groupEnd
 }
 
@@ -57,7 +57,7 @@ function make_base_image_by_apt() {
 	shift
 	local PKGS=("$@")
 
-	info "make base image by apt-get, from ${BASEIMG}"
+	info "利用apt-get制作基础镜像, 来自 ${BASEIMG}"
 
 	local POSTSCRIPT=""
 	if ! is_tty 0; then

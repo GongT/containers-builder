@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 if [[ -z ${PORTS} ]]; then
-	die "missing required config: PORTS=[sock1:]12345[/tcp] ..."
+	die "缺少必要输入参数: PORTS=[sock1:]12345[/tcp] ..."
 fi
 
-declare -r SOURCE_DIR="/etc/systemd/my/sockets"
+declare -r SOURCE_DIR="/entrypoint/systemd.sockets.d/"
 
 # shellcheck disable=SC2206
 PORTS_ARR=(${PORTS})

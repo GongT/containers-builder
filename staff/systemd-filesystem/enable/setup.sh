@@ -1,20 +1,23 @@
 #!/usr/bin/bash
 
-mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE-}")
-mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT-}")
-
-declare -r SOURCE_DIR="/etc/systemd/my/enable"
-mkdir -p "${SOURCE_DIR}"
-
-# shellcheck disable=SC2086
-x systemctl enable ${REQUIRE-} ${WANT-}
-
-# shellcheck disable=SC2086
-if [[ -n ${REQUIRE-} ]]; then
-	printf "%s\n" ${REQUIRE-} >>"${SOURCE_DIR}/requires"
+# 由于service名称绝不会出现空格，因此可以用空格分割成数组
+if [[ -n "${REQUIRE-}" ]]; then
+	mapfile -d ' ' -t REQ_ARR < <(printf '%s' "${REQUIRE-}")
+else
+	declare -a REQ_ARR=()
+fi
+if [[ -n "${WANT-}" ]]; then
+	mapfile -d ' ' -t WANT_ARR < <(printf '%s' "${WANT-}")
+else
+	declare -a WANT_ARR=()
 fi
 
-# shellcheck disable=SC2086
-if [[ -n ${WANT-} ]]; then
-	printf "%s\n" ${WANT-} >>"${SOURCE_DIR}/wants"
-fi
+OUT_DIR=/entrypoint/systemd.enables.d
+mkdir -p "${OUT_DIR}/requires" "${OUT_DIR}/wants"
+
+for req in "${REQ_ARR[@]}"; do
+	touch "${OUT_DIR}/requires/${req}"
+done
+for want in "${WANT_ARR[@]}"; do
+	touch "${OUT_DIR}/wants/${want}"
+done

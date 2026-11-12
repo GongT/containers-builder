@@ -30,14 +30,14 @@ if [[ ${NO_DELETE_TEMP-no} != yes ]]; then
 		register_exit_handler __exit_delete_temp_files
 	fi
 else
-	register_exit_handler echo "no delete temp: NO_DELETE_TEMP is set; location is ${TMPDIR}"
+	register_exit_handler echo "由于设置了 NO_DELETE_TEMP, 不会删除临时文件, 位置为: ${TMPDIR}"
 fi
 
 function create_temp_dir() {
 	local FILE_NAME="${1-unknown-usage}"
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
 	DIR=$(mktemp "--tmpdir=${TMPDIR}" --directory "${FILE_BASE}.XXXXX.${FILE_EXT}")
-	[[ -d ${DIR} ]] || die "failed create temp dir"
+	[[ -d ${DIR} ]] || die "创建临时目录失败"
 	echo "${DIR}"
 }
 
@@ -45,7 +45,7 @@ function create_temp_file() {
 	local FILE_NAME="${1-unknown-usage}"
 	local DIR FILE_BASE="${FILE_NAME%.*}" FILE_EXT="${FILE_NAME##*.}"
 	FILE=$(mktemp "--tmpdir=${TMPDIR}" "${FILE_BASE}.XXXXX.${FILE_EXT}")
-	[[ -f ${FILE} ]] || die "failed create temp file"
+	[[ -f ${FILE} ]] || die "创建临时文件失败"
 	echo "${FILE}"
 }
 
@@ -60,19 +60,19 @@ function __exit_delete_temp_files() {
 	local TEMP_TO_DELETE I
 	mapfile -t TEMP_TO_DELETE <"${TMP_REGISTRY_FILE}"
 
-	info_note "destroy temporary content at ${TMPDIR}\n\t(set NO_DELETE_TEMP=yes to prevent)"
+	info_note "销毁临时内容于 ${TMPDIR}\n\t(设置 NO_DELETE_TEMP=yes 可防止删除)"
 	rm -rf "${TMPDIR}"
 
 	if [[ ${#TEMP_TO_DELETE[@]} -eq 0 ]]; then
-		info_note "no extra temporary files"
+		info_note "没有额外的临时文件"
 		return
 	fi
 
-	info_note "deleting extra temporary files..."
+	info_note "删除额外的临时文件..."
 	indent
 	for I in "${TEMP_TO_DELETE[@]}"; do
 		if [[ -e ${I} ]]; then
-			info_note "delete ${I}"
+			info_note "删除 ${I}"
 			rm -vrf "${I}"
 		fi
 	done
@@ -97,12 +97,12 @@ function __exit_delete_container() {
 	mapfile -t TODEL_IMG <"${TMP_IMAGE_FILE}"
 
 	if [[ ${#TODEL_CTR[@]} -eq 0 && ${#TODEL_IMG[@]} -eq 0 ]]; then
-		info_note "no temporary container or image"
+		info_note "没有临时容器或镜像"
 		return
 	fi
 
-	info_note group "deleting ${#TODEL_IMG[@]} containers and ${#TODEL_CTR[@]} images..."
-	info_note "\t(set NO_DELETE_TEMP=yes to prevent)"
+	info_note group "删除 ${#TODEL_IMG[@]} 个容器和 ${#TODEL_CTR[@]} 个镜像..."
+	info_note "\t(设置 NO_DELETE_TEMP=yes 可防止删除)"
 	indent
 	if [[ ${#TODEL_CTR[@]} -ne 0 ]]; then
 		xbuildah rm "${TODEL_CTR[@]}" >/dev/null

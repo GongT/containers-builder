@@ -3,7 +3,7 @@ function filtered_jq() {
 	local INPUT
 	INPUT=$(jq "${JQ_ARGS[@]}" "$@")
 	if [[ ${INPUT} == "null" ]]; then
-		echo "failed query $1" >&2
+		echo "[json] 查询失败 $1" >&2
 		return 1
 	fi
 	echo "${INPUT}"
@@ -15,7 +15,7 @@ function parse_json() {
 function json_map() {
 	local -nr VARREF=$1
 	if ! variable_is_map "$1"; then
-		info_error "variable is not map: $(declare -p "${VARNAME}" 2>&1)"
+		info_error "[json] 变量不是 map: $(declare -p "${VARNAME}" 2>&1)"
 		return 1
 	fi
 	local ARGS=()
@@ -28,7 +28,7 @@ function json_map() {
 function json_map_get_back() {
 	local -r VARNAME="$1" JSON="$2"
 	if ! variable_is_map "${VARNAME}"; then
-		info_error "variable is not map: $(declare -p "${VARNAME}" 2>&1)"
+		info_error "[json] 变量不是 map: $(declare -p "${VARNAME}" 2>&1)"
 		return 1
 	fi
 
@@ -52,7 +52,7 @@ function json_array_get_back() {
 	local -r _VARNAME="$1" JSON="$2"
 
 	if ! variable_is_array "${_VARNAME}"; then
-		info_error "variable is not array: $(declare -p "${_VARNAME}" 2>&1)"
+		info_error "[json] 变量不是数组: $(declare -p "${_VARNAME}" 2>&1)"
 		callstack 0
 		return 1
 	fi

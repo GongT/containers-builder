@@ -5,6 +5,7 @@ function _service_executer_write() {
 	{
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
+		call_script_emit
 		__concat_wait_files
 		echo use_normal
 		echo execute_service_waiter_main
@@ -22,19 +23,30 @@ __concat_wait_files() {
 		cat_source_file "${FILE_PATH}"
 	done
 }
+
+_debugger_remove_domain() {
+	local IMAGE="$1"
+	if [[ ${IMAGE} == "${PODMAN_MY_REGISTRY}"/* ]]; then
+		echo "${IMAGE#"${PODMAN_MY_REGISTRY}"/}"
+	else
+		echo "${IMAGE}"
+	fi
+}
+
 _debugger_file_write() {
 	local I EX_SRC TMPF OUTPUT
 
 	TMPF=$(create_temp_file "debugger.script.file.sh")
 
 	local SRC="${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh"
-	{
+	(
+		_S_IMAGE=$(_debugger_remove_domain "${_S_IMAGE}")
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
 		call_script_emit
 		__concat_wait_files
 		cat_source_file "${SRC}"
-	} >"${TMPF}"
+	) >"${TMPF}"
 
 	WHO_AM_I='service-waiter (debug)' \
 		install_script "${TMPF}" "debug-start.sh"

@@ -46,6 +46,9 @@ function __create_unit__() {
 		_S_AT_='@'
 	fi
 
+	if [[ ${_S_IMAGE} != "${PODMAN_MY_REGISTRY}"/* ]]; then
+		_S_IMAGE="${PODMAN_MY_REGISTRY}/${_S_IMAGE}"
+	fi
 	_S_CURRENT_UNIT_NAME="${NAME}"
 
 	set_script_root "${NAME}"
@@ -71,8 +74,6 @@ function _create_service_lib() {
 		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
 
 		printf "declare UNIT_FILE_NAME=%q\n" "$(_create_unit_name)"
-
-		call_script_emit
 	)
 	write_file "${SCRIPTS_DIR}/service-library.sh" "$BODY"
 }

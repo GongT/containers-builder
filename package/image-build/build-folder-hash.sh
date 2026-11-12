@@ -8,6 +8,6 @@ function fast_hash_path() {
 	git ls-tree -r HEAD "$@"
 }
 function hash_current_folder() {
-	info_note "hashing dir: ${CURRENT_DIR}"
+	info_note "生成目录哈希: ${CURRENT_DIR}"
 	hash_path "${CURRENT_DIR}" | md5sum | awk '{print $1}'
 }

@@ -42,9 +42,9 @@ function cache_try_pull() {
 	local -r URL=$(cache_create_url "$@")
 	local -r NAME=$(cache_create_name "$@")
 
-	info_log "pull cache image ${URL}"
+	info_log "拉取缓存镜像 ${URL}"
 	if [[ ${LAST_CACHE_COMES_FROM} == build ]]; then
-		info_log "  - skip pull: LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM}"
+		info_log "  - 跳过拉取: LAST_CACHE_COMES_FROM=${LAST_CACHE_COMES_FROM}"
 		return
 	fi
 
@@ -65,11 +65,11 @@ function cache_try_pull() {
 		if grep -q -- 'manifest unknown' "${MANAGER_TMP_STDERR}" \
 			|| grep -q -- 'name unknown' "${MANAGER_TMP_STDERR}" \
 			|| grep -q -- 'no such file or directory' "${MANAGER_TMP_STDERR}"; then
-			info_note " - failed: not exists."
+			info_note " - 失败: 不存在."
 		else
 			info_stream <"${MANAGER_TMP_STDERR}"
-			info_warn "  - failed, not able to pull."
-			die "failed pull cache image!"
+			info_warn "  - 拉取失败, 无法获取缓存."
+			die "拉取缓存镜像失败!"
 		fi
 	fi
 }
@@ -80,18 +80,18 @@ function cache_push() {
 	if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]]; then
 		local FILEPATH="${URL#*:}"
 		if [[ ${FILEPATH:0:1} != / ]]; then
-			die "invalid local cache path: ${URL}"
+			die "无效的本地缓存路径: ${URL}"
 		fi
 		mkdir -p "$(dirname "${FILEPATH}")"
 	fi
 
 	local -r CACHE_NAME=$1 CACHE_STAGE=$2
 	if [[ ${LAST_CACHE_COMES_FROM} == "pull" ]]; then
-		info_note "skip push cache of '${NAME}', reason: last cache comes from pull."
+		info_note "跳过推送缓存 '${NAME}', 原因: 上次缓存来自拉取."
 		return
 	fi
 
-	control_ci group "push cache image '${NAME}' (reason: ${LAST_CACHE_COMES_FROM}) to '${URL}'"
+	control_ci group "推送缓存镜像 '${NAME}' (原因: ${LAST_CACHE_COMES_FROM}) 到 '${URL}'"
 
 	xpodman image push "--format=oci" "${CACHE_REGISTRY_ARGS[@]}" "${NAME}" "${URL}"
 

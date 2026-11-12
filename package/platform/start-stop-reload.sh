@@ -18,10 +18,16 @@ function _stopreload_config_buildah() {
 	if [[ ${#CUSTOMSTOP_COMMAND[@]} -gt 0 ]]; then
 		S=$(json_array "${CUSTOMSTOP_COMMAND[@]}")
 		add_build_config "--label=${LABELID_STOP_COMMAND}=$(json_array "${CUSTOMSTOP_COMMAND[@]}")"
+		info_log "停止命令: 自定义 - ${CUSTOMSTOP_COMMAND[*]}"
+	else
+		info_log "停止命令: 默认"
 	fi
 	if [[ ${#CUSTOMRELOAD_COMMAND[@]} -gt 0 ]]; then
 		S=$(json_array "${CUSTOMRELOAD_COMMAND[@]}")
 		add_build_config "--label=${LABELID_RELOAD_COMMAND}=$(json_array "${CUSTOMRELOAD_COMMAND[@]}")"
+		info_log "重载命令: 自定义 - ${CUSTOMRELOAD_COMMAND[*]}"
+	else
+		info_log "重载命令: 默认"
 	fi
 }
 register_argument_config _stopreload_config_buildah
@@ -43,6 +49,6 @@ function unit_data() {
 		_S_BODY_CONFIG[TimeoutStartFailureMode]=abort
 		_S_BODY_CONFIG[TimeoutStopFailureMode]=abort
 	else
-		die "unit_data <safe|danger>"
+		die "用法: unit_data <safe|danger>"
 	fi
 }

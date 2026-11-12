@@ -40,23 +40,23 @@ function is_ci() {
 
 function _check_ci_env() {
 	if is_ci; then
-		info "[CI] dectected CI environment"
+		info "[CI] 检测到 CI 环境"
 		readonly CI
 	else
 		unset CI
-		info "[CI] no CI environment"
+		info "[CI] 无 CI 环境变量"
 	fi
 }
 
 function guard_root_only() {
 	if ! is_root; then
-		die "This action must run by root."
+		die "此操作必须由 root 用户执行。"
 	fi
 }
 
 function guard_no_root() {
 	if is_root; then
-		die "This action can not run by root."
+		die "此操作不能由 root 用户执行。"
 	fi
 }
 

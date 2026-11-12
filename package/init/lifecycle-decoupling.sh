@@ -10,8 +10,8 @@ function __call_array() {
 		# info_note "    call ${handler}"
 		try "${handler}"
 		if [[ ${ERRNO} -ne 0 ]]; then
-			info_warn "while execute function: ${handler} around ${ERRLOCATION}"
-			return ${ERRNO}
+			info_warn "执行函数: ${handler}, 位置: ${ERRLOCATION}"
+			return "${ERRNO}"
 		fi
 	done
 	return 0

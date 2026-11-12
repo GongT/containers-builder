@@ -28,7 +28,7 @@ function __fs_args() {
 		shift
 	done
 	if [[ ${#ARGS[@]} -lt ${OPERATER} ]]; then
-		die "invalid filesystem function call (requires ${OPERATER} arguments)"
+		die "无效的文件系统函数调用 (需要 ${OPERATER} 个参数)"
 	fi
 }
 
@@ -36,7 +36,7 @@ function ensure_parent() {
 	local MKDIR=$1 FILE=$2 DIR
 	DIR=$(dirname "${FILE}")
 	if [[ ${MKDIR} -eq 1 ]] && [[ ! -d ${DIR} ]]; then
-		info_note "  * create directory: ${DIR}"
+		info_note "  * 创建目录: ${DIR}"
 		mkdir -p "${DIR}"
 	fi
 }
@@ -64,7 +64,7 @@ function delete_file() {
 	local PARENT
 
 	if [[ -e ${TARGET} ]]; then
-		info_note "  * remove file: ${TARGET}"
+		info_note "  * 删除文件: ${TARGET}"
 		unlink "${TARGET}"
 		emit_file_changes "${TARGET}"
 	fi
@@ -84,14 +84,14 @@ function copy_file() {
 	local FILE=${ARGS[0]} TARGET=${ARGS[1]}
 	FILE=$(resolve "${CURRENT_DIR}" "${FILE}")
 	if ! is_project_file "${FILE}"; then
-		die "file outside project: ${FILE}"
+		die "文件不在项目中: ${FILE}"
 	fi
 
 	if [[ ${TARGET} != /* ]]; then
-		die "copy_file target must be absolute path"
+		die "copy_file 目标必须是绝对路径"
 	fi
 	if [[ -d ${TARGET} ]]; then
-		die "copy_file target is already exists, but it's directory"
+		die "copy_file 目标已存在, 但它是一个目录"
 	fi
 
 	if is_uninstalling; then
@@ -102,11 +102,11 @@ function copy_file() {
 	ensure_parent "${MKDIR}" "${TARGET}"
 
 	if cmp --quiet "${FILE}" "${TARGET}"; then
-		info_note "  * copy file: ${TARGET} - same"
+		info_note "  * 复制文件: ${TARGET} - 相同"
 	else
 		cp -fpT "${FILE}" "${TARGET}"
 		emit_file_changes "${TARGET}"
-		info_note "  * copy file: ${TARGET} - ok"
+		info_note "  * 复制文件: ${TARGET} - 成功"
 	fi
 
 	if [[ -n ${MODE-} ]]; then
@@ -120,7 +120,7 @@ function write_file() {
 	local TARGET=${ARGS[0]} DATA=${ARGS[1]}
 
 	if [[ ${TARGET} == *$'\n'* ]]; then
-		die "wrong params: target contains invalid character"
+		die "错误参数: 目标包含无效字符"
 	fi
 
 	TARGET=$(resolve "${SCRIPTS_DIR}" "${TARGET}")
@@ -135,14 +135,14 @@ function write_file() {
 	ensure_parent "${MKDIR}" "${TARGET}"
 
 	if [[ -e ${TARGET} ]] && [[ ${DATA} == "$(<"${TARGET}")" ]]; then
-		info_note "  * write file: ${TARGET} - same"
+		info_note "  * 写入文件: ${TARGET} - 相同"
 	else
 		if [[ -e ${TARGET} ]]; then
 			rm -f "${TARGET}"
 		fi
 		echo "${DATA}" >"${TARGET}"
 		emit_file_changes "${TARGET}"
-		info_note "  * write file: ${TARGET} - ok"
+		info_note "  * 写入文件: ${TARGET} - 成功"
 	fi
 	if [[ -n ${MODE-} ]]; then
 		chmod "$(bit_mask "${MODE}")" "${TARGET}"
@@ -165,10 +165,10 @@ function ensure_symlink() {
 			return
 		fi
 	elif [[ -f ${LINK_FILE} ]]; then
-		info_warn "replacing normal file ${LINK_FILE} with a symlink"
+		info_warn "用符号链接替换普通文件 ${LINK_FILE}"
 		unlink "${LINK_FILE}"
 	elif [[ -d ${LINK_FILE} ]]; then
-		die "ensure_symlink: element exists and is a folder"
+		die "ensure_symlink: 元素已存在且是文件夹"
 	fi
 
 	mkdir -p "$(dirname "${LINK_FILE}")"
@@ -180,7 +180,7 @@ function read_list_file() {
 	local -r FILE=$1
 	local -r VARNAME=$2
 	if ! variable_is_array "${VARNAME}"; then
-		die "variable is not array: ${VARNAME}"
+		die "变量不是数组: ${VARNAME}"
 	fi
 
 	sed -E 's/#.*$//g; s/\s+$//g; /^$/d' "${FILE}" | mapfile -t "${VARNAME}"

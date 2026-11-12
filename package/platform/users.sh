@@ -3,16 +3,16 @@ function ensure_user() {
 	if user_exists "${U_NAME}"; then
 		local EX_UID=$(get_uid_of_user "${U_NAME}")
 		if [[ ${EX_UID} -eq ${U_ID} ]]; then
-			info_note "User ${U_NAME} exists with id ${EX_UID}"
+			info_note "[主机] 用户 ${U_NAME} 已存在, id 为 ${EX_UID}"
 		else
-			info_warn "User ${U_NAME} has a different id: exists=${EX_UID}, want=${U_ID}"
+			info_warn "[主机] 用户 ${U_NAME} 的 id 不同: exists=${EX_UID}, want=${U_ID}"
 		fi
 	else
 		local G_ID
 		G_ID=$(get_gid_of_group "${G_ID_OR_NAME}")
 
 		useradd --gid "${G_ID}" --no-create-home --no-user-group --uid "$U_ID" "${U_NAME}"
-		info_success "new system user ${U_NAME} ($(get_uid_of_user "${U_NAME}"))"
+		info_success "[主机] 新建系统用户 ${U_NAME} ($(get_uid_of_user "${U_NAME}"))"
 	fi
 }
 
@@ -21,13 +21,13 @@ function ensure_group() {
 	if group_exists "${G_NAME}"; then
 		local EX_GID=$(get_gid_of_group "${G_NAME}")
 		if [[ ${EX_GID} -eq ${G_ID} ]]; then
-			info_note "Group ${G_NAME} exists with id ${EX_GID}"
+			info_note "[主机] 用户组 ${G_NAME} 已存在, id 为 ${EX_GID}"
 		else
-			info_warn "Group ${G_NAME} has a different id: exists=${EX_GID}, want=${G_ID}"
+			info_warn "[主机] 用户组 ${G_NAME} 的 id 不同: exists=${EX_GID}, want=${G_ID}"
 		fi
 	else
 		groupadd -g "${G_ID}" "${G_NAME}"
-		info_success "new system group ${G_NAME} ($(get_gid_of_group "${G_NAME}"))"
+		info_success "[主机] 新建系统用户组 ${G_NAME} ($(get_gid_of_group "${G_NAME}"))"
 	fi
 }
 
@@ -50,12 +50,12 @@ function group_exists() {
 function ensure_user_exists() {
 	local U_NAME=$1
 	if user_exists "${U_NAME}"; then
-		info_note "User ${U_NAME} exists with id $(get_uid_of_user "${U_NAME}")"
+		info_note "[主机] 用户 ${U_NAME} 已存在, id 为 $(get_uid_of_user "${U_NAME}")"
 	else
 		local G_ID
 		G_ID=$(get_gid_of_group "users")
 
 		useradd --gid "${G_ID}" --no-create-home --no-user-group "${U_NAME}"
-		info_success "new system user ${U_NAME} ($(get_uid_of_user "${U_NAME}"))"
+		info_success "[主机] 新建系统用户 ${U_NAME} ($(get_uid_of_user "${U_NAME}"))"
 	fi
 }

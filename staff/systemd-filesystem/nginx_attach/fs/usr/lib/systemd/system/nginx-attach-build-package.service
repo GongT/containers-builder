@@ -1,5 +1,5 @@
 [Unit]
-Description=compress config files to be attached
+Description=压缩要附加的配置文件，只启动一次，重试时不再反复打包
 RefuseManualStop=yes
 RefuseManualStart=yes
 FailureAction=exit

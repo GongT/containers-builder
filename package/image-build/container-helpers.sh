@@ -46,7 +46,7 @@ function image_get_digist() {
 	if xpodman_capture image inspect --format '{{.ID}}' "$1"; then
 		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'image not known' "$MANAGER_TMP_STDERR"; then
-		die "missing required image: $1"
+		die "缺失所需镜像: $1"
 	else
 		error_with_manager_output
 	fi
@@ -65,7 +65,7 @@ function container_get_digist() {
 	if xbuildah_capture inspect --type=container --format '{{.ContainerID}}' "$1"; then
 		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
-		die "missing required build container: $1"
+		die "缺失所需构建容器: $1"
 	else
 		error_with_manager_output
 	fi
@@ -83,7 +83,7 @@ function container_get_base_image_id() {
 	if xbuildah_capture inspect --type=container --format '{{.FromImageID}}' "$1"; then
 		digist_to_short "$(<"${MANAGER_TMP_STDOUT}")"
 	elif grep -qF 'container not known' "$MANAGER_TMP_STDERR"; then
-		die "missing required build container: $1"
+		die "缺失所需构建容器: $1"
 	else
 		error_with_manager_output
 	fi

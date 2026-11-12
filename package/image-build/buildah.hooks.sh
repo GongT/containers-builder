@@ -92,7 +92,6 @@ function buildah() {
 
 			COMMIT_CONFIGS+=(
 				"--author=${AUTHOR}"
-				"--comment=final image"
 			)
 
 			if is_ci; then
@@ -105,20 +104,20 @@ function buildah() {
 
 			COMMIT_CONFIGS+=("--annotation=${ANNOID_CACHE_PREV_STAGE}-" "--annotation=${ANNOID_CACHE_HASH}-")
 
-			local BASE_FULL_NAME= BASE_DIGIST=
+			local BASE_FULL_NAME= BASE_DIGITS=
 			if [[ -n ${LAST_KNOWN_BASE} ]]; then
 				BASE_FULL_NAME=$(image_find_full_name "${LAST_KNOWN_BASE}")
 			fi
 			if [[ -n ${BASE_FULL_NAME} ]]; then
-				BASE_DIGIST=$(image_get_digist "${BASE_FULL_NAME}")
+				BASE_DIGITS=$(image_get_digist "${BASE_FULL_NAME}")
 			fi
 			LAST_KNOWN_BASE=
-			if [[ -n ${BASE_FULL_NAME} && -n ${BASE_DIGIST} ]]; then
+			if [[ -n ${BASE_FULL_NAME} && -n ${BASE_DIGITS} ]]; then
 				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_NAME}=${BASE_FULL_NAME}")
-				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGIST}=${BASE_DIGIST}")
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGITS}=${BASE_DIGITS}")
 			else
 				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_NAME}-")
-				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGIST}-")
+				COMMIT_CONFIGS+=("--annotation=${ANNOID_OPEN_IMAGE_BASE_DIGITS}-")
 			fi
 
 			COMMIT_CONFIGS+=("--created-by=RUN build-script # finalize: $(get_current_commit_message_first_line)")

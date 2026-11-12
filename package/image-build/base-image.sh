@@ -14,16 +14,16 @@ function buildah_cache_start() {
 		BASE_IMG+=":latest"
 	fi
 
-	info_success "\nCache Branch Start"
+	info_success "\n缓存分支开始"
 	if [[ ${BASE_IMG} == scratch ]]; then
 		LAST_KNOWN_BASE=
-		info_note "  - using empty base"
+		info_note "  - 使用空基础镜像 (scratch)"
 		record_last_image "scratch"
 		return
 	fi
 
 	if is_recording_steps; then
-		info "  - fake (recording)"
+		info "  - 假的 (因正在记录中而跳过)"
 		record_last_image scratch
 
 		record_last_base_name "${BASE_IMG}"
@@ -35,17 +35,17 @@ function buildah_cache_start() {
 	if [[ -n ${RESULT_ID} ]]; then
 		if is_ci; then
 			if [[ ${NO_PULL_BASE-} == yes ]]; then
-				info_warn "  - skip pull base due to NO_PULL_BASE=${NO_PULL_BASE-}"
+				info_warn "  - 跳过拉取基础镜像，因为 NO_PULL_BASE=${NO_PULL_BASE-}"
 			else
-				control_ci group "[cache start] pull base image: ${BASE_IMG}"
+				control_ci group "[缓存分支开始] 拉取基础镜像: ${BASE_IMG}"
 				xpodman image pull "${BASE_IMG}"
 				control_ci groupEnd
 			fi
 		fi
 
-		info_note "  - using exists base: $RESULT_ID"
+		info_note "  - 使用传入的完整名称: ${BASE_NAME}"
 	else
-		info_note "  - using base not exists, pull it: ${BASE_IMG}"
+		info_note "  - 基础镜像不存在，拉取: ${BASE_IMG}"
 		RESULT_ID=$(xpodman image pull "${BASE_IMG}")
 	fi
 
@@ -53,33 +53,5 @@ function buildah_cache_start() {
 
 	BASE_NAME=$(image_find_full_name "${RESULT_ID}")
 	record_last_base_name "${BASE_NAME}"
-	info_note "  - full name: ${BASE_NAME}"
+	info_note "  - 完整名称: ${BASE_NAME}"
 }
-
-# function _repo_query() {
-# 	NAME=$1
-# 	if [[ $1 == *:/* ]]; then
-# 		local -r NAME="$1"
-# 	else
-# 		local -r NAME="docker://${NAME}"
-# 	fi
-
-# 	local -r CACHE_DIR="${SYSTEM_FAST_CACHE}/repo-query-cache/"
-# 	mkdir -p "${CACHE_DIR}"
-
-# 	local -r REF_FILE="${CACHE_DIR}/update"
-# 	touch -d "7 days ago" "${REF_FILE}"
-
-# 	local -r CACHE_FILE="${CACHE_DIR}/$(echo "${NAME}" | md5sum | awk '{print $1}').json"
-
-# 	if [[ ! -e ${CACHE_FILE} ]] || [[ ${REF_FILE} -nt ${CACHE_FILE} ]]; then
-# 		x skopeo inspect "${NAME}" | jq --raw-output >"${CACHE_FILE}"
-# 	fi
-
-# 	cat "${CACHE_FILE}"
-# }
-
-# function repo_query() {
-# 	_repo_query "$1" >&2
-# 	:
-# }

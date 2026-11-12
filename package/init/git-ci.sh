@@ -44,19 +44,19 @@ function control_ci() {
 	group)
 		INSIDE_GROUP=$((INSIDE_GROUP + 1))
 		if [[ ${INSIDE_GROUP} -gt 5 ]]; then
-			die "too many group level"
+			die "分组嵌套过深，最多允许 5 层"
 		fi
 		if [[ ${INSIDE_GROUP} -eq 1 ]] && is_ci; then
 			save_indent
 			echo "::group::$*" >&2
 		else
-			info_bright "[Start Group] $*"
+			info_bright "[输出分组] $*"
 			indent
 		fi
 		;;
 	groupEnd)
 		if [[ ${INSIDE_GROUP} -eq 0 ]]; then
-			info_error "mismatch group start / end"
+			info_error "分组开始/结束不匹配"
 			return
 		fi
 		INSIDE_GROUP=$((INSIDE_GROUP - 1))
@@ -65,18 +65,18 @@ function control_ci() {
 			echo "::endgroup::" >&2
 		else
 			dedent
-			info_note "[End Group]"
+			info_note "[结束分组]"
 		fi
 		;;
 	*)
-		die "[CI] not support action: ${ACTION}"
+		die "[CI] 不支持的CI操作: ${ACTION}"
 		;;
 	esac
 }
 
 function get_current_commit_message_first_line() {
 	if ! is_ci; then
-		echo "not running in CI"
+		echo "未在 CI 环境中运行"
 		return 0
 	fi
 	x git log -n 1 --format=%s | head -n1 || true

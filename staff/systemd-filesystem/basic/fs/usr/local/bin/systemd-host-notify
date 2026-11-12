@@ -1,12 +1,16 @@
 #!/usr/bin/bash
 
-if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-	eval "$(load_env user)"
-fi
-if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-	echo "failed notify: missing __NOTIFY_SOCKET__" >&2
-	exit 1
+if [[ -z ${NOTIFY_SOCKET-} ]]; then
+	if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+		eval "$(load_env user)"
+	fi
+	if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+		echo "无法发送通知: 缺少 __NOTIFY_SOCKET__ 环境变量" >&2
+		exit 1
+	fi
+	export NOTIFY_SOCKET="${__NOTIFY_SOCKET__}"
+else
+	export NOTIFY_SOCKET
 fi
 
-export NOTIFY_SOCKET="${__NOTIFY_SOCKET__}"
 systemd-notify "$@"

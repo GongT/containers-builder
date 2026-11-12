@@ -27,8 +27,8 @@ function buildah_finalize_image() {
 	IMAGE=$(get_last_image_id)
 
 	local -i DONE_STAGE WORK_STAGE
-	buildah_cache_increament_count "${NAME}" "Finalize"
-	info "[${NAME}] STEP ${WORK_STAGE}: \e[0mFinalize"
+	buildah_cache_increament_count "${NAME}" "最终配置步骤"
+	info "[${NAME}] 步骤 ${WORK_STAGE}: \e[0m最终配置"
 
 	if skip_this_step "${NAME}"; then
 		commit_step_section "${NAME}" "Finalize" "${IMAGE}" "${IMAGE_OUT}"
@@ -42,7 +42,7 @@ function buildah_finalize_image() {
 
 	local SUMMARY
 	SUMMARY=$(
-		echo "## success build image"
+		echo "## 成功构建镜像"
 		echo " - IMAGE = ${LAST_COMMITED_IMAGE}"
 		echo " - NAME = ${IMAGE_OUT}"
 		echo " - BASE = ${BASE_IMAGE_NAME-}"

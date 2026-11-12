@@ -5,7 +5,7 @@ declare ARCH_PACMAN_CID
 
 function use_pacman_cache() {
 	local -r SYSTEM="$1"
-	info_log "using ${SYSTEM} pacman cache: ${SYSTEM_COMMON_CACHE}/pacman/${SYSTEM}/packages"
+	info_log "使用 ${SYSTEM} pacman 缓存: ${SYSTEM_COMMON_CACHE}/pacman/${SYSTEM}/packages"
 	mkdir -p "${SYSTEM_COMMON_CACHE}/pacman/${SYSTEM}/packages" "${SYSTEM_COMMON_CACHE}/pacman/${SYSTEM}/lists"
 
 	PACMAN_CACHE_ARGS=(
@@ -15,7 +15,7 @@ function use_pacman_cache() {
 }
 
 pacman_prepare_environment() {
-	info "update pacman cache"
+	info "更新 pacman 缓存"
 	ARCH_PACMAN_CID=$(create_if_not "pacman" "docker.io/library/archlinux")
 	local TMP_SCRIPT=$(create_temp_file "pacman.install.sh")
 

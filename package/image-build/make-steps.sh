@@ -30,18 +30,18 @@ function should_quit_after_this_step() {
 
 function commit_step_section() {
 	if ! is_recording_steps; then
-		info_note "  - skip"
+		info_note "  - 跳过"
 		return
 	fi
 
 	local NAME=$1 TITLE=$2 PREV_IMAGE=$3 CUR_IMAGE=$4
 	local -ir INDEX=${_CURRENT_STAGE_STORE[${NAME}]}
 	if [[ -z ${TITLE} ]]; then
-		TITLE="No Name Stage"
+		TITLE="未命名步骤"
 	fi
 	info_note "    ${NAME}:${INDEX} [${TITLE}]"
-	info_note "       from: ${PREV_IMAGE}"
-	info_note "       tree_base: ${LAST_KNOWN_BASE}"
+	info_note "       构建自: ${PREV_IMAGE}"
+	info_note "       基础镜像: ${LAST_KNOWN_BASE}"
 
 	local -A DEF=(
 		[name]="${NAME}"
@@ -56,31 +56,31 @@ function commit_step_section() {
 function __check_known_step_title() {
 	if [[ ${ERRNO} -eq 0 ]] && [[ ${__SOME_STEP_RUN} == no ]]; then
 		ERRNO=233
-		info_error "no step have been run"
+		info_error "没有步骤被执行"
 	fi
 }
 
 function __print_steps_summary() {
-	info "summary:"
-	info_log "    Base Image: ${BASE_IMAGE_NAME-*missing*}"
-	info "recorded steps:"
+	info "综合:"
+	info_log "    基础镜像: ${BASE_IMAGE_NAME-*missing*}"
+	info "记录的步骤:"
 	for JSON in "${STEPS_DEFINE[@]}"; do
 		local -A STEPDEF=()
 		json_map_get_back "STEPDEF" "${JSON}"
 		info_log "[${STEPDEF[name]}:${STEPDEF[index]}] ${STEPDEF[title]}"
-		info_note "    from: ${STEPDEF[prev_image]}"
-		info_note "    tree_base: ${STEPDEF[cur_image]}"
+		info_note "    构建自: ${STEPDEF[prev_image]}"
+		info_note "    基础镜像: ${STEPDEF[cur_image]}"
 	done
 }
 
 if [[ -z ${_BUILDSCRIPT_RUN_STEP_-} ]]; then
-	info "[run mode] complate build"
+	info "[run mode] 完整构建"
 	_BUILDSCRIPT_RUN_STEP_=''
 elif is_recording_steps; then
-	info "[run mode] recording steps"
+	info "[run mode] 记录步骤"
 	register_exit_handler __print_steps_summary
 else
-	info "[run mode] single step ($_BUILDSCRIPT_RUN_STEP_)"
+	info "[run mode] 单步构建 ($_BUILDSCRIPT_RUN_STEP_)"
 	register_exit_handler __check_known_step_title
 fi
 
@@ -102,7 +102,7 @@ function get_last_image_id() {
 	if variable_exists LAST_BUILT_IMAGE_ID; then
 		printf '%s' "${LAST_BUILT_IMAGE_ID}"
 	else
-		info_error "no last step image id"
+		info_error "没有上一步的镜像 ID"
 		return 1
 	fi
 }
@@ -118,7 +118,7 @@ function get_last_base_name() {
 	if variable_exists BASE_IMAGE_NAME; then
 		printf '%s' "${BASE_IMAGE_NAME}"
 	else
-		info_error "no known base image id"
+		info_error "没有已知的基础镜像 ID"
 		return 1
 	fi
 }

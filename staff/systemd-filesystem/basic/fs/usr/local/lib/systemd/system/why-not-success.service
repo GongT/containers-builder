@@ -1,7 +1,8 @@
 [Unit]
+Description=容器退出前显示 success.service 启动失败的原因
 DefaultDependencies=no
-After=ldconfig.service
-Requires=basic.target ldconfig.service
+Requires=local-fs.target
+Before=basic.target
 RefuseManualStart=yes
 CollectMode=inactive-or-failed
 
@@ -11,7 +12,7 @@ WantedBy=local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStop=/usr/bin/systemctl list-dependencies success.service
+ExecStop=/usr/bin/systemctl list-dependencies success.service --no-pager --legend=no
 StandardOutput=journal+console
 StandardError=journal+console
 Restart=no

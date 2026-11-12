@@ -8,7 +8,7 @@ if [[ -n ${PROXY} && ${PROXY} != http://* && ${PROXY} != https://* ]]; then
 fi
 declare -xr PROXY
 
-info_note "using PROXY=${PROXY-*not set*}"
+info_note "使用代理变量 PROXY=${PROXY-*not set*}"
 
 function SHELL_USE_PROXY() {
 	if [[ -n ${PROXY-} ]]; then
@@ -27,15 +27,15 @@ fi
 
 function perfer_proxy() {
 	if [[ -n ${PROXY-} ]]; then
-		info_note "[proxy] using proxy ${PROXY}"
+		info_note "[代理] 使用代理 ${PROXY}"
 		http_proxy="${PROXY}" https_proxy="${PROXY}" HTTP_PROXY="${PROXY}" HTTPS_PROXY="${PROXY}" "$@"
 	else
-		info_note "[proxy] perfer proxy, but not set"
+		info_note "[代理] 偏好代理，但未设置"
 		http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 	fi
 }
 function deny_proxy() {
-	# info_note "[proxy] deny proxy"
+	# info_note "[代理] 禁用代理"
 	http_proxy='' https_proxy='' HTTP_PROXY='' HTTPS_PROXY='' "$@"
 }
 
@@ -62,17 +62,17 @@ function is_china() {
 		return 1
 	fi
 
-	info_note "checking if in China..."
+	info_note "检查是否在中国..."
 
 	local PING_OVERSEA PING_CHINA
 	PING_OVERSEA=$(ping www.google.com -c 4 -W 1 | tail -n1 | cut -d "/" -s -f5 | cut -d "." -f1 || echo 9999)
 	PING_CHINA=$(ping www.dnspod.cn -c 4 -W 1 | tail -n1 | cut -d "/" -s -f5 | cut -d "." -f1 || echo 9999)
 
 	if ((PING_OVERSEA > PING_CHINA)); then
-		info_note "  * found Oversea: ping ${PING_OVERSEA}ms, china ping ${PING_CHINA}ms"
+		info_note "  * 发现海外: ping ${PING_OVERSEA}ms, 国内 ping ${PING_CHINA}ms"
 		_IS_CHINA=yes
 	else
-		info_note "  * found China: ping ${PING_CHINA}ms, oversea ping ${PING_OVERSEA}ms"
+		info_note "  * 发现国内: ping ${PING_CHINA}ms, 海外 ping ${PING_OVERSEA}ms"
 		_IS_CHINA=no
 	fi
 	printf "%s" "${_IS_CHINA}" >"${_IS_CHINA_CACHE}"

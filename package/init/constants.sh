@@ -7,7 +7,7 @@ declare -xr LABELID_USE_SYSTEMD="me.gongt.using.systemd"
 declare -xr LABELID_USE_NGINX_ATTACH="me.gongt.using.nginx-attach"
 
 declare -xr ANNOID_OPEN_IMAGE_BASE_NAME="org.opencontainers.image.base.name"
-declare -xr ANNOID_OPEN_IMAGE_BASE_DIGIST="org.opencontainers.image.base.digest"
+declare -xr ANNOID_OPEN_IMAGE_BASE_DIGITS="org.opencontainers.image.base.digest"
 
 if [[ ${FEDORA_VERSION+found} != found ]]; then
 	FEDORA_VERSION="45"
@@ -27,7 +27,7 @@ function ___copy_constants_value() {
 		LABELID_USE_SYSTEMD \
 		LABELID_USE_NGINX_ATTACH \
 		ANNOID_OPEN_IMAGE_BASE_NAME \
-		ANNOID_OPEN_IMAGE_BASE_DIGIST
+		ANNOID_OPEN_IMAGE_BASE_DIGITS
 }
 
 register_script_emit ___copy_constants_value

@@ -22,7 +22,7 @@ function download_file() {
 	local ARGS=()
 
 	if [[ -z ${URL} ]]; then
-		die "missing download url."
+		die "缺失下载 URL"
 	fi
 
 	mkdir -p "${PRIVATE_CACHE}/download"
@@ -39,14 +39,14 @@ function download_file() {
 		fi
 
 		control_ci group "download with wget"
-		info " * downloading ${NAME} from ${URL}"
+		info " * 正在从 ${URL} 下载 ${NAME}"
 		x wget "${EXARGS[@]}" "${ARGS[@]}" "${URL}" -O "${OUTFILE}.downloading" >&2
 
 		mv "${OUTFILE}.downloading" "${OUTFILE}"
-		info_log "    downloaded."
+		info_log "    下载完成"
 		control_ci groupEnd
 	else
-		info_log "download file ${NAME} cached."
+		info_log "文件 ${NAME} 有缓存，跳过下载"
 	fi
 
 	echo "${OUTFILE}"
@@ -68,7 +68,7 @@ function decompression_file_source() {
 
 function decompression_file() {
 	local FILE="$1" STRIP="$2" TARGET="$3"
-	info " * extracting ${FILE}"
+	info " * 正在解压 ${FILE}"
 	case "${FILE}" in
 	*.tar.gz | *.tar.xz | *.tar.bz2)
 		extract_tar "$@"
@@ -77,10 +77,10 @@ function decompression_file() {
 		extract_zip "$@"
 		;;
 	*)
-		die "Unable to extract ${FILE}"
+		die "    解压缩失败！"
 		;;
 	esac
-	info "    extracted."
+	info "    解压完成"
 }
 
 function extract_tar() {
@@ -96,7 +96,7 @@ function extract_zip() {
 	local STRIP="${2}"
 	local TDIR="${TARGET}/.extract"
 	mkdir -p "${TDIR}"
-	pushd "${TDIR}" &>/dev/null || die "error syscall chdir"
+	pushd "${TDIR}" &>/dev/null || die "系统调用错误 chdir"
 
 	unzip -q -o -d . "${FILE}"
 
@@ -110,17 +110,17 @@ function extract_zip() {
 	# shellcheck disable=SC2086
 	mv -f ${STRIPSTR} -t "${TARGET}"
 
-	popd &>/dev/null || die "error syscall chdir"
+	popd &>/dev/null || die "系统调用错误 chdir"
 }
 
 function __github_api() {
 	local URL="https://api.github.com/$*"
 	local TOKEN_PARAM=()
-	control_ci group "Github Api: ${URL}"
+	control_ci group "GitHub API调用: ${URL}"
 	if [[ ${GITHUB_TOKEN+found} == found ]]; then
 		TOKEN_PARAM=(--header "authorization: Bearer ${GITHUB_TOKEN}")
 	else
-		info_warn "GITHUB_TOKEN not set, maybe hit limit."
+		info_warn "GITHUB_TOKEN 未设置，可能会触发限制。"
 	fi
 
 	API_RESULT=$(perfer_proxy curl_proxy "${TOKEN_PARAM[@]}" --location -s "${URL}")
@@ -133,7 +133,7 @@ function __github_api() {
 function http_get_github_tag_commit() {
 	local REPO="$1"
 	local URL="repos/${REPO}/tags"
-	info_log " * fetching tags from ${URL}"
+	info_log " * 正在从 ${URL} 获取标签"
 	__github_api "${URL}" | filtered_jq '.[0].commit.sha'
 }
 
@@ -141,17 +141,17 @@ LAST_GITHUB_RELEASE_JSON=""
 function http_get_github_release() {
 	local REPO="$1"
 	local URL="repos/${REPO}/releases/latest"
-	info_log " * fetching release from ${URL}"
+	info_log " * 正在从 ${URL} 获取发布信息"
 	LAST_GITHUB_RELEASE_JSON=$(__github_api "${URL}")
 }
 function __github_release_json_id() {
 	ID=$(echo "${LAST_GITHUB_RELEASE_JSON}" | filtered_jq '(.id|tostring) + " - " + .target_commitish')
 
-	info_log "       release id = ${ID}"
+	info_log "       发布 ID = ${ID}"
 	if [[ -n ${ID} ]]; then
 		echo "${ID}"
 	else
-		die "failed get ETag"
+		die "获取 ETag 失败"
 	fi
 }
 
@@ -160,20 +160,6 @@ function http_get_github_release_id() {
 	http_get_github_release "${REPO}"
 	__github_release_json_id
 }
-
-# latest always first, this not work
-# function http_get_github_unstable_release() {
-# 	local REPO="$1"
-# 	local URL="repos/${REPO}/releases?per_page=1"
-# 	info_log " * fetching UNSTABLE release from ${URL}"
-# 	LAST_GITHUB_RELEASE_JSON=$(__github_api "${URL}" | filtered_jq '.[0]')
-# }
-#
-# function http_get_github_unstable_release_id() {
-# 	local REPO="$1" ID
-# 	http_get_github_unstable_release "${REPO}"
-# 	__github_release_json_id
-# }
 
 function github_release_asset_download_url() {
 	local -r NAME="$1"
@@ -184,7 +170,7 @@ function github_release_asset_download_url() {
 	if [[ -n ${RESULT} ]]; then
 		echo "${RESULT}"
 	else
-		die "failed get asset download url"
+		die "从头 GitHub Release 获取资产下载 URL 失败"
 	fi
 }
 function github_release_asset_download_url_regex() {
@@ -196,24 +182,24 @@ function github_release_asset_download_url_regex() {
 	if [[ -n ${RESULT} ]]; then
 		echo "${RESULT}"
 	else
-		die "failed get asset download url"
+		die "从头 GitHub Release 获取资产下载 URL 失败"
 	fi
 }
 
 function http_get_github_last_commit_id() {
 	local REPO=$1 API_RESULT
-	info_log " * check last commit id of ${REPO}"
+	info_log " * 正在检查 ${REPO} 的最新提交 ID"
 	__github_api "repos/${REPO}/commits?per_page=1" | filtered_jq '.[0].sha'
 }
 function http_get_github_default_branch_name() {
 	## todo: cache 1 day
 	local REPO=$1 API_RESULT
-	info_log " * fetching default branch name ${REPO}"
+	info_log " * 正在获取 ${REPO} 的默认分支名称"
 	__github_api "repos/$1" | filtered_jq '.default_branch'
 }
 function http_get_github_last_commit_id_on_branch() {
 	local REPO=$1 BRANCH=$2 RESULT
-	info_log " * check last commit id of ${REPO} (${BRANCH})"
+	info_log " * 正在检查 ${REPO} (${BRANCH}) 的最新提交 ID"
 	RESULT=$(__github_api "repos/${REPO}/branches/${BRANCH}" | filtered_jq '.commit.sha')
 	info_log "     = ${RESULT}"
 	echo "${RESULT}"
@@ -243,15 +229,15 @@ function download_git() {
 
 	local -r TIMESTAMP="${GIT_DIR}/timestamp"
 
-	info "git clone ${URL} (${BRANCH})"
+	info "运行 git 克隆 ${URL} (分支: ${BRANCH})"
 	indent
-	info_log "   to ${CWD}"
+	info_log "本地目录 ${CWD}"
 
 	if [[ -e "${GIT_DIR}/config" ]]; then
 		local REFS
 		mapfile -t REFS < <(git -C "${CWD}" for-each-ref "--format=%(refname)" refs/heads/ || true)
 		if [[ ${#REFS[@]} != 1 ]] || [[ ${REFS[0]} != "refs/heads/${BRANCH}" ]]; then
-			info_warn "invalid git status: multiple or invalid branch"
+			info_warn "无效的 git 状态: 多个或无效的分支"
 			rm -rf "${CWD}"
 		fi
 	fi
@@ -262,9 +248,9 @@ function download_git() {
 		if [[ -e ${TIMESTAMP} ]] && [[ $(<"${TIMESTAMP}") -gt $((CTIME - GIT_REPO_EXPIRES)) ]]; then
 			CTIME=$(<"${TIMESTAMP}")
 			CTIME=$((CTIME + GIT_REPO_EXPIRES))
-			info_success "skip download, cache expire at $(date "--date=@${CTIME}" +"%F %T")"
+			info_success "跳过下载, 缓存过期时间 $(date "--date=@${CTIME}" +"%F %T")"
 		else
-			info "update existing cache."
+			info "更新现有缓存"
 			indent_stream retry_execute 10 3 git -C "${CWD}" submodule update --depth 3 --recursive
 			indent_stream x git -C "${CWD}" submodule sync --recursive
 			indent_stream retry_execute 10 3 git -C "${CWD}" submodule update --depth 3 --init --recursive
@@ -273,12 +259,12 @@ function download_git() {
 
 			date +%s >"${TIMESTAMP}"
 
-			info_success "update complete."
+			info_success "更新完成"
 		fi
 	else
-		info "clone new repo."
+		info "克隆新仓库"
 		if [[ -d ${CWD} ]]; then
-			info_warn "deleting folder: ${CWD}"
+			info_warn "删除文件夹: ${CWD}"
 			rm -rf "${CWD}"
 		fi
 		mkdir -p "${CWD}"
@@ -286,10 +272,10 @@ function download_git() {
 		indent_stream retry_execute 10 3 git -C "${CWD}" clone --depth 3 --no-tags --recurse-submodules --shallow-submodules --branch "${BRANCH}" --single-branch "${URL}" . 2>&1
 
 		date +%s >"${TIMESTAMP}"
-		info_success "clone complete."
+		info_success "克隆完成"
 	fi
 
-	info_bright "last commit id is: $(git -C "${CWD}" log --format="%H" -n 1)"
+	info_bright "最后提交 ID 是: $(git -C "${CWD}" log --format="%H" -n 1)"
 	dedent
 	unset GIT_DIR
 }
@@ -300,7 +286,7 @@ function download_git_result_copy() {
 	GIT_DIR="${CWD}/.git"
 
 	if [[ ! -f "${GIT_DIR}/timestamp" ]]; then
-		die "missing downloaded git data: ${GIT_DIR} (from ${NAME})"
+		die "缺失下载的 git 数据: ${GIT_DIR} (来自 ${NAME})"
 	fi
 	# DIST="$SYSTEM_FAST_CACHE/git-temp/$(echo "$GIT_DIR" | md5sum | awk '{print $1}')"
 	mkdir -p "${DIST}"
@@ -312,7 +298,7 @@ function download_git_result_copy() {
 declare LAST_HTTP_HEADER_RESULT=
 function http_get_headers() {
 	local URL="$1"
-	info_log " * fetching headers: ${URL}"
+	info_log "  * 获取 HTTP 头: ${URL}"
 	echo -ne "\e[2m" >&2
 	LAST_HTTP_HEADER_RESULT=$(curl_proxy -I --retry 5 --location "${URL}")
 	echo -ne "\e[0m" >&2
@@ -337,7 +323,7 @@ function http_header_get_multiple() {
 
 function http_get_etag() {
 	local URL="$1" ETAG
-	info_log " * fetching ETag: ${URL}"
+	info_log "  * 获取 ETag: ${URL}"
 	echo -ne "\e[2m" >&2
 	ETAG=$(curl_proxy -I --retry 5 --location "${URL}" | grep -iE '^ETag: ' | sed -E 's/ETag: "(.+)"/\1/ig' | sed 's/\r//g')
 	echo -ne "\e[0m" >&2
@@ -345,7 +331,7 @@ function http_get_etag() {
 	if [[ -n ${ETAG} ]]; then
 		echo "${ETAG}"
 	else
-		die "failed get ETag"
+		die "获取 ETag 失败"
 	fi
 }
 
@@ -354,6 +340,6 @@ function curl_proxy() {
 	if [[ -n ${HTTP_PROXY-} ]]; then
 		PROXY_VAL=(--proxy "${HTTP_PROXY}")
 	fi
-	info_note "    + curl ${PROXY_VAL[*]} $*"
+	info_note "    + 运行 curl: ${PROXY_VAL[*]} $*"
 	curl "${PROXY_VAL[@]}" "$@"
 }

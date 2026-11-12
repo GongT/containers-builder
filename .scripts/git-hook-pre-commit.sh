@@ -5,8 +5,17 @@ cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.."
 function hash_every_systemd_plugin() {
 	set -Eeuo pipefail
 	cd "staff/systemd-filesystem"
-	for ITEM in */; do
-		hash_files "${ITEM}" | md5sum -b | awk '{print $1}' >"${ITEM}/version.txt"
+	mapfile -d '' -t ITEMS < <(find . -maxdepth 1 -mindepth 1 -type d -print0)
+	for ITEM in "${ITEMS[@]}"; do
+		NAME=$(basename "${ITEM}")
+		NEW_HASH=$(hash_files "${ITEM}" | md5sum -b | awk '{print $1}')
+		OLD_HASH=$(cat "${ITEM}/version.txt" || true)
+		if [[ ${NEW_HASH} != "${OLD_HASH}" ]]; then
+			echo "systemd组件${NAME}哈希变化: ${OLD_HASH} -> ${NEW_HASH}" >&2
+			printf "%s" "${NEW_HASH}" >"${ITEM}/version.txt"
+		else
+			echo "systemd组件${NAME}哈希未变化: ${OLD_HASH}" >&2
+		fi
 	done
 	git add ./*/version.txt
 }

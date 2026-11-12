@@ -11,6 +11,7 @@ if [[ -z ${CONFIG_FILE-} ]]; then
 fi
 
 # if [[ ! -e ${CONFIG_FILE} ]]; then
+# 此处无法检查，可能是动态生成的
 # 	die "missing nginx config file: ${CONFIG_FILE}"
 # fi
 

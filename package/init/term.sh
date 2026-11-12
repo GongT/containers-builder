@@ -87,7 +87,7 @@ function alternative_buffer_execute() {
 		local TMP_OUT
 		TMP_OUT=$(create_temp_file "screen.output.txt")
 		save_cursor_position
-		info "save log to ${TMP_OUT}"
+		info "保存日志到 ${TMP_OUT}"
 		save_indent
 
 		info_warn "$TITLE"
@@ -115,7 +115,7 @@ function alternative_buffer_execute() {
 
 		if [[ ${ERRNO} -eq 0 ]]; then
 			info_success "[screen] ${TITLE} (command '$*' return ${ERRNO})"
-			info_note "[screen]     to see output, set ALLOW_ALTERNATIVE_BUFFER=no"
+			info_note "[screen]     要查看输出, 设置 ALLOW_ALTERNATIVE_BUFFER=no"
 			return 0
 		else
 			info_error "[screen:${ERRNO}] ${TITLE}"
@@ -147,7 +147,7 @@ function term_reset() {
 	fi
 
 	if [[ ${INSIDE_GROUP} -gt 0 ]]; then
-		control_ci notice "Unclosed Group" "level: ${INSIDE_GROUP}"
+		control_ci notice "未关闭的输出组" "level: ${INSIDE_GROUP}"
 		local -i i
 		for ((i = INSIDE_GROUP; i > 0; i--)); do
 			control_ci groupEnd
@@ -156,7 +156,7 @@ function term_reset() {
 }
 
 function pause() {
-	local _ msg=${1-'press any key.'}
+	local _ msg=${1-'按任意键继续'}
 	read -r -p "${msg}" _
 	tput cuu1
 }

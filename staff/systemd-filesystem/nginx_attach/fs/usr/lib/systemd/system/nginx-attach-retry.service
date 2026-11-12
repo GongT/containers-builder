@@ -1,5 +1,5 @@
 [Unit]
-Description=restart nginx-attach.service
+Description=重试失败的 nginx-attach.service
 RefuseManualStart=yes
 
 [Service]

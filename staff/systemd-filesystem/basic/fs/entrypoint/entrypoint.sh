@@ -1,44 +1,48 @@
 #!/usr/bin/bash
 
-# shellcheck source=./library/log.sh
-source "/entrypoint/library/log.sh"
-log "arguments: $# - $*"
-# shellcheck source=./library/env.sh
-source "/entrypoint/library/env.sh"
-# shellcheck source=./library/users.sh
-source "/entrypoint/library/users.sh"
+if [[ $* == '--systemd' || $# -eq 0 ]]; then
+	_MODE=systemd
+elif [[ $* == 'bash' || $* == 'sh' || $* == 'shell' ]]; then
+	_MODE=shell
+else
+	# log "单独执行命令: $*"
+	exec "$@"
+fi
+
+# shellcheck source=./library/all-load.sh
+source "/entrypoint/library/all-load.sh"
+
+log "容器内进程开始运行，参数: $# - $*"
 
 if [[ $* == 'emergency' ]]; then
 	touch /run/.userenvironments /etc/environment
-	log "emergency!"
+	log "发现参数 emergency 跳过hook并进入shell"
 	export DEBUG_SHELL=yes
 	exec /usr/bin/bash --login -i
 fi
 
-log "prestart:"
-while read -d '' -r FILE; do
-	if [[ $FILE == *.md ]]; then
-		continue
-	fi
-	log "    execute script: ${FILE}"
+log "启动前hook:"
+
+declare -a HOOK_FILES=()
+list_scripts_in_dir HOOK_FILES /entrypoint/prestart.d
+log "  * 共有 ${#HOOK_FILES[@]} 个prestart脚本"
+for FILE in "${HOOK_FILES[@]}"; do
+	log "  - 导入执行hook脚本: ${FILE}"
 	# shellcheck source=/dev/null
 	source "${FILE}"
-done < <(find /entrypoint/prestart.d -maxdepth 1 -type f -print0 | sort --zero-terminated)
-log "prestart complete"
+done
+log "启动前hook运行完成"
 
-unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS
-
-if [[ $* == '--systemd' || $# -eq 0 ]]; then
-	log "executing systemd!"
+if [[ $_MODE == systemd ]]; then
+	log "运行 systemd"
 	# capsh --print
 	unset SHLVL PATH PWD
 	exec /usr/lib/systemd/systemd --system "--show-status=yes" --crash-reboot=no
-fi
-
-if [[ $* == 'bash' || $* == 'sh' || $* == 'shell' ]]; then
-	log "hello!"
+elif [[ $_MODE == shell ]]; then
+	log "发现shell参数，进入调试"
+	echo "" >&2
 	export DEBUG_SHELL=yes
 	set -- /usr/bin/bash --login -i
+else
+	die "未知的运行模式: $_MODE"
 fi
-
-exec "$@"

@@ -2,31 +2,34 @@
 
 set -Eeuo pipefail
 
-# note: NGINX_CONFIG_SOURCE is env var, CONFIG_SOURCE is build argument
+function die() {
+	local code="$1"
+	shift
+	echo "$*" >&2
+	exit "$code"
+}
+
+if [[ -z ${SHARED_SOCKET_PATH-} || -z ${NGINX_CONFIG_PACKAGE-}   ]]; then
+	die 233 "缺少必要的环境变量!!!"
+fi
 
 declare -r NGINX_UPLOAD_SCRIPT="${SHARED_SOCKET_PATH-}/.nginx.upload.sh"
 
-echo "$1 nginx:" >&2
-echo "    container id: ${CONTAINER_ID-}" >&2
-echo "    package: ${NGINX_CONFIG_PACKAGE-}" >&2
-echo "    control script: ${NGINX_UPLOAD_SCRIPT}" >&2
-
-if [[ -z ${SHARED_SOCKET_PATH-} || -z ${NGINX_CONFIG_PACKAGE-} || -z ${NGINX_UPLOAD_SCRIPT-} ]]; then
-	echo "missing required environment!!!" >&2
-	exit 233
-fi
+echo "操作nginx网关 [$1]:" >&2
+echo "    容器ID: ${CONTAINER_ID-}" >&2
+echo "    配置包: ${NGINX_CONFIG_PACKAGE-}" >&2
+echo "    控制脚本: ${NGINX_UPLOAD_SCRIPT}" >&2
 
 if [[ $1 == attach ]]; then
 	if [[ -n ${IN_DEBUG_MODE-} ]]; then
-		echo "in debug mode, refuse to run."
-		exit 0
+		die 0 "调试模式下，拒绝执行并成功退出。"
 	fi
-	bash /usr/libexec/nginx-attach-prepare.sh
 
+	# 等待从网关容器挂载过来的目录中出现上传脚本
 	declare -i I=0
 	while ! [[ -e ${NGINX_UPLOAD_SCRIPT} ]]; do
 		if [[ $((I % 10)) -eq 0 ]]; then
-			echo "waiting uploader script to exists..."
+			echo "等待网关服务上传脚本存在..."
 		fi
 
 		sleep 1
@@ -37,6 +40,5 @@ if [[ $1 == attach ]]; then
 
 	rm -f "${NGINX_CONFIG_PACKAGE}"
 else
-	echo "Not Impl"
-	exit 1
+	die 1 "未实现"
 fi

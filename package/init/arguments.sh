@@ -13,7 +13,7 @@ function arg_string() {
 		shift
 		_ARG_REQUIRE[$1]=yes
 		if [[ $1 == *=* ]]; then
-			die "required argument must not have default value"
+			die "必须参数 ${1} 不允许有默认值"
 		fi
 	elif [[ $1 == '-' ]]; then
 		shift
@@ -72,13 +72,13 @@ function _arg_ensure_finish() {
 		return
 	fi
 	if [[ ${_ARG_USING+found} == found ]] && [[ ${BASH_SUBSHELL} -ne 0 ]]; then
-		die "invalid usage, some function has drop into a subshell, use arg_finish before it."
+		die "无效的用法，某些函数已经进入子 shell，请在此之前使用 arg_finish。"
 	fi
 	arg_finish >&2
 }
 function arg_finish() {
 	if [[ ${_ARG_HAS_FINISH} == "yes" ]]; then
-		die "Error: arg_finish called twice!"
+		die "错误: arg_finish 被调用了两次!"
 	fi
 	declare -gr _ARG_HAS_FINISH=yes
 
@@ -109,7 +109,7 @@ function arg_finish() {
 	fi
 
 	if [[ -e ${USER_PRIVATE_CONFIG_FILE} ]]; then
-		info_note "load arguments from ${USER_PRIVATE_CONFIG_FILE} - ${CURRENT_ACTION}"
+		info_note "从文件 ${USER_PRIVATE_CONFIG_FILE} 中加载命令行参数列表 - ${CURRENT_ACTION}"
 		local -a ENV_ARGS CMDLINE_TO_PARSE
 		CMDLINE_TO_PARSE=$(
 			grep_safe -E "^${PROJECT_NAME}:" "${USER_PRIVATE_CONFIG_FILE}"  \
@@ -126,7 +126,7 @@ function arg_finish() {
 			eval "${ENV_VARS}"
 		fi
 	else
-		info_note "environment file not exists: ${USER_PRIVATE_CONFIG_FILE}"
+		info_note "环境信息文件不存在: ${USER_PRIVATE_CONFIG_FILE}"
 	fi
 
 	for i in $(seq $((${#__BASH_ARGV[@]} - 1)) -1 0); do
@@ -152,7 +152,7 @@ function arg_print_usage() {
 	exit 1
 }
 function arg_get_usage() {
-	info "Usage: $0 <options>"
+	info "用法: $0 <参数>"
 	local K
 	{
 		for K in "${!_ARG_INPUT[@]}"; do
@@ -181,11 +181,11 @@ function _arg_parse_name() {
 	fi
 
 	if ! echo "${LONG}${SHORT}" | grep -qE "^[0-9a-z_-]+$"; then
-		die "Invalid argument define: ${NAME} (LONG=${LONG}, SHORT=${SHORT})"
+		die "无效的参数定义: ${NAME} (LONG=${LONG}, SHORT=${SHORT})"
 	fi
 
 	if [[ ${#SHORT} -gt 1 ]]; then
-		die "Short argument only allow single char (LONG=${LONG}, SHORT=${SHORT})"
+		die "短参数只允许单个字符 (LONG=${LONG}, SHORT=${SHORT})"
 	fi
 }
 function _arg_set() {
@@ -204,12 +204,12 @@ function _arg_set() {
 	shift
 
 	if [[ $# -gt 0 ]]; then
-		die "Unknown argument '$1'"
+		die "未知的参数 '$1'"
 	fi
 
 	for VAR_NAME in "${!_ARG_INPUT[@]}"; do
 		if [[ -z ${_ARG_RESULT[${VAR_NAME}]-} && -n ${_ARG_REQUIRE[${VAR_NAME}]-} ]]; then
-			die "Argument '${_ARG_INPUT[${VAR_NAME}]} - ${_ARG_COMMENT[${VAR_NAME}]-}' is required"
+			die "必须参数 '${_ARG_INPUT[${VAR_NAME}]} - ${_ARG_COMMENT[${VAR_NAME}]-}'"
 		fi
 		if [[ ${_ARG_RESULT[${VAR_NAME}]+found} == found ]]; then
 			declare -rg "${VAR_NAME}=${_ARG_RESULT[${VAR_NAME}]}"
@@ -249,4 +249,4 @@ function is_flag_argument() {
 	[[ $1 == -* && $1 != -*=* ]]
 }
 
-arg_flag _ACTION_HELP help "show help"
+arg_flag _ACTION_HELP help "显示帮助"

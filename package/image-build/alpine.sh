@@ -1,5 +1,5 @@
 function use_alpine_apk_cache() {
-	info_log "using apk cache: ${SYSTEM_COMMON_CACHE}/apk"
+	info_log "使用apk缓存: ${SYSTEM_COMMON_CACHE}/apk"
 	mkdir -p "${SYSTEM_COMMON_CACHE}/apk"
 	echo -e "--volume=${SYSTEM_COMMON_CACHE}/apk:/etc/apk/cache"
 }
@@ -8,7 +8,7 @@ function apk_install() {
 	local NAME=$1
 	shift
 
-	control_ci group "apk install packages"
+	control_ci group "apk 安装软件包"
 
 	{
 		cat <<-'APK'
@@ -25,15 +25,15 @@ function apk_install() {
 				apk update || true
 
 				if [ "$I" -ge 10 ]; then
-					die "can not install packages by apk."
+					die "无法通过apk安装软件包."
 				fi
 
 				I=$(($I + 1))
-				echo "failed... retry: $I"
+				echo "安装失败... 重试: $I"
 			done
 		APK
 		if ! is_tty 0; then
-			echo "### post scripts:"
+			echo "### apk后处理脚本:"
 			cat
 		fi
 	} | buildah run $(use_alpine_apk_cache) "${NAME}" sh -s- -- "$@"
@@ -46,7 +46,7 @@ function make_base_image_by_apk() {
 	shift
 	local PKGS=("$@")
 
-	info "make base image by alpine apk, from ${BASEIMG}"
+	info "利用alpine apk制作基础镜像, 来自 ${BASEIMG}"
 
 	local POSTSCRIPT=""
 	if ! is_tty 0; then

@@ -37,7 +37,7 @@ function ___finalize_daemon_reloaded() {
 	local FILE
 	for FILE in "${ALL_CHANGED_FILES[@]}"; do
 		if file_in_folder "${FILE}" "${SYSTEM_UNITS_DIR}"; then
-			info_success "systemd units file changed, auto reload."
+			info_success "systemd 单元文件已改变, 自动重载"
 			systemctl daemon-reload
 			delete_file 0 "${PRIVATE_CACHE}/remember-service-list.txt"
 			break

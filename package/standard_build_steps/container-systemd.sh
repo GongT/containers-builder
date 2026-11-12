@@ -1,6 +1,3 @@
-# shellcheck disable=SC2329
-# shellcheck disable=SC2312
-
 THIS_FILE_HASH=$(md5sum "${BASH_SOURCE[0]}" | awk '{print $1}')
 
 function is_systemd_plugin() {
@@ -34,18 +31,17 @@ function setup_systemd() {
 	function __hash_cb() {
 		if [[ ${#INPUT_ARGS[@]} -eq 0 || ${INPUT_ARGS[0]} != 'basic' ]]; then
 			# 第一个参数不是basic，按需追加basic参数
-			# 如果有此label，说明镜像前面的层已经有systemd设置
 			if [[ -n $(image_get_label "${PREV_STAGE_IMAGE_ID}" "${LABELID_USE_SYSTEMD}") ]]; then
+				# 如果有此label，说明镜像前面的层已经有systemd设置
 				info_note "[systemd] 镜像已经设置过systemd"
-				# 不需要修改
 			else
-				info_note "[systemd] 本镜像首次添加systemd，前置 <基本设置>"
+				info_note "[systemd] 本镜像首次添加systemd，前置 <basic> 组件"
 				INPUT_ARGS=("basic" "${INPUT_ARGS[@]}")
 			fi
+		fi
 
-			if [[ ${#INPUT_ARGS[@]} -eq 0 ]]; then
-				die "[systemd] 无事可做！"
-			fi
+		if [[ ${#INPUT_ARGS[@]} -eq 0 ]]; then
+			die "[systemd] 无事可做！"
 		fi
 
 		echo "version:4+${THIS_FILE_HASH}"

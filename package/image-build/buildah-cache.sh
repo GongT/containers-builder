@@ -41,7 +41,7 @@ function buildah_cache() {
 	buildah_cache_increament_count "${CACHE_NAME}" "${_STITLE}"
 	readonly DONE_STAGE WORK_STAGE
 
-	info "[${CACHE_NAME}] STEP ${WORK_STAGE}: \e[0;38;5;11m${_STITLE}"
+	info "[${CACHE_NAME}] 步骤 ${WORK_STAGE}: \e[0;38;5;11m${_STITLE}"
 
 	local PREV_STAGE_IMAGE_ID STEP_RESULT_IMAGE PREV_STEP_IMAGE
 	PREV_STEP_IMAGE=$(cache_create_name "${CACHE_NAME}" "${DONE_STAGE}")
@@ -60,13 +60,13 @@ function buildah_cache() {
 			cache_try_pull "${CACHE_NAME}" "${DONE_STAGE}"
 
 			if ! image_exists "${PREV_STEP_IMAGE}"; then
-				info_error "required previous stage [${PREV_STEP_IMAGE}] did not exists"
+				info_error "需要的前一步阶段 [${PREV_STEP_IMAGE}] 不存在"
 				return 1
 			fi
 		fi
 		local -r PREVIOUS_ID=$(image_get_long_id "${PREV_STEP_IMAGE}" || true)
 		if [[ -z ${PREVIOUS_ID} ]]; then
-			info_error "failed get id from image (${PREV_STEP_IMAGE}) cache state is invalid."
+			info_error "从镜像 (${PREV_STEP_IMAGE}) 获取 ID 失败，缓存状态无效。"
 			return 1
 		fi
 	else
@@ -78,18 +78,18 @@ function buildah_cache() {
 
 	indent
 	{
-		printf "last image: %q" "${PREV_STAGE_IMAGE_ID}"
+		printf "last-image-id: %q" "${PREV_STAGE_IMAGE_ID}"
 		"${BUILDAH_HASH_CALLBACK}" "${PREV_STAGE_IMAGE_ID}"
 	} >"${HASH_TMP}"
 
 	local WANTED_HASH
 	WANTED_HASH=$(hash_string "${HASH_TMP}")
 
-	info_note "current hash: ${WANTED_HASH}"
+	info_note "当前步骤hash: ${WANTED_HASH}"
 	dedent
 
 	if [[ ${BUILDAH_FORCE-no} == "yes" ]]; then
-		info_warn "cache skip <BUILDAH_FORCE=yes> target=${WANTED_HASH}"
+		info_warn "缓存: 跳过 <BUILDAH_FORCE=yes> 目标=${WANTED_HASH}"
 	elif image_exists "${STEP_RESULT_IMAGE}"; then
 		local EXISTS_PREVIOUS_ID EXISTS_HASH
 		EXISTS_PREVIOUS_ID="$(image_get_annotation "${STEP_RESULT_IMAGE}" "${ANNOID_CACHE_PREV_STAGE}")"
@@ -98,17 +98,17 @@ function buildah_cache() {
 		# info_log "EXISTS_HASH=$EXISTS_HASH EXISTS_PREVIOUS_ID=$EXISTS_PREVIOUS_ID"
 
 		if [[ -z ${EXISTS_PREVIOUS_ID} ]] || [[ -z ${EXISTS_HASH} ]]; then
-			info_warn "cache state is invalid!"
+			info_warn "缓存状态无效!"
 		else
-			info_success "cache exists <hash=${EXISTS_HASH}, base=${EXISTS_PREVIOUS_ID}>"
+			info_success "缓存: 可用 <当前=${EXISTS_HASH}, 基础=${EXISTS_PREVIOUS_ID}>"
 			if [[ "${EXISTS_HASH}++${EXISTS_PREVIOUS_ID}" == "${WANTED_HASH}++${PREVIOUS_ID}" ]]; then
 				_buildah_cache_done hit "${STEP_RESULT_IMAGE}"
 				return
 			fi
-			info "cache outdat <want=${WANTED_HASH}, base=${PREVIOUS_ID}>"
+			info "缓存: 过期 <期望=${WANTED_HASH}, 基础=${PREVIOUS_ID}>"
 		fi
 	else
-		info_success "cache missing: no image: ${STEP_RESULT_IMAGE}"
+		info_success "缓存: 缺失 <无此镜像: ${STEP_RESULT_IMAGE}>"
 	fi
 
 	indent
@@ -117,19 +117,18 @@ function buildah_cache() {
 	new_container "${CID}" "${PREV_STAGE_IMAGE_ID}" >/dev/null
 	try "${BUILDAH_BUILD_CALLBACK}" "${CID}"
 	if [[ $ERRNO -ne 0 ]]; then
-		info_error "build callback '${BUILDAH_BUILD_CALLBACK}' failed to run with $ERRNO ($ERRLOCATION)"
+		info_error "构建回调 '${BUILDAH_BUILD_CALLBACK}' 执行失败，错误码 $ERRNO ($ERRLOCATION)"
 		dedent
 		return 1
 	fi
-	info_note "build callback '${BUILDAH_BUILD_CALLBACK}' finish"
+	info_note "构建回调 '${BUILDAH_BUILD_CALLBACK}' 完成"
 	dedent
 
-	local COMMENT="${CACHE_NAME} layer <${DONE_STAGE}> to <${WORK_STAGE}>"
+	local COMMENT="${CACHE_NAME} 基于层 <${DONE_STAGE}> 构建出 <${WORK_STAGE}>"
 	buildah config \
 		"--annotation=${ANNOID_CACHE_HASH}=${WANTED_HASH}" \
 		"--annotation=${ANNOID_CACHE_PREV_STAGE}=${PREVIOUS_ID}" \
 		"--author=${AUTHOR}" \
-		"--comment=cache:step${WORK_STAGE}" \
 		"--created-by=RUN build-script # ${COMMENT}" \
 		"${CID}" >/dev/null
 
@@ -145,36 +144,36 @@ _buildah_cache_done() {
 
 	cache_push "${CACHE_NAME}" "${WORK_STAGE}"
 	if [[ -n ${_STITLE} ]]; then
-		info_note "[${CACHE_NAME}] STEP ${WORK_STAGE} (\e[0;38;5;13m${_STITLE}\e[0;2m) DONE | result: ${BUILT_ID}\n"
+		info_note "[${CACHE_NAME}] 步骤 ${WORK_STAGE} (\e[0;38;5;13m${_STITLE}\e[0;2m) 完成 | 结果ID: ${BUILT_ID}\n"
 	else
-		info_note "[${CACHE_NAME}] STEP ${WORK_STAGE} DONE | result: ${BUILT_ID}\n"
+		info_note "[${CACHE_NAME}] 步骤 ${WORK_STAGE} 完成 | 结果ID: ${BUILT_ID}\n"
 	fi
 
 	local -r END_TIME=$(uptime_sec)
 
 	SUMMARY=$(
-		echo "## ${CACHE_NAME} step ${WORK_STAGE} - ${_STITLE}"
+		echo "## ${CACHE_NAME} 步骤 ${WORK_STAGE} - ${_STITLE}"
 		echo ""
-		echo " - cache status: ${CACHE_STATE}"
-		echo " - cache hash: ${WANTED_HASH}"
-		echo " - time elapsed: $(seconds_timespan $((END_TIME - START_TIME)))"
+		echo " - 缓存命中状态: ${CACHE_STATE}"
+		echo " - 缓存 hash: ${WANTED_HASH}"
+		echo " - 用时: $(seconds_timespan $((END_TIME - START_TIME)))"
 		echo ""
 		echo "<details>"
-		echo "<summary><h5>Base Image</h5></summary>"
+		echo "<summary><h5>基础镜像信息</h5></summary>"
 		echo ""
 		echo ""
 		_image_summary "${PREV_STAGE_IMAGE_ID}"
 		echo ""
 		echo "</details>"
 		echo ""
-		echo "#### Built Result"
+		echo "#### 构建结果"
 		_image_summary "${BUILT_ID}"
 		echo ""
 	)
 	control_ci summary "${SUMMARY}"
 
 	if should_quit_after_this_step; then
-		info_success "build step done (skip all remaining steps)"
+		info_success "构建步骤完成 (跳过所有剩余步骤)"
 		exit 0
 	fi
 }
@@ -182,7 +181,7 @@ _buildah_cache_done() {
 function _image_summary() {
 	local -r ID=$1
 	if [[ ${ID} == none ]]; then
-		echo " - scratch"
+		echo " - 空镜像 (scratch)"
 		return
 	fi
 
@@ -193,7 +192,7 @@ function _image_summary() {
 	SIZE=$(parse_json "${JSON}" ".[0].size")
 	NAME=$(parse_json "${JSON}" ".[0].tags[0]" || echo "no name")
 
-	printf ' - Create Time: %s\n' "$(TZ=GMT+8 systemd-analyze timestamp "${CTIME}" | grep -E 'Normalized form:|From now:' | sed -E 's/^.+:\s+//' | tr '\n' '`' | sed 's/`/ (`/'))"
-	printf ' - Size: %s\n' "$(numfmt --to=iec --suffix=B --format="%.2f" "${SIZE}")"
-	printf ' - Name: %s\n' "${NAME}"
+	printf ' - 创建时间: %s\n' "$(TZ=GMT+8 systemd-analyze timestamp "${CTIME}" | grep -E 'Normalized form:|From now:' | sed -E 's/^.+:\s+//' | tr '\n' '`' | sed 's/`/ (`/'))"
+	printf ' - 大小: %s\n' "$(numfmt --to=iec --suffix=B --format="%.2f" "${SIZE}")"
+	printf ' - 名称: %s\n' "${NAME}"
 }

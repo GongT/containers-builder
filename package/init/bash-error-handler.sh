@@ -5,7 +5,7 @@ function callstack() {
 	local -i SKIP=${1-1} i
 	local F_NAME RESOLVE_ENABLED=no
 	if [[ ${#FUNCNAME[@]} -le ${SKIP} ]]; then
-		echo "  * empty callstack *" >&2
+		echo "  * 没有调用栈 *" >&2
 	fi
 	if function_exists try_resolve_file; then
 		RESOLVE_ENABLED=yes
@@ -49,7 +49,7 @@ function try_resolve_file() {
 function reflect_function_location() {
 	local FN=$1 DEF_LINE DEF_FILE
 	if ! function_exists "$FN"; then
-		die "missing bash function: $FN"
+		die "缺失的 bash 函数: $FN"
 	fi
 	shopt -s extdebug
 	declare -F "${NAME}" | read -r FN DEF_LINE DEF_FILE
@@ -89,7 +89,7 @@ function set_error_trap() {
 	# info_note "install global error trap."
 	if [[ -n "$(trap -p ERR)" ]]; then
 		info_log "$(trap -p ERR | head -n3)"
-		die "already set ERR trap"
+		die "重复设置全局 ERR trap"
 	fi
 
 	local try_symbol=${1-try}

@@ -1,16 +1,16 @@
 [Unit]
-Description=notify stopping message to host systemd
-After=success.service
+Description=向容器外发送停止通知
 RefuseManualStart=yes
 RefuseManualStop=yes
+After=multi-user.target graphical.target
 
 [Install]
-WantedBy=success.service
+WantedBy=local-fs.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStop=/usr/local/bin/systemd-host-notify --stopping --status="container is stopping"
+ExecStop=/usr/local/bin/systemd-host-notify --stopping --status="容器正在停止"
 StandardInput=null
 StandardOutput=journal+console
 StandardError=journal+console

@@ -1,7 +1,7 @@
 function buildah_run_shell_script() {
 	local CONTAINER SCRIPT_FILE SH="bash"
 	if [[ $# -lt 2 ]]; then
-		die "buildah_run_shell_script: missing arguments, at least 2, got $#"
+		die "buildah_run_shell_script: 缺少参数，至少需要 2 个，实际提供了 $# 个"
 	fi
 
 	local ARGS=("$@")
@@ -53,6 +53,7 @@ function _warp_script_in_function() {
 }
 
 ## construct_child_shell_script OUTPUT_FILE SCRIPT_FILE [EXTRA_CONTENT]
+# 构造子bash脚本文件，包含公共库
 function construct_child_shell_script() {
 	local OUTPUT_FILE="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
 
@@ -60,7 +61,7 @@ function construct_child_shell_script() {
 
 	read -r FIRST_LINE <"${SCRIPT_FILE}"
 	if [[ ${FIRST_LINE} != '#!'* ]]; then
-		info_warn "missing shebang in file ${SCRIPT_FILE}"
+		info_warn "即将在容器中运行的脚本文件 ${SCRIPT_FILE} 缺失 shebang 行"
 		FIRST_LINE='#!/usr/bin/bash'
 	fi
 
@@ -69,7 +70,7 @@ function construct_child_shell_script() {
 
 		echo "${FIRST_LINE}"
 
-		printf 'if declare -p %s &>/dev/null; then echo "duplicate source to ${BASH_SOURCE[0]}"; exit 1; fi; declare -r %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
+		printf 'if declare -p %s &>/dev/null; then echo "重复加载脚本: ${BASH_SOURCE[0]}"; exit 1; fi; declare -r %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
 
 		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
 		export_common_libs
@@ -86,7 +87,7 @@ function construct_child_shell_script() {
 		declare -p _CURRENT_INDENT PROJECT_NAME
 		echo '
 function try_resolve_file() {
-	echo "[in container] ${1} : ${SOURCE_SCRIPT_FILE}"
+	echo "[容器内] ${1} : ${SOURCE_SCRIPT_FILE}"
 }
 '
 
@@ -98,7 +99,7 @@ function try_resolve_file() {
 
 function cat_source_file() {
 	local -r FILE_PATH=$1
-	printf '\n## SOURCE FILE: %s\n' "${FILE_PATH}"
+	printf '\n## 以下为源文件: %s\n' "${FILE_PATH}"
 	cat "${FILE_PATH}"
-	printf '\n'
+	printf '\n\n'
 }

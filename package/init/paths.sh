@@ -46,7 +46,7 @@ function find_current_file_absolute_path() {
 		return
 	fi
 
-	die "can not find absolute path of \$0(${CURRENT_FILE}), in:\n - COMMON_LIB_ROOT=${COMMON_LIB_ROOT}\n - PWD=${PWD}\nBASH_SOURCE:\n$(printf ' * %s\n' "${BASH_SOURCE[@]}")"
+	die "无法找到 \$0(${CURRENT_FILE}) 的绝对路径, in:\n - COMMON_LIB_ROOT=${COMMON_LIB_ROOT}\n - PWD=${PWD}\nBASH_SOURCE:\n$(printf ' * %s\n' "${BASH_SOURCE[@]}")"
 }
 
 if [[ ${CURRENT_FILE} != /* ]]; then
@@ -59,7 +59,7 @@ declare -xr CURRENT_FILE
 if [[ ${CURRENT_DIR+found} != "found" ]]; then
 	CURRENT_DIR="$(dirname "${CURRENT_FILE}")"
 	if [[ ${CURRENT_DIR} == "." ]]; then
-		echo "Error: can't get current script location." >&2
+		echo "错误: 无法获取当前脚本位置." >&2
 		exit 1
 	fi
 	if [[ "$(basename "${CURRENT_DIR}")" == "scripts" ]]; then
@@ -108,7 +108,7 @@ function set_script_root() {
 
 if is_root; then
 	if [[ ${TEST_MODE-} == yes ]]; then
-		info_warn "runing in test mode"
+		info_warn "以测试模式运行"
 		declare -r PODMAN_QUADLET_DIR="/run/containers/systemd"
 		declare -r SYSTEM_UNITS_DIR="/run/systemd/system"
 	else

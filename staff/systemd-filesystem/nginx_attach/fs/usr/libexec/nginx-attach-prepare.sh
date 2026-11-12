@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-if [[ ! -e ${NGINX_CONFIG_SOURCE} ]]; then
-	echo "missing nginx_attach CONFIG_FILE: ${NGINX_CONFIG_SOURCE}"
+function die() {
+	echo "$*" >&2
 	exit 1
+}
+
+if [[ ! -e ${NGINX_CONFIG_SOURCE} ]]; then
+	die "缺少 nginx_attach 组件输入参数 CONFIG_FILE: ${NGINX_CONFIG_SOURCE}"
 fi
 if ! mountpoint "${SHARED_SOCKET_PATH}"; then
-	echo "missing mounted socket folder: ${SHARED_SOCKET_PATH}"
-	exit 1
+	die "缺少已挂载的 socket 文件夹: ${SHARED_SOCKET_PATH}"
 fi
 
 declare -r CONF_DIR="/tmp/nginx-package"
@@ -18,15 +21,14 @@ elif [[ -d ${NGINX_CONFIG_SOURCE} ]]; then
 	mkdir -p "${CONF_DIR}"
 	cp -rf "${NGINX_CONFIG_SOURCE}/." "${CONF_DIR}"
 else
-	echo "invalid type must be file or folder: ${NGINX_CONFIG_SOURCE}"
-	exit 1
+	die "配置文件类型必须是文件或文件夹: ${NGINX_CONFIG_SOURCE}"
 fi
 
 cd "${CONF_DIR}"
 rm -f "${NGINX_CONFIG_PACKAGE}"
 tar -c -f "${NGINX_CONFIG_PACKAGE}" .
 
-echo "config files content:"
+echo "配置文件打包内容:"
 tar -t -f "${NGINX_CONFIG_PACKAGE}"
 
-echo "package save to: ${NGINX_CONFIG_PACKAGE}"
+echo "打包文件保存到: ${NGINX_CONFIG_PACKAGE}"

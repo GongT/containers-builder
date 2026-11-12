@@ -1,6 +1,7 @@
-# prestart hook scripts dir
+# 启动前hook脚本目录
 
-This folder contains bash script files, will execute in entrypoint, before systemd start.
+该目录包含 bash 脚本文件，会在 entrypoint 中执行，且在 systemd 启动之前执行。
 
-* script in sub folder not execute
-* execute is done by `source`, be carefull
+* 子目录中的脚本不会被执行
+* 执行是通过 `source` 完成的，请注意脚本中的变量和函数可能会影响整个 entrypoint 环境
+* 不区分是否可执行、以何种扩展名结尾（但md除外）

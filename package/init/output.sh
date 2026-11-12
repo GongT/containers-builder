@@ -71,13 +71,14 @@ function x() {
 _LINE_LABEL=""
 function branch_split() {
 	if [[ -n ${_LINE_LABEL} ]]; then
-		die "tty_split can not call twice"
+		die "branch_split 不能被重复调用"
 	fi
 	local LABEL=$1
 	if [[ -z ${LABEL} ]]; then
-		die "empty label"
+		die "空标签"
 	fi
 
+	_LINE_LABEL="${LABEL}"
 	if is_tty 2; then
 		echo -ne "\e[2m  * ${LABEL} \e[0m" >&2
 	fi
@@ -85,7 +86,7 @@ function branch_split() {
 
 function branch_join() {
 	if [[ -z ${_LINE_LABEL} ]]; then
-		die "branch_join without branch_split"
+		die "branch_join 未调用 branch_split"
 	fi
 	local RESULT=$1
 	if is_tty 2; then
@@ -93,4 +94,5 @@ function branch_join() {
 	else
 		echo -e "\e[2m${_LINE_LABEL} -> ${RESULT}\e[0m" >&2
 	fi
+	_LINE_LABEL=""
 }

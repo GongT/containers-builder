@@ -11,7 +11,7 @@ function download_and_build_github() {
 	local __FORCE=${BUILDAH_FORCE:-}
 
 	BUILDAH_FORCE=''
-	STEP="${PSTEP}（下载）"
+	STEP="${PSTEP}（下载GitHub项目）"
 	hash_download() {
 		http_get_github_last_commit_id_on_branch "${REPO}" "${BRANCH}"
 	}
@@ -27,13 +27,13 @@ function download_and_build_github() {
 	buildah_cache "${CACHE_BRANCH}" hash_download do_download
 
 	BUILDAH_FORCE="${__FORCE}"
-	STEP="${PSTEP}（编译）"
+	STEP="${PSTEP}（编译GitHub项目）"
 	hash_compile() {
 		cat "scripts/build-${PROJ_ID}.sh"
 	}
 	do_compile() {
 		SOURCE_DIRECTORY=no run_compile "${PROJ_ID}" "$1" "./scripts/build-${PROJ_ID}.sh"
-		info "${PROJ_ID} build complete..."
+		info "GitHub项目 ${PROJ_ID} 构建完成..."
 	}
 	buildah_cache "${CACHE_BRANCH}" hash_compile do_compile
 
@@ -47,7 +47,7 @@ function download_and_build_github_release() {
 	local __FORCE=${BUILDAH_FORCE:-}
 
 	BUILDAH_FORCE=''
-	STEP="${PSTEP}（下载）"
+	STEP="${PSTEP}（下载GitHub发布）"
 
 	local RELEASE_URL=""
 	local RELEASE_NAME=""
@@ -71,7 +71,7 @@ function download_and_build_github_release() {
 	buildah_cache "${CACHE_BRANCH}" hash_last_release download_last_release
 
 	BUILDAH_FORCE="${__FORCE}"
-	STEP="${PSTEP}（编译）"
+	STEP="${PSTEP}（编译GitHub发布）"
 	hash_compile() {
 		cat "scripts/build-${PROJ_ID}.sh"
 	}
