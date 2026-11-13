@@ -243,6 +243,7 @@ function download_git() {
 	fi
 
 	if [[ -e "${GIT_DIR}/config" ]]; then
+		chown -R "$(id -u):$(id -g)" "${GIT_DIR}"
 		local CTIME
 		CTIME=$(date +%s)
 		if [[ -e ${TIMESTAMP} ]] && [[ $(<"${TIMESTAMP}") -gt $((CTIME - GIT_REPO_EXPIRES)) ]]; then

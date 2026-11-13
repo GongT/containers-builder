@@ -1,3 +1,5 @@
+DEFAULT_UNIT_NAME=$(systemctl get-default)
+
 # _OPEN_UNIT_FILE=""
 # _OPEN_UNIT_DATA=""
 # function systemd_unit_open() {
@@ -71,7 +73,13 @@ function systemd_edit() {
 		die "重写文件名必须以两位数字开头，例如 50-untitled-override"
 	fi
 
-	local TARGET_FILE="/etc/systemd/system/$UNIT_NAME.d/${OVERRIDE_NAME}.$SECTION.conf"
+	CONTENT="$(cat)"
+
+	if [[ ${UNIT_NAME} == default.target ]]; then
+		UNIT_NAME="${DEFAULT_UNIT_NAME}"
+	fi
+
+	local TARGET_FILE="/etc/systemd/system/${UNIT_NAME}.d/${OVERRIDE_NAME}.$SECTION.conf"
 	log "写入 $TARGET_FILE ..."
 	if [[ ! -f $TARGET_FILE ]]; then
 		mkdir -p "$(dirname "$TARGET_FILE")"
@@ -80,5 +88,12 @@ function systemd_edit() {
 	fi
 
 	# $(...) 会删除末尾的换行，用 echo 加回来，这样输入有没有换行都不影响结果
-	printf "%s\n" "$(cat)" >>"$TARGET_FILE"
+	printf "%s\n" "${CONTENT}" >>"$TARGET_FILE"
+}
+
+function systemd_unit_can_enable() {
+	systemctl cat "$1" 2>/dev/null | grep -qF "[Install]"
+}
+function systemd_unit_exists() {
+	systemctl cat "$1" &>/dev/null
 }

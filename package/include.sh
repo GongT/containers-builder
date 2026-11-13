@@ -54,10 +54,6 @@ source "./platform/mount-script-run.sh"
 source "./platform/users.sh"
 popd &>/dev/null
 
-if [[ -z "${PODMAN_MY_REGISTRY-}" ]]; then
-	die "PODMAN_MY_REGISTRY 环境变量不存在"
-fi
-
 _check_ci_env
 use_normal
 use_exit_handler

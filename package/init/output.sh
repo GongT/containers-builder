@@ -38,10 +38,14 @@ function indent_stream() {
 	else
 		local _CIDD="${_CURRENT_INDENT}"
 		save_indent
-		{
-			"$@"
-		} > >(sed -u "s/^/${_CIDD}/") 2> >(sed -u "s/^/${_CIDD}/" >&2)
+		local RET=0
+		if "$@" > >(sed -u "s/^/${_CIDD}/") 2> >(sed -u "s/^/${_CIDD}/" >&2); then
+			:
+		else
+			RET=$?
+		fi
 		restore_indent
+		return "${RET}"
 	fi
 }
 

@@ -16,14 +16,13 @@ if [[ -e /etc/fedora-release ]]; then
 		./*.path \
 		./systemd-firstboot.service \
 		./systemd-machine-id-commit.service \
-		./systemd-sysusers.service \
 		./systemd-tpm2-* \
 		./systemd-update-*
 fi
 
-systemctl disable console-getty.service || true
+systemctl disable console-getty.service systemd-resolved.service systemd-logind.service systemd-sysusers.service || true
 systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service systemd-hostnamed.socket kbrequest.target
-systemctl enable dbus.socket notify-stop.service success.service || true
+systemctl enable notify-stop.service success.service
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime

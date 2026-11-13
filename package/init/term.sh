@@ -3,7 +3,10 @@ function get_cursor_line() {
 	local RESP _ COL
 	declare -gi CURSOR_LINE=0
 
-	IFS='[;' read -t 1 -r -s -d 'R' -p $'\e[6n' _ CURSOR_LINE COL
+	IFS='[;' read -t 1 -r -s -d 'R' -p $'\e[6n' _ CURSOR_LINE COL || {
+		info_warn "获取光标位置失败"
+		return 1
+	}
 }
 
 function save_cursor_position() {

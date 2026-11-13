@@ -46,9 +46,9 @@ function __create_unit__() {
 		_S_AT_='@'
 	fi
 
-	if [[ ${_S_IMAGE} != "${PODMAN_MY_REGISTRY}"/* ]]; then
-		_S_IMAGE="${PODMAN_MY_REGISTRY}/${_S_IMAGE}"
-	fi
+	# if [[ ${_S_IMAGE} != "${PODMAN_MY_REGISTRY}"/* ]]; then
+	# 	_S_IMAGE="${PODMAN_MY_REGISTRY}/${_S_IMAGE}"
+	# fi
 	_S_CURRENT_UNIT_NAME="${NAME}"
 
 	set_script_root "${NAME}"
@@ -158,7 +158,7 @@ function unit_get_scopename() {
 function _export_base_envs() {
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
 	printf 'declare PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
-	printf 'declare -r PODMAN_MY_REGISTRY=%q\n' "${PODMAN_MY_REGISTRY}"
+	# printf 'declare -r PODMAN_MY_REGISTRY=%q\n' "${PODMAN_MY_REGISTRY}"
 	echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
 }
 register_script_emit _export_base_envs

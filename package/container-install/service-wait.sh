@@ -23,13 +23,6 @@ __concat_wait_files() {
 	done
 }
 
-_debugger_remove_domain() {
-	if [[ ${PODMAN_IMAGE_NAME} == "${PODMAN_MY_REGISTRY}"/* ]]; then
-		info_note "从PODMAN_IMAGE_NAME中删除前缀 ${PODMAN_MY_REGISTRY}/"
-		PODMAN_IMAGE_NAME="${PODMAN_IMAGE_NAME#"${PODMAN_MY_REGISTRY}"/}"
-	fi
-}
-
 _debugger_file_write() {
 	local I EX_SRC TMPF OUTPUT
 
@@ -40,7 +33,6 @@ _debugger_file_write() {
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
 
-		export_function_body _debugger_remove_domain
 		__concat_wait_files
 		cat_source_file "${SRC}"
 	) >"${TMPF}"

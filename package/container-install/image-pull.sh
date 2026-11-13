@@ -5,12 +5,6 @@ function unit_podman_image() {
 	_S_IMAGE=$1
 	shift
 
-	if [[ -n ${PODMAN_MY_REGISTRY:-} ]]; then
-		if [[ ${_S_IMAGE} != "${PODMAN_MY_REGISTRY}/"* ]]; then
-			_S_IMAGE="${PODMAN_MY_REGISTRY}/${_S_IMAGE}"
-		fi
-	fi
-
 	if [[ $# -gt 0 ]]; then
 		unit_podman_cmdline "$@"
 	fi
