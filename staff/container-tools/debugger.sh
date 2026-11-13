@@ -19,7 +19,11 @@ function xpodman() {
 
 	echo ""
 	echo ""
-	echo "podman exit code: ${RET}"
+	local C=""
+	if [[ ${RET} -ne 0 ]]; then
+		C="\e[31m"
+	fi
+	echo -e "${C}podman 退出码: ${RET}\e[0m"
 }
 
 declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_template "${UNIT_NAME}")_${RANDOM}"
@@ -27,13 +31,13 @@ declare -xr CONTAINER_ID="debug_container_$(template_id='i' filter_systemd_templ
 printf "\e[2m"
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
-printf 'Container Id: %s\n' "${CONTAINER_ID}"
-printf 'Service File: %s\n' "$SERVICE_FILE"
-printf 'Podman Params: %s\n' "${ENGINE_PARAMS[*]}"
-printf 'Image Name: %s\n' "${PODMAN_IMAGE_NAME}"
-printf 'Default Commandline: %s\n' "${COMMAND_LINE[*]}"
-printf 'Input Commandline: %s\n' "$*"
-printf 'env:ENTRYPOINT: %s\n' "${ENTRYPOINT-image default}"
+printf '容器Id（名称）: %s\n' "${CONTAINER_ID}"
+printf '服务单元文件: %s\n' "$SERVICE_FILE"
+printf 'Podman 参数: %s\n' "${ENGINE_PARAMS[*]}"
+printf '镜像名称: %s\n' "${PODMAN_IMAGE_NAME}"
+printf '默认命令行: %s\n' "${COMMAND_LINE[*]}"
+printf '输入命令行: %s\n' "$*"
+printf '环境变量/ENTRYPOINT: %s\n' "${ENTRYPOINT-image default}"
 
 printf '=%.0s' $(seq 1 ${COLUMNS-80})
 echo ""
@@ -47,7 +51,6 @@ echo ""
 #     COMMAND_LINE
 
 if [[ "${ENTRYPOINT-}" ]]; then
-	echo "force using entrypoint: $ENTRYPOINT"
 	RESULT+=("--entrypoint=$ENTRYPOINT")
 fi
 
@@ -87,7 +90,7 @@ for I in "${X[@]}"; do
 		continue
 	fi
 	if [[ ${REAL_NETWORK-} != 1 ]] && [[ ${I} == "--mac-address="* || ${I} == "--pod="* ]]; then
-		info "remove ${I} from podman exec arguments, set REAL_NETWORK=1 to prevent this."
+		info "从podman参数移除 '${I}', 设置 REAL_NETWORK=1 可防止此操作."
 		continue
 	fi
 	PODMAN_EXEC_ARGS+=("${I}")

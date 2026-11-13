@@ -1,7 +1,10 @@
 #!/usr/bin/bash
 
-set -Eeuo pipefail
-shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
+if [[ $_MODE == systemd ]]; then
+	# 正常启动时启用严格模式，调试时宽松
+	set -Eeuo pipefail
+	shopt -s inherit_errexit extglob nullglob globstar lastpipe shift_verbose
+fi
 
 _loader_file="$(realpath "${BASH_SOURCE[0]}")"
 

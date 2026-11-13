@@ -36,32 +36,34 @@ do_pull() {
 	SUCCESS=()
 	FAILED=()
 	for SRV_FILE in "${SERVICE_NAMES[@]}"; do
-		info "\e[7;38;5;3m  $SRV_FILE  \e[0m"
+		info "\e[7m 处理单元文件: $SRV_FILE \e[0m"
 
 		TARGET_SCRIPT_DIR=$(systemctl cat "${SRV_FILE}" | filter_service_file_comment SCRIPTS_DIR)
 		if [[ -z ${TARGET_SCRIPT_DIR} ]]; then
-			info_error "missing SCRIPTS_DIR"
+			info_error "单元文件缺失变量 SCRIPTS_DIR"
 			continue
 		fi
 
-		if env -i "FORCE_PULL=${FORCE_PULL}" "SKIP_REMOVE=yes" "${TARGET_SCRIPT_DIR}/pull-image" always; then
-			info_success "\e[38;5;10mDone!\e[0m"
+		PULLER="${TARGET_SCRIPT_DIR}/pull-image"
+		info_note " + ${PULLER}"
+		if env -i "FORCE_PULL=${FORCE_PULL}" "SKIP_REMOVE=yes" "${PULLER}" always; then
+			info_success "完成"
 			SUCCESS+=("$SRV_FILE")
 		else
-			info_error "\e[38;5;9mFailed!\e[0m"
+			info_error "失败"
 			FAILED+=("$SRV_FILE")
 		fi
 	done
 
 	if [[ ${#FAILED[@]} -gt 0 ]]; then
-		info_error "\e[38;5;9mFailed: ${FAILED[*]}\e[0m"
+		info_error "拉取失败: ${FAILED[*]}"
 	fi
 
 	if [[ ${#SUCCESS[@]} -gt 0 ]]; then
-		info_note "removing unused images:"
-		podman image list --noheading \
-			| grep --fixed-strings '<none>' \
-			| awk '{print $3}' \
-			| xargs --no-run-if-empty -t podman image rm || true
+		info_note "移除未使用的镜像:"
+		podman image list --noheading |
+			grep --fixed-strings '<none>' |
+			awk '{print $3}' |
+			xargs --no-run-if-empty -t podman image rm || true
 	fi
 }

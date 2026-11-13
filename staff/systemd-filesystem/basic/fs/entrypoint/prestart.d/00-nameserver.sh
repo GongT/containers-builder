@@ -1,5 +1,6 @@
 # 根据外部控制器传入的几个环境变量生成 /etc/resolv.conf 文件
 # 即使外部没有传入（裸调试状态）也强制覆写
+# 使用networkd时此文件无效
 
 if [[ -e /etc/resolv.conf ]]; then
 	log "即将覆盖 /etc/resolv.conf 文件, 原始内容为:"

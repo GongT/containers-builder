@@ -5,9 +5,17 @@ function use_full_system_privilege() {
 	podman_engine_params "--privileged=true"
 }
 function add_network_privilege() {
-	add_capability NET_ADMIN NET_RAW NET_BIND_SERVICE NET_BROADCAST # SETGID SETUID
-}
+	# 不知道需不需要这个
+	add_capability NET_ADMIN
 
+	# networkd
+	add_capability NET_RAW
+	add_capability NET_BIND_SERVICE
+	add_capability NET_BROADCAST
+
+	# resolved似乎需要
+	add_capability SETPCAP
+}
 function ___reset_cap_pri_param() {
 	declare -ga _S_LINUX_CAP=(LINUX_IMMUTABLE)
 }

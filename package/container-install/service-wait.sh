@@ -5,6 +5,7 @@ function _service_executer_write() {
 	{
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
+		echo 'declare -r PODMAN_IMAGE_NAME'
 		__concat_wait_files
 		echo use_normal
 		echo execute_service_waiter_main
@@ -32,6 +33,10 @@ _debugger_file_write() {
 	(
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
+
+		if [[ ${DEBUG_MODE} != "yes" ]]; then
+			echo 'declare -r PODMAN_IMAGE_NAME="${PODMAN_IMAGE_NAME#*/}"'
+		fi
 
 		__concat_wait_files
 		cat_source_file "${SRC}"

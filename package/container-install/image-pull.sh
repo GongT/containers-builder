@@ -1,8 +1,35 @@
 function unit_podman_image_pull() {
 	_S_IMAGE_PULL=$1
 }
+
+declare -r VALID_IMAGE_NAME='^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+(?::[0-9]+)?(?:/[^/?#]+){2,}/?$'
+declare -r VALID_WITHOUT_DOMAIN='^[^/?#]+/[^/?#]+$'
+
+function sanity_image_name() {
+	local NAME="$1"
+
+	if [[ ${DEBUG_MODE} == "yes" ]]; then
+		echo "$NAME"
+		return
+	fi
+
+	# 检查镜像名称是否符合规范: domain.com/user/repo/...
+	if echo "$NAME" | grep -Pq "$VALID_IMAGE_NAME"; then
+		# 完整名称
+		echo "$NAME"
+	elif echo "$NAME" | grep -Pq "$VALID_WITHOUT_DOMAIN"; then
+		if [[ -n ${PODMAN_IMAGE_REGISTRY:-} ]]; then
+			echo "${PODMAN_IMAGE_REGISTRY}/$NAME"
+		else
+			die "缺少 PODMAN_IMAGE_REGISTRY 环境变量，无法补全镜像名称"
+		fi
+	else
+		die "镜像名称不合法: $NAME"
+	fi
+}
+
 function unit_podman_image() {
-	_S_IMAGE=$1
+	_S_IMAGE=$(sanity_image_name "$1")
 	shift
 
 	if [[ $# -gt 0 ]]; then

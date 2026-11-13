@@ -63,7 +63,14 @@ source '${_SRC}'"
 function install_modified_script() {
 	local SRC=$1 TARGET=$2 DATA
 
-	local SOURCE_STMT='source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"'
+	local SOURCE_STMT='source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"/'
+	if [[ $TARGET == "${SHARED_SCRIPTS_DIR}/"* ]]; then
+		SOURCE_STMT+='service-library.sh'
+	elif [[ $TARGET == "${SCRIPTS_DIR}/"* ]]; then
+		SOURCE_STMT+='functions.sh'
+	else
+		die "试图将脚本安装到未知的目标目录: ${TARGET}"
+	fi
 	SOURCE_STMT+=$(printf "; declare WHO_AM_I=%q" "${WHO_AM_I-"${SRC}"}")
 	unset WHO_AM_I
 

@@ -116,7 +116,7 @@ function die() {
 	trap - ERR
 
 	local LASTERR=$? STACK
-	echo -e "\n\e[38;5;9;1m致命错误: $*\e[0m" >&2
+	printf "\n\e[38;5;9;1m致命错误: %s\e[0m\n\n" "$*" >&2
 
 	if function_exists catch_error_stack; then catch_error_stack; fi
 

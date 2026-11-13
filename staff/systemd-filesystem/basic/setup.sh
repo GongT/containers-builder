@@ -42,7 +42,7 @@ if [[ -e /etc/fedora-release ]]; then
 fi
 
 x systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service systemd-hostnamed.socket kbrequest.target
-x systemctl enable notify-stop.service success.service
+x systemctl enable notify-stop.service success.service systemd-journald.service
 
 if [[ ! -e /etc/localtime ]]; then
 	x rm -f /etc/localtime

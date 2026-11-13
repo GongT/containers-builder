@@ -249,4 +249,6 @@ function is_flag_argument() {
 	[[ $1 == -* && $1 != -*=* ]]
 }
 
+DEBUG_MODE=no
 arg_flag _ACTION_HELP help "显示帮助"
+arg_flag DEBUG_MODE d/debug "调试模式: 镜像名不添加域名"
