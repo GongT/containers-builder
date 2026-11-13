@@ -7,8 +7,8 @@ fi
 
 cat <<-EOF >/etc/systemd/resolved.conf
 	[Resolve]
-	FallbackDNS=${NSS-} 8.8.8.8
-	Domains=$RESOLVE_SEARCH
+	FallbackDNS=${NSS:-} 8.8.8.8
+	Domains=${RESOLVE_SEARCH:-}
 	DNSSEC=no
 	MulticastDNS=yes
 	LLMNR=resolve
