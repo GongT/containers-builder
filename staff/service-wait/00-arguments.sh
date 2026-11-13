@@ -18,23 +18,15 @@ function make_arguments() {
 			if [[ -z ${HOST_IP} ]]; then
 				critical_die "尝试使用 --dns=h.o.s.t, 但是网络类型为 ${NETWORK_TYPE} 时, 当前不支持"
 			fi
-			push_engine_param "--dns=${HOST_IP}"
+			dns_resolve env "${HOST_IP}"
 		elif [[ ${i} == "--dns=p.a.s.s" ]]; then
 			dns_pass argument
 		elif [[ ${i} == "--dns-env=p.a.s.s" ]]; then
 			dns_pass env
 		elif [[ ${i} == "--dns="* ]]; then
-			if ip route get "${i#--dns=}" &>/dev/null; then
-				push_engine_param "${i}"
-			else
-				dns_resolve argument "${i#--dns=}"
-			fi
+			dns_resolve argument "${i#--dns=}"
 		elif [[ ${i} == "--dns-env="* ]]; then
-			if ip route get "${i#--dns-env=}" &>/dev/null; then
-				push_engine_param "${i}"
-			else
-				dns_resolve env "${i#--dns-env=}"
-			fi
+			dns_resolve env "${i#--dns-env=}"
 		else
 			push_engine_param "${i}"
 		fi

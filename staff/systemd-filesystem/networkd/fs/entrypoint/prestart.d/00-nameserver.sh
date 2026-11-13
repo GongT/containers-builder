@@ -15,15 +15,15 @@ cat <<-EOF >/etc/systemd/resolved.conf
 	Cache=yes
 	CacheFromLocalhost=yes
 	DNSStubListener=yes
-	DNSStubListenerExtra=
+	# DNSStubListenerExtra=
 	ReadEtcHosts=yes
 	ResolveUnicastSingleLabel=yes
 EOF
 
+# RESOLVE_OPTIONS 暂不处理
+
 ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
-log "已生成 /etc/resolv.conf 文件"
-printf "%s\n" "$(</etc/resolv.conf)"  >&2
-log "====="
+log "已链接 /etc/resolv.conf 文件到systemd-resolved"
 
 unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS

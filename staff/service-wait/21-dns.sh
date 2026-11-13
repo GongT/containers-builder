@@ -12,7 +12,15 @@ function _nslookup() {
 
 declare -a NSS=()
 function dns_resolve() {
+	# 设置dns服务器，通过在主机解析参数中的域名
 	local -r METHOD="$1" HOSTN="$2"
+
+	if ipcalc -c "${HOSTN}" &>/dev/null; then
+		# 如果hostname实际是个ip地址，则直接使用它
+		dns_append_server "${METHOD}" "${HOSTN}"
+		return
+	fi
+
 	local RESOLVE_ARR RESOLVE_STR
 	local -i I=5
 	info_log "解析 DNS 主机: <${HOSTN}>"
@@ -36,7 +44,7 @@ function dns_resolve() {
 	for ADDR in "${RESOLVE_ARR[@]}"; do
 		info_log " - 验证 DNS 服务器: ${ADDR}"
 		if _nslookup -timeout=2 -retry=1 z.cn "${ADDR}" &>/dev/null; then
-			dns_append "${METHOD}" "${ADDR}"
+			dns_append_server "${METHOD}" "${ADDR}"
 		fi
 	done
 }
@@ -44,6 +52,10 @@ function dns_resolve() {
 function dns_pass() {
 	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1-}"
 	info_log "通过 ${METHOD} 传递 DNS 服务器"
+	if [[ ${METHOD} != 'env' ]] && [[ ${METHOD} != argument ]]; then
+		die "不支持的 DNS 传递方法: ${METHOD}"
+	fi
+
 	mapfile -t RESOLVE_OPTIONS < <(grep '^options ' /etc/resolv.conf | sed 's/^options //g')
 	if [[ -n ${RESOLVE_OPTIONS[*]} ]]; then
 		if [[ ${METHOD} == 'env' ]]; then
@@ -59,10 +71,12 @@ function dns_pass() {
 	fi
 
 	mapfile -t RESOLVE_NS < <(grep '^nameserver ' /etc/resolv.conf | sed 's/^nameserver //g' | grep -Fv 127.0.0.1)
-	dns_append "${METHOD}" "${RESOLVE_NS[@]}"
+	dns_append_server "${METHOD}" "${RESOLVE_NS[@]}"
 }
 
-function dns_append() {
+DNS_USED_ARG=0 DNS_USED_ENV=0
+
+function dns_append_server() {
 	local METHOD="${1}"
 	shift
 
@@ -71,16 +85,21 @@ function dns_append() {
 	if [[ ${METHOD} == 'env' ]]; then
 		NSS+=("${@}")
 		export NSS
+		DNS_USED_ENV=1
 	else
 		local NS
 		for NS in "${@}"; do
 			push_engine_param "--dns=${NS}"
 		done
+		DNS_USED_ARG=1
 	fi
 }
 
 function dns_finalize() {
-	if [[ ${#NSS[@]} -gt 0 ]]; then
-		push_engine_param "--env=NSS=${NSS[*]}"
+	if [[ ${DNS_USED_ARG} -ne 0 ]] && [[ ${#NSS[@]} -ne 0 ]]; then
+		die "配置冲突: 同时使用了命令行和环境变量传递 DNS 服务器"
+	fi
+	if [[ ${DNS_USED_ENV} -ne 0 ]]; then
+		push_engine_param "--env=NSS=${NSS[*]}" "--dns=none"
 	fi
 }
