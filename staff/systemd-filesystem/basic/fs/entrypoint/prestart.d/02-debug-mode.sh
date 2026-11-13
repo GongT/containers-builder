@@ -10,7 +10,13 @@ FailureAction=none
 	unset TYPE
 	exportenv IN_DEBUG_MODE yes
 	systemctl disable notify-stop.service
-elif [[ -z ${NOTIFY_SOCKET-} ]]; then
-	log "非调试模式下 NOTIFY_SOCKET 不存在！！！"
-	exit 233
+else
+	if [[ -z ${NOTIFY_SOCKET-} ]]; then
+		log "非调试模式下 NOTIFY_SOCKET 不存在！！！"
+		exit 233
+	fi
+
+	# systemd检测到容器会自动启用它，disable不管用
+	# systemctl mask console-getty.service
+	systemctl mask getty.target
 fi

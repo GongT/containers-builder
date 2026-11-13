@@ -1,8 +1,6 @@
 [Unit]
 Description=容器退出前显示启动失败的原因
 DefaultDependencies=no
-Requires=local-fs.target
-Before=basic.target
 RefuseManualStart=yes
 CollectMode=inactive-or-failed
 

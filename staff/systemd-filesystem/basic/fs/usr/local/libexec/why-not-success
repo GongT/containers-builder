@@ -9,6 +9,10 @@ red() {
 	printf '\e[31m%s\e[0m\n' "$*" >&2
 }
 
-red  "容器启动失败"
+if [[ -e /entrypoint/ready ]]; then
+	exit 0
+fi
+
+red "容器启动失败"
 
 x systemctl list-dependencies default.target --no-pager --legend=no

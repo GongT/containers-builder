@@ -16,7 +16,7 @@ if [[ $TYPE == stop ]]; then
 		info_log "  - found running container."
 		x podman container stop --ignore "--time=-1" "${CONTAINER_ID}"
 	else
-		x podman container rm --ignore "--time=-1" "${CONTAINER_ID}"
+		x podman container rm --ignore --force "--time=-1" "${CONTAINER_ID}"
 	fi
 	info_log "  * done."
 elif [[ $TYPE == kill ]]; then

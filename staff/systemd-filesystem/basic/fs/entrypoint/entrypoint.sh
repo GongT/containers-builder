@@ -16,7 +16,9 @@ else
 	exec "$@"
 fi
 
-export SYSTEMD_SUPPORT_DEVICE=0 SYSTEMD_SUPPORT_MOUNT=0 SYSTEMD_SUPPORT_SWAP=0
+# export SYSTEMD_SUPPORT_DEVICE=0
+export SYSTEMD_SUPPORT_MOUNT=0
+# export SYSTEMD_SUPPORT_SWAP=0
 
 # shellcheck source=./library/all-load.sh
 source "/entrypoint/library/all-load.sh"

@@ -2,32 +2,52 @@
 
 declare -fp ensure_user ensure_group get_gid_of_group get_uid_of_user user_exists group_exists >/entrypoint/library/users.sh
 
-info_note "设置默认目标为 ${DEFAULT_TARGET-multi-user.target}"
-systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
+x() {
+	echo "+ $*" >&2
+	"$@"
+}
 
-if [[ -e /etc/fedora-release ]]; then
+info_note "设置默认目标为 ${DEFAULT_TARGET-multi-user.target}"
+x systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
+
+clear_unused() {
+	local R=$1
+
 	# 清理一些不需要的文件，目前只测试了fedora系统
 	# 这些完整系统需要的东西在容器里不需要，甚至有可能导致容器启动失败
-	rm -rvf /usr/lib/systemd/system/local-fs.target.wants /usr/lib/systemd/system/graphical.target.wants /usr/lib/systemd/system/multi-user.target.wants
-	rm -rvf /etc/systemd/system/*.target.wants
+	x rm -rf \
+		"$R"/local-fs.target.wants \
+		"$R"/graphical.target.wants \
+		"$R"/multi-user.target.wants \
+		"$R"/*.target.wants \
+		\
+		"$R"/sysinit.target.wants/*.mount \
+		"$R"/sysinit.target.wants/*.path \
+		"$R"/sysinit.target.wants/systemd-firstboot.service \
+		"$R"/sysinit.target.wants/systemd-machine-id-commit.service \
+		"$R"/sysinit.target.wants/systemd-tpm2-* \
+		"$R"/sysinit.target.wants/systemd-update-* \
+		\
+		"$R"/sockets.target.wants/systemd-resolved-*.socket \
+		"$R"/sockets.target.wants/systemd-storage-*.socket \
+		"$R"/sockets.target.wants/systemd-report-*.socket \
+		"$R"/sockets.target.wants/systemd-ask-password.socket \
+		"$R"/sockets.target.wants/systemd-creds.socket \
+		"$R"/sockets.target.wants/systemd-factory-reset.socket
+}
 
-	cd /usr/lib/systemd/system/sysinit.target.wants
-	rm -vf ./*.mount \
-		./*.path \
-		./systemd-firstboot.service \
-		./systemd-machine-id-commit.service \
-		./systemd-tpm2-* \
-		./systemd-update-*
+if [[ -e /etc/fedora-release ]]; then
+	clear_unused /etc/systemd/system
+	clear_unused /usr/lib/systemd/system
 fi
 
-systemctl disable console-getty.service systemd-resolved.service systemd-logind.service systemd-sysusers.service || true
-systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service systemd-hostnamed.socket kbrequest.target
-systemctl enable notify-stop.service success.service
+x systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service systemd-hostnamed.socket kbrequest.target
+x systemctl enable notify-stop.service success.service
 
 if [[ ! -e /etc/localtime ]]; then
-	rm -f /etc/localtime
-	ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+	x rm -f /etc/localtime
+	x ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 fi
 
 # 可能存在这个文件，其内容会被启动时覆盖，避免混淆直接删除它
-rm -f /etc/machine-id
+x rm -f /etc/machine-id

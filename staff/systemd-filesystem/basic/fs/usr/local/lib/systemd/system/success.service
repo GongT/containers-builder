@@ -17,6 +17,7 @@ WantedBy=default.target
 Type=oneshot
 RemainAfterExit=no
 ExecStart=/usr/bin/echo "向容器外发送启动完成通知"
+ExecStart=/usr/bin/touch /entrypoint/ready
 ExecStart=/usr/local/bin/systemd-host-notify --ready --status="正常运行中"
 StandardOutput=journal+console
 StandardError=journal+console
