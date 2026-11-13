@@ -74,9 +74,7 @@ function install_common_system_support() {
 		add_service_to_enable "services.target"
 	fi
 
-	local BODY
-	BODY=$(_create_common_lib)
-	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "${BODY}"
+	write_file "${SHARED_SCRIPTS_DIR}/service-library.sh" "$(_create_common_lib)"
 }
 function _install_common_script_service() {
 	local SRV="$1" ARG="${2-}" SCRIPT

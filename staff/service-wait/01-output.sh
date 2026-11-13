@@ -22,7 +22,7 @@ function try_resolve_file() {
 function _on_exit_notify_service_manager() {
 	local EXIT_CODE=$?
 	set +Eeuo pipefail
-	sdnotify --stopping "--status=control process $$ exit"
+	sdnotify --stopping "--status=控制进程 $$ 退出"
 	callstack 2
-	critical_die "startup script died with error code ${EXIT_CODE}"
+	critical_die "服务主启动进程异常退出, 错误码为 ${EXIT_CODE}"
 }

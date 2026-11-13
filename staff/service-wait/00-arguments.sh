@@ -16,7 +16,7 @@ function make_arguments() {
 	for i in "${COMBINED_ARGS[@]}"; do
 		if [[ ${i} == "--dns=h.o.s.t" ]]; then
 			if [[ -z ${HOST_IP} ]]; then
-				critical_die "Try to use h.o.s.t when network type is ${NETWORK_TYPE}, this is currently not supported."
+				critical_die "尝试使用 --dns=h.o.s.t, 但是网络类型为 ${NETWORK_TYPE} 时, 当前不支持"
 			fi
 			push_engine_param "--dns=${HOST_IP}"
 		elif [[ ${i} == "--dns=p.a.s.s" ]]; then

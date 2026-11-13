@@ -18,10 +18,14 @@ if [[ ${NOTIFY_SOCKET+found} == found ]]; then
 	}
 else
 	function sdnotify() {
-		# echo "[SDNOTIFY] (disabled) $*" >&2
+		echo "[SDNOTIFY] (disabled) $*" >&2
 		:
 	}
 fi
+
+function hide_sdnotify() {
+	unset NOTIFY_SOCKET
+}
 
 function _SERVICE_exit_handler() {
 	local _EXIT_CODE=$?
@@ -30,17 +34,17 @@ function _SERVICE_exit_handler() {
 
 	_CURRENT_INDENT='[exit] '
 
-	# info_note "call handler: last-return=${_EXIT_CODE}, ERRNO=${ERRNO}, EXIT_CODE=${EXIT_CODE-missing}, pid=$$"
+	# info_note "退出回调被调用: 上个命令返回=${_EXIT_CODE}, ERRNO=${ERRNO}, EXIT_CODE=${EXIT_CODE-missing}, 当前进程ID=$$"
 
 	call_exit_handlers
 
 	if [[ ${_EXIT_CODE} -ne 0 ]]; then
-		info_error "command return code ${_EXIT_CODE}"
+		info_error "命令执行返回码 ${_EXIT_CODE}"
 	elif [[ ${EXIT_CODE-0} -ne 0 ]]; then
-		info_error "service script exit with error code ${EXIT_CODE}"
+		info_error "服务主脚本退出码 ${EXIT_CODE}"
 		_EXIT_CODE=${EXIT_CODE}
 	elif [[ ${ERRNO} -ne 0 ]]; then
-		info_error "unclean errno ${ERRNO}"
+		info_error "非正常返回值 ${ERRNO}"
 		_EXIT_CODE=${ERRNO}
 	fi
 
@@ -48,7 +52,7 @@ function _SERVICE_exit_handler() {
 		if [[ -e ${ERRSTACK_FILE-not exists} ]]; then
 			cat "${ERRSTACK_FILE}"
 		else
-			info_warn "stack not available"
+			info_warn "栈信息不可用"
 		fi
 	fi
 
@@ -84,10 +88,6 @@ function get_service_property() {
 	systemctl show "${UNIT_NAME}" "--property=$1" --value
 }
 
-function hide_sdnotify() {
-	unset NOTIFY_SOCKET
-}
-
 # if variable_exists
 
 function is_ci() {
@@ -114,15 +114,15 @@ function control_ci() {
 		fi
 		;;
 	group)
-		info_bright "[Start Group] $*"
+		info_bright "[开始输出分组] $*"
 		indent
 		;;
 	groupEnd)
 		dedent
-		info_note "[End Group]"
+		info_note "[结束输出分组]"
 		;;
 	*)
-		die "[None-CI] not support action: ${ACTION}"
+		die "[非CI模式] 不支持的CI操作: ${ACTION}"
 		;;
 	esac
 }
@@ -141,7 +141,7 @@ function get_container_id() {
 	local CONTAINER_ID=$(systemctl cat "${UNIT_FILE_NAME}" 2>&1 | grep -F Environment=CONTAINER_ID= | sed 's#^Environment=CONTAINER_ID=##g')
 	if [[ ${CONTAINER_ID} == *%* ]]; then
 		if [[ -z ${template_id-} ]]; then
-			die "for template (instantiated / ending with @) service, must have environment variable: template_id"
+			die "对于模板 (实例化 / 以 @ 结尾) 服务，必须有环境变量: template_id"
 		fi
 		filter_systemd_template "${CONTAINER_ID}"
 	else
@@ -151,7 +151,7 @@ function get_container_id() {
 
 function filter_systemd_template() {
 	if [[ $1 == *%* && -z ${template_id-} ]]; then
-		die "for template (instantiated / ending with @) service, must have environment variable: template_id"
+		die "对于模板 (实例化 / 以 @ 结尾) 服务，必须有环境变量: template_id"
 	fi
 	echo "${1//%i/${template_id}}"
 }
@@ -198,7 +198,7 @@ function container_get_annotation() {
 	elif [[ $# -eq 2 ]]; then
 		local -r ID=$1 ANNO_NAME="$2"
 	else
-		die "invalid call"
+		die "错误调用 container_get_annotation"
 	fi
 	x podman container inspect -f "{{index .Config.Annotations \"${ANNO_NAME}\"}}" "${ID}"
 }
@@ -209,7 +209,7 @@ function container_get_label() {
 	elif [[ $# -eq 2 ]]; then
 		local -r ID=$1 LABEL_NAME="$2"
 	else
-		die "invalid call"
+		die "错误调用 container_get_label"
 	fi
 	x podman container inspect -f "{{index .Config.Labels \"${LABEL_NAME}\"}}" "${ID}"
 }
@@ -242,18 +242,18 @@ function wait_removal() {
 	local ID=${1-"$(get_container_id)"} STATE
 	sleep 1s
 
-	info_note "wait container ${ID} to remove:"
+	info_note "等待容器 ${ID} 被移除:"
 	while podman container exists "${ID}"; do
 		sleep 1s
 		STATE=$(container_get_status "${ID}")
 
 		if is_running_state "${STATE}"; then
-			info_note "  * still runining. (I'll not stop it)"
+			info_note "  * 仍在运行 (我不会停止它)"
 		elif [[ ${STATE} == 'removed' ]]; then
-			info_note "  - success."
+			info_note "  - 已消失"
 			return
 		else
-			info_note "  * stopped but not remove, remove it now. (I'll not add --force or --depend)"
+			info_note "  * 已停止但未移除, 现在移除它 (我不会添加 --force 或 --depend)"
 			x podman container rm "${ID}"
 		fi
 	done

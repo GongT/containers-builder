@@ -12,15 +12,15 @@ fi
 
 {
 	# TODO: split this another place
-	if [[ -n "${RESOLVE_OPTIONS-}" ]]; then
+	if [[ -n ${RESOLVE_OPTIONS-} ]]; then
 		log "  -> RESOLVE_OPTIONS=${RESOLVE_OPTIONS}"
 		echo "options $RESOLVE_OPTIONS"
 	fi
-	if [[ -n "${RESOLVE_SEARCH-}" ]]; then
+	if [[ -n ${RESOLVE_SEARCH-} ]]; then
 		log "  -> RESOLVE_SEARCH=${RESOLVE_SEARCH}"
 		echo "search $RESOLVE_SEARCH"
 	fi
-	if [[ -n "${NSS-}" ]]; then
+	if [[ -n ${NSS-} ]]; then
 		log "  -> NSS=${NSS}"
 		mapfile -d ' ' -t NSS < <(echo "$NSS")
 		for NS in "${NSS[@]}"; do
@@ -33,7 +33,7 @@ fi
 } >/etc/resolv.conf
 
 log "已生成 /etc/resolv.conf 文件"
-cat /etc/resolv.conf >&2
+printf "%s\n" "$(</etc/resolv.conf)"  >&2
 log "====="
 
 unset NSS RESOLVE_SEARCH RESOLVE_OPTIONS

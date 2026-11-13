@@ -17,11 +17,11 @@ function core_switch() {
 		wait_by_create_file "$WAIT_ARGS"
 		;;
 	healthy) exit 251 ;; # do nothing
-	pass) exit 251 ;;    # do nothing
+	pass) exit 251 ;; # do nothing
 	*)
-		sdnotify "--status=startup timeout"
-		echo "invalid wait type: ${WAIT_TYPE}" >&2
-		return 1
+		sdnotify "--status=脚本异常"
+		echo "未定义的等待类型: ${WAIT_TYPE}" >&2
+		return 233
 		;;
 	esac
 }
@@ -33,31 +33,61 @@ function service_wait_success() {
 function service_wait_thread() {
 	function _wait_exit() {
 		local RET=$?
+		trap - EXIT TERM INT ERR
 		if [[ ${WAIT_ERROR} -eq 0 && ${RET} -eq 0 ]]; then
 			return
 		elif [[ ${RET} -eq 251 ]]; then
 			exit 0 # no need wait
 		else
-			info_log "failed wait container '$(get_container_id)' to stable running."
+			info_log "等待容器 '$(get_container_id)' 稳定运行失败。"
 
-			sdnotify --stopping "wait fail"
+			sdnotify --stopping "未能等到容器稳定运行"
 
 			local SPID
 			SPID=$(get_service_property "MainPID")
 			if [[ ${SPID} -gt 0 ]]; then
-				info "send signal to podman container ${SPID}"
-				kill -s sigterm "${SPID}"
+				info_log "向 podman 容器 ${SPID} 发送信号"
+				while kill -0 "${SPID}" 2>/dev/null; do
+					kill -s sigterm "${SPID}"
+					sleep 5
+				done
 			fi
-			exit ${RET}
+
+			info_log "容器主进程已退出，等待进程结束 (${RET})"
+			exit "${RET}"
 		fi
 	}
-	trap _wait_exit EXIT
+	trap _wait_exit EXIT TERM INT ERR
 
-	info_log "wait container $(get_container_id), type=${WAIT_TYPE}, $(echo "${WAIT_ARGS}" | base64 --wrap=0)."
+	sleep 2
+	local ARGS_HINT
+	if [[ $WAIT_TYPE == output ]]; then
+		ARGS_HINT=$(echo "${WAIT_ARGS}" | base64 --wrap=0)
+	else
+		ARGS_HINT="${WAIT_ARGS}"
+	fi
+	info_log "等待 $(get_container_id) 稳定运行, 等待类型=${WAIT_TYPE}, 参数: ${ARGS_HINT}"
 
 	core_switch
 
 	startup_done
+}
+
+function passing_sdnotify_socket() {
+	# 根据传入的模式设置容器的 sdnotify 参数
+	# 如果使用podman自己的healthcheck机制来判断容器健康状态，就需要把 sdnotify 设置为 healthy，这样容器内就无法使用它了，所以需要手动传入
+	# 其他所有方式都直接通过参数传入
+	local MODE=${1} INNER_NOTIFY_SOCKET="/run/host/systemd-notify.sock"
+	if [[ ${MODE} == healthy ]]; then
+		push_engine_param "--sdnotify=healthy"
+		push_engine_param "--env=NOTIFY_SOCKET=${INNER_NOTIFY_SOCKET}"
+		push_engine_param "--volume=${NOTIFY_SOCKET}:${INNER_NOTIFY_SOCKET}"
+	else
+		push_engine_param "--sdnotify=container"
+		if [[ ! -e ${NOTIFY_SOCKET} ]]; then
+			die "NOTIFY_SOCKET 文件不存在: ${NOTIFY_SOCKET}"
+		fi
+	fi
 }
 
 function execute_service_waiter_main() {
@@ -81,7 +111,7 @@ function execute_service_waiter_main() {
 		else
 			START_WAIT_DEFINE=sleep:10
 		fi
-		info_log "auto detect wait: ${START_WAIT_DEFINE}"
+		info_log "自动探测到等待类型: ${START_WAIT_DEFINE}"
 	fi
 	if [[ ${START_WAIT_DEFINE} == touch || ${START_WAIT_DEFINE} == touch: ]]; then
 		START_WAIT_DEFINE="touch:/startup.${RANDOM}.signal"
@@ -94,15 +124,10 @@ function execute_service_waiter_main() {
 		local -r WAIT_ARGS=''
 	fi
 
-	if [[ ${WAIT_TYPE} == pass ]]; then
-		push_engine_param "--sdnotify=container"
-	elif [[ ${WAIT_TYPE} == healthy ]]; then
-		push_engine_param "--sdnotify=healthy"
-	elif [[ ${WAIT_TYPE} == touch ]]; then
-		push_engine_param "--env=STARTUP_TOUCH_FILE=${WAIT_ARGS}"
-	else
-		push_engine_param "--sdnotify=ignore"
-	fi
+	passing_sdnotify_socket "${WAIT_TYPE}"
+	push_engine_param "--env=WAIT_TYPE=${WAIT_TYPE}"
+	push_engine_param "--env=WAIT_ARGS=${WAIT_ARGS}"
+
 	apply_container_healthcheck
 
 	wait_for_pid_and_notify

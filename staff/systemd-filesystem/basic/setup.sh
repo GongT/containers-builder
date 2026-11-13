@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+declare -fp ensure_user ensure_group get_gid_of_group get_uid_of_user user_exists group_exists >/entrypoint/library/users.sh
+
 info_note "设置默认目标为 ${DEFAULT_TARGET-multi-user.target}"
 systemctl set-default "${DEFAULT_TARGET-multi-user.target}"
 
@@ -20,9 +22,8 @@ if [[ -e /etc/fedora-release ]]; then
 fi
 
 systemctl disable console-getty.service || true
-systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service kbrequest.target
-systemctl enable dbus.socket notify-stop.service || true
-# success.service延迟到运行时再enable
+systemctl mask systemd-networkd-wait-online.service systemd-hostnamed.service systemd-hostnamed.socket kbrequest.target
+systemctl enable dbus.socket notify-stop.service success.service || true
 
 if [[ ! -e /etc/localtime ]]; then
 	rm -f /etc/localtime

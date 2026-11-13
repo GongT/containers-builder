@@ -4,7 +4,7 @@ function self_journal() {
 
 function startup_done() {
 	sdnotify --ready --status=ok
-	info_log "Finish, Ok."
+	info_log "服务主启动进程成功完成"
 	sleep 10
 	exit 0
 }

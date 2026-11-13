@@ -1,16 +1,17 @@
 #!/usr/bin/bash
 
-if [[ -z ${NOTIFY_SOCKET-} ]]; then
-	if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-		eval "$(load_env user)"
+# 此脚本调用 systemd-notify 发送通知给【外部管理器】
+# 如果没有传入socket，则什么都不做
+
+if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+	eval "$(load_env user)"
+fi
+if  [[ -z ${__NOTIFY_SOCKET__-} ]]; then
+	if [[ -n ${IN_DEBUG_MODE-} ]]; then
+		echo "跳过发送通知: 缺少 __NOTIFY_SOCKET__ 环境变量" >&2
 	fi
-	if [[ -z ${__NOTIFY_SOCKET__-} ]]; then
-		echo "无法发送通知: 缺少 __NOTIFY_SOCKET__ 环境变量" >&2
-		exit 1
-	fi
-	export NOTIFY_SOCKET="${__NOTIFY_SOCKET__}"
-else
-	export NOTIFY_SOCKET
+	exit 0
 fi
 
-systemd-notify "$@"
+NOTIFY_SOCKET="${__NOTIFY_SOCKET__}" \
+	systemd-notify "$@"

@@ -1,5 +1,5 @@
 [Unit]
-Description=容器退出前显示 success.service 启动失败的原因
+Description=容器退出前显示启动失败的原因
 DefaultDependencies=no
 Requires=local-fs.target
 Before=basic.target
@@ -12,7 +12,7 @@ WantedBy=local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStop=/usr/bin/systemctl list-dependencies success.service --no-pager --legend=no
+ExecStop=-/usr/local/libexec/why-not-success
 StandardOutput=journal+console
 StandardError=journal+console
 Restart=no

@@ -82,11 +82,11 @@ function _MAIN_exit_handler() {
 				printf "\e[0m"
 			fi
 		fi
+		info_error "脚本异常结束"
 	else
-		info_note "脚本正常结束"
+		info_success "脚本正常结束"
 	fi
 
-	# info_note "last statement."
 	exit "${_EXIT_CODE}"
 }
 

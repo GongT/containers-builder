@@ -1,3 +1,6 @@
+# 非常底层的脚本运行工具，提供在容器中运行子脚本的能力
+# 被运行的脚本无任何过滤操作
+# 参数 CONTAINER SCRIPT_FILE [BUILDAH_RUN_ARGS...]
 function buildah_run_shell_script() {
 	local CONTAINER SCRIPT_FILE SH="bash"
 	if [[ $# -lt 2 ]]; then
@@ -19,7 +22,7 @@ function buildah_run_shell_script() {
 		fi
 	fi
 
-	if [[ -n ${WHO_AM_I-} ]]; then
+	if [[ -n ${WHO_AM_I-} ]] && ! grep -q 'WHO_AM_I=' "${SCRIPT_FILE}"; then
 		ARGS+=("--env=WHO_AM_I=${WHO_AM_I}")
 	fi
 	ARGS+=("--env=BUILDAH_RUN_HOST_SCRIPT=${SCRIPT_FILE}")
@@ -42,6 +45,7 @@ function export_common_libs() {
 	declare -fp variable_is_array variable_is_map variable_exists is_tty function_exists
 	declare -fp use_strict use_normal set_error_trap callstack function_exists reflect_function_location caller_hyperlink
 	declare -fp register_exit_handler call_exit_handlers
+	declare -fp ensure_user ensure_group get_gid_of_group get_uid_of_user user_exists group_exists
 }
 
 function _warp_script_in_function() {
@@ -54,6 +58,7 @@ function _warp_script_in_function() {
 
 ## construct_child_shell_script OUTPUT_FILE SCRIPT_FILE [EXTRA_CONTENT]
 # 构造子bash脚本文件，包含公共库
+# EXTRA_CONTENT 被插入到脚本前方（公共库之后）
 function construct_child_shell_script() {
 	local OUTPUT_FILE="$1" SCRIPT_FILE="$2" EXTRA_CONTENT="${3-}"
 
@@ -72,6 +77,7 @@ function construct_child_shell_script() {
 
 		printf 'if declare -p %s &>/dev/null; then echo "重复加载脚本: ${BASH_SOURCE[0]}"; exit 1; fi; declare -r %s=yes\n' "${RANDOM_NAME}" "${RANDOM_NAME}"
 
+		printf 'declare -x WHO_AM_I=%q\n' "${SCRIPT_FILE}"
 		printf 'declare -xr SOURCE_SCRIPT_FILE=%q\n' "${SCRIPT_FILE}"
 		export_common_libs
 		cat_source_file "${COMMON_LIB_ROOT}/staff/script-helpers/tiny-lib.sh"
@@ -101,5 +107,5 @@ function cat_source_file() {
 	local -r FILE_PATH=$1
 	printf '\n## 以下为源文件: %s\n' "${FILE_PATH}"
 	cat "${FILE_PATH}"
-	printf '\n\n'
+	printf '\n## 以上为源文件: %s\n\n' "${FILE_PATH}"
 }

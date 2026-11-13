@@ -5,7 +5,6 @@ function _service_executer_write() {
 	{
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
-		call_script_emit
 		__concat_wait_files
 		echo use_normal
 		echo execute_service_waiter_main
@@ -25,11 +24,9 @@ __concat_wait_files() {
 }
 
 _debugger_remove_domain() {
-	local IMAGE="$1"
-	if [[ ${IMAGE} == "${PODMAN_MY_REGISTRY}"/* ]]; then
-		echo "${IMAGE#"${PODMAN_MY_REGISTRY}"/}"
-	else
-		echo "${IMAGE}"
+	if [[ ${PODMAN_IMAGE_NAME} == "${PODMAN_MY_REGISTRY}"/* ]]; then
+		info_note "从PODMAN_IMAGE_NAME中删除前缀 ${PODMAN_MY_REGISTRY}/"
+		PODMAN_IMAGE_NAME="${PODMAN_IMAGE_NAME#"${PODMAN_MY_REGISTRY}"/}"
 	fi
 }
 
@@ -40,10 +37,10 @@ _debugger_file_write() {
 
 	local SRC="${COMMON_LIB_ROOT}/staff/container-tools/debugger.sh"
 	(
-		_S_IMAGE=$(_debugger_remove_domain "${_S_IMAGE}")
 		echo '#!/usr/bin/bash'
 		echo 'source "__replace_me__/include.sh"'
-		call_script_emit
+
+		export_function_body _debugger_remove_domain
 		__concat_wait_files
 		cat_source_file "${SRC}"
 	) >"${TMPF}"
@@ -52,23 +49,19 @@ _debugger_file_write() {
 		install_script "${TMPF}" "debug-start.sh"
 }
 
-function unit_start_notify() {
-	info_warn "unit_start_notify has renamed to start_notify"
-	start_notify "$@"
-}
 function start_notify() {
 	local TYPE="$1" ARG="${2-}"
 	_S_START_WAIT=
 	case "${TYPE}" in
 	socket)
 		if [[ -n ${ARG} ]]; then
-			die "touch method do not allow argument"
+			die "socket方法不支持参数"
 		fi
 		_S_START_WAIT="socket"
 		;;
 	port)
 		if [[ ${ARG} != */tcp && ${ARG} != */udp ]]; then
-			die "start notify port must use xxx/tcp or xxx/udp"
+			die "port方法必须使用 xxx/tcp 或 xxx/udp"
 		fi
 		_S_START_WAIT="port:${ARG}"
 		;;
@@ -91,7 +84,7 @@ function start_notify() {
 		_S_START_WAIT="auto"
 		;;
 	*)
-		die "Unknown start notify method ${TYPE}, allow: socket, port, sleep, output, touch, pass, healthy. defaults to healthy if healthcheck exists, or sleep if not."
+		die "未知的 start notify 方法 ${TYPE}，允许: socket, port, sleep, output, touch, pass, healthy. 如果存在健康检查，默认为 healthy，否则为 sleep"
 		;;
 	esac
 }
@@ -106,7 +99,7 @@ function __emit_start_helpers() {
 		_S_START_WAIT="auto"
 	elif [[ $_S_START_WAIT == socket ]]; then
 		if [[ ${#_S_PROVIDE_SOCKETS[@]} -eq 0 ]]; then
-			die "unit wait for socket but not provide any."
+			die "单元使用 socket 方法判定容器启动，但未提供任何 socket"
 		fi
 	fi
 	printf "declare START_WAIT_DEFINE=%q\n" "${_S_START_WAIT}"

@@ -2,8 +2,10 @@
 Description=压缩要附加的配置文件，只启动一次，重试时不再反复打包
 RefuseManualStop=yes
 RefuseManualStart=yes
-FailureAction=exit
-FailureActionExitStatus=233
+Before=default.target
+
+[Install]
+RequiredBy=default.target
 
 [Service]
 Type=oneshot

@@ -38,8 +38,10 @@ function __print_hook_name() {
 	printf '### HOOK: %s\n' "$1"
 }
 function call_script_emit() {
+	echo "### call_script_emit vvv"
 	local pre_eval="__print_hook_name"
 	__call_array "${_HANDLERS_EMIT_SRC[@]}"
+	echo "### call_script_emit ^^^"
 }
 
 function register_argument_config() {

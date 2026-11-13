@@ -6,11 +6,12 @@ function wait_by_port() {
 		sleep 2
 	done
 
-	info_log "container init pid is ${INNER_PID}"
+	info_log "容器已初始化，PID 是 ${INNER_PID}"
+	sdnotify --status="等待端口打开..."
 
 	while ! nsenter --user --net --target "${INNER_PID}" ss --listening "--$PROTOCOL" --numeric | grep -q ":${PORT} "; do
 		sleep 2
 	done
-	info_log "${PROTOCOL} port ${PORT} has opened for listening"
+	info_log "${PROTOCOL} 端口 ${PORT} 已开始监听"
 	service_wait_success
 }

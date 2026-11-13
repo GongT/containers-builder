@@ -7,7 +7,7 @@ function die() {
 }
 
 if [[ ! -e ${NGINX_CONFIG_SOURCE} ]]; then
-	die "缺少 nginx_attach 组件输入参数 CONFIG_FILE: ${NGINX_CONFIG_SOURCE}"
+	die "缺少 nginx_attach 组件需要的配置文件: ${NGINX_CONFIG_SOURCE}"
 fi
 if ! mountpoint "${SHARED_SOCKET_PATH}"; then
 	die "缺少已挂载的 socket 文件夹: ${SHARED_SOCKET_PATH}"

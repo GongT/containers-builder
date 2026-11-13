@@ -4,14 +4,14 @@
 # 鉴于名称更加常用，所以将它写入了 /run/machine-id 文件
 
 CONTAINER_DIGITS_LONG=$(grep -F .containerenv /proc/self/mountinfo | grep -oE '[0-9a-f]{64}') || true
-log  "  -> ${CONTAINER_DIGITS_LONG}"
+log  "  -> 长ID: ${CONTAINER_DIGITS_LONG}"
 if [[ ${#CONTAINER_DIGITS_LONG} -ne 64 ]]; then
 	die "容器 ID 长度不正确，应为 64，实为 ${#CONTAINER_DIGITS_LONG}: ${CONTAINER_DIGITS_LONG}"
 fi
 
 # 取前12位，类似docker的短ID
 CONTAINER_DIGITS_SHORT="${CONTAINER_DIGITS_LONG:0:12}"
-info " --> ${CONTAINER_DIGITS_SHORT}"
+log "  -> 短ID: ${CONTAINER_DIGITS_SHORT}"
 
 exportenv 'CONTAINER_DIGITS_LONG' "${CONTAINER_DIGITS_LONG}"
 exportenv 'CONTAINER_DIGITS_SHORT' "${CONTAINER_DIGITS_SHORT}"
@@ -22,12 +22,13 @@ else
 	log "管理程序未传入容器名称，随机生成"
 	CONTAINER_ID="debugger_container_${RANDOM}"
 fi
+log "  -> 名称: ${CONTAINER_ID}"
+
 exportenv 'CONTAINER_ID' "${CONTAINER_ID}"
 
 # 写入/etc/machine-id，随后启动的systemd将使用该ID
-echo "${CONTAINER_ID}" >/etc/machine-id
-echo "${CONTAINER_ID}" >/run/machine-id
-log "  -> ${CONTAINER_ID} | 已写入 /etc/machine-id"
+echo "${CONTAINER_DIGITS_SHORT}" >/etc/machine-id
+echo "${CONTAINER_DIGITS_SHORT}" >/run/machine-id
 
 # systemd支持使用此环境变量设置/etc/machine-id，不过我们自己做了，所以不需要它
 unset container_uuid

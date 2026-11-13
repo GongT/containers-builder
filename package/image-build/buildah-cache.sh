@@ -98,17 +98,17 @@ function buildah_cache() {
 		# info_log "EXISTS_HASH=$EXISTS_HASH EXISTS_PREVIOUS_ID=$EXISTS_PREVIOUS_ID"
 
 		if [[ -z ${EXISTS_PREVIOUS_ID} ]] || [[ -z ${EXISTS_HASH} ]]; then
-			info_warn "缓存状态无效!"
+			info_error "缓存状态无效!"
 		else
-			info_success "缓存: 可用 <当前=${EXISTS_HASH}, 基础=${EXISTS_PREVIOUS_ID}>"
 			if [[ "${EXISTS_HASH}++${EXISTS_PREVIOUS_ID}" == "${WANTED_HASH}++${PREVIOUS_ID}" ]]; then
+				info_success "缓存: 命中 <当前=${EXISTS_HASH}, 基础=${EXISTS_PREVIOUS_ID}>"
 				_buildah_cache_done hit "${STEP_RESULT_IMAGE}"
 				return
 			fi
-			info "缓存: 过期 <期望=${WANTED_HASH}, 基础=${PREVIOUS_ID}>"
+			info_warn "缓存: 过期 <当前=${EXISTS_HASH}, 期望=${WANTED_HASH}, 基础=${PREVIOUS_ID}>"
 		fi
 	else
-		info_success "缓存: 缺失 <无此镜像: ${STEP_RESULT_IMAGE}>"
+		info_warn "缓存: 缺失 <无此镜像: ${STEP_RESULT_IMAGE}>"
 	fi
 
 	indent
@@ -117,7 +117,7 @@ function buildah_cache() {
 	new_container "${CID}" "${PREV_STAGE_IMAGE_ID}" >/dev/null
 	try "${BUILDAH_BUILD_CALLBACK}" "${CID}"
 	if [[ $ERRNO -ne 0 ]]; then
-		info_error "构建回调 '${BUILDAH_BUILD_CALLBACK}' 执行失败，错误码 $ERRNO ($ERRLOCATION)"
+		info_error "构建回调 '${BUILDAH_BUILD_CALLBACK}' 执行失败，错误码 $ERRNO @ $ERRLOCATION"
 		dedent
 		return 1
 	fi

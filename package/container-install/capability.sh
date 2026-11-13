@@ -9,7 +9,7 @@ function add_network_privilege() {
 }
 
 function ___reset_cap_pri_param() {
-	declare -ga _S_LINUX_CAP=()
+	declare -ga _S_LINUX_CAP=(LINUX_IMMUTABLE)
 }
 register_unit_reset ___reset_cap_pri_param
 

@@ -17,6 +17,10 @@ function validate_systemd_plugin_param() {
 	fi
 }
 
+# 用法:
+# setup_systemd <cache_branch> \
+#    <plugin1> [PARAM1=VALUE1] [PARAM2=VALUE2] ... \
+#    <plugin2> [PARAM1=VALUE1] [PARAM2=VALUE2] ...
 function setup_systemd() {
 	local STEP="配置镜像中的systemd"
 	local CACHE_BRANCH="$1"
@@ -127,7 +131,7 @@ function setup_systemd() {
 
 				local EXTRA
 				EXTRA=$(
-					printf 'declare -xr WHO_AM_I=%q\n' "${SETUP_SRC}"
+					printf 'declare -x WHO_AM_I=%q\n' "${SETUP_SRC}"
 					if [[ ${#PARAMS[@]} -gt 0 ]]; then
 						printf 'declare -xr %q\n' "${PARAMS[@]}"
 					fi

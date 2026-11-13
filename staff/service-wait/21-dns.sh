@@ -5,7 +5,7 @@ fi
 DNS_TIMEOUT=$((DNS_TIMEOUT + 5))
 
 function _nslookup() {
-	sdnotify --status="wait:lookup $1"
+	sdnotify --status="等待dns解析成功: lookup $1"
 	expand_timeout_seconds "${DNS_TIMEOUT}"
 	nslookup "$@"
 }
@@ -15,26 +15,26 @@ function dns_resolve() {
 	local -r METHOD="$1" HOSTN="$2"
 	local RESOLVE_ARR RESOLVE_STR
 	local -i I=5
-	info_log "Resolve host for dns: <${HOSTN}>"
+	info_log "解析 DNS 主机: <${HOSTN}>"
 	while true; do
 		RESOLVE_STR=$(_nslookup "${HOSTN}" || :)
 		if [[ -n ${RESOLVE_STR} ]]; then
 			break
 		fi
 		if [[ ${I} -gt 0 ]]; then
-			info_log "retry... (${I})"
+			info_log "重试... (${I})"
 			sleep 2
 			I="${I} - 1"
 			continue
 		else
-			die "Failed resolve dns: ${HOSTN}"
+			die "解析 DNS 失败: ${HOSTN}"
 		fi
 	done
 	mapfile -t RESOLVE_ARR < <(echo "${RESOLVE_STR}" | tail -n +3 | grep Address | sed 's/Address: //g')
 
 	local ADDR
 	for ADDR in "${RESOLVE_ARR[@]}"; do
-		info_log " - verify dns server: ${ADDR}"
+		info_log " - 验证 DNS 服务器: ${ADDR}"
 		if _nslookup -timeout=2 -retry=1 z.cn "${ADDR}" &>/dev/null; then
 			dns_append "${METHOD}" "${ADDR}"
 		fi
@@ -43,7 +43,7 @@ function dns_resolve() {
 
 function dns_pass() {
 	local RESOLVE_OPTIONS="" RESOLVE_SEARCH="" RESOLVE_NS="" NS METHOD="${1-}"
-	info_log "pass dns server by ${METHOD}"
+	info_log "通过 ${METHOD} 传递 DNS 服务器"
 	mapfile -t RESOLVE_OPTIONS < <(grep '^options ' /etc/resolv.conf | sed 's/^options //g')
 	if [[ -n ${RESOLVE_OPTIONS[*]} ]]; then
 		if [[ ${METHOD} == 'env' ]]; then
@@ -66,7 +66,7 @@ function dns_append() {
 	local METHOD="${1}"
 	shift
 
-	info_log "$METHOD dns servers: ${*}"
+	info_log "$METHOD DNS 服务器: ${*}"
 
 	if [[ ${METHOD} == 'env' ]]; then
 		NSS+=("${@}")

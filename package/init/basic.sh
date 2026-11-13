@@ -81,3 +81,14 @@ function hash_string() {
 	MOUT=$(echo "$1" | md5sum "${HASH_TMP}")
 	echo "${MOUT}" | awk '{print $1}'
 }
+
+function export_function_body() {
+	local FUNC_NAME="$1"
+	# bash似乎不管怎么定义函数，declare -f 都会输出
+	#     xxxx()
+	#     {
+	#     .....
+	#     }
+	# 所以删掉前2行和最后一行即可得到完整的函数体
+	declare -f "$FUNC_NAME" | sed '1,2d;$d'
+}

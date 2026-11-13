@@ -18,7 +18,7 @@ function podman_run_container() {
 
 	get_service_timeout
 
-	sdnotify "--status=run main process" "EXTEND_TIMEOUT_USEC=$((SERVICE_START_TIMEOUT_SEC * microsecond_unit))"
+	sdnotify "--status=运行主进程" "EXTEND_TIMEOUT_USEC=$((SERVICE_START_TIMEOUT_SEC * microsecond_unit))"
 	trap - EXIT
 	exec podman run "${PODMAN_EXEC_ARGS[@]}"
 }
@@ -39,8 +39,8 @@ function __pid_waiter_thread() {
 	PID=$(<"${PIDFile}")
 	rm -f "${PIDFile}"
 
-	echo "pidfile seen at $PIDFile, pid=$PID"
-	sdnotify "--pid=${PID}" "--status=conmon started"
+	info_log "pidfile 已看到 $PIDFile, pid=$PID"
+	sdnotify "--pid=${PID}" "--status=conmon 已启动"
 }
 
 function wait_for_conmon_start() {

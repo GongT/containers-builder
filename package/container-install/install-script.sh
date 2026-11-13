@@ -63,7 +63,7 @@ source '${_SRC}'"
 function install_modified_script() {
 	local SRC=$1 TARGET=$2 DATA
 
-	local SOURCE_STMT='source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/service-library.sh"'
+	local SOURCE_STMT='source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/functions.sh"'
 	SOURCE_STMT+=$(printf "; declare WHO_AM_I=%q" "${WHO_AM_I-"${SRC}"}")
 	unset WHO_AM_I
 

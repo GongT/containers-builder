@@ -5,6 +5,7 @@ if [[ -z ${PORTS} ]]; then
 fi
 
 declare -r SOURCE_DIR="/entrypoint/systemd.sockets.d/"
+mkdir -p "${SOURCE_DIR}"
 
 # shellcheck disable=SC2206
 PORTS_ARR=(${PORTS})
@@ -12,14 +13,16 @@ PORTS_ARR=(${PORTS})
 for PORTDEF in "${PORTS_ARR[@]}"; do
 	NAME="${PORTDEF%:*}"
 	VALUE="${PORTDEF#*:}"
-
-	if [[ ${NAME} == "${VALUE}" ]]; then
-		NAME=''
-	fi
-
 	PROTO="${VALUE#*/}"
 	PORT="${VALUE%/*}"
+
+	if [[ ${NAME} == "${VALUE}" ]]; then
+		# 没有":"
+		NAME="${VALUE}"
+	fi
+
 	if [[ ${PROTO} == "${PORT}" ]]; then
+		# 没有"/"
 		PROTO='tcp'
 	fi
 
@@ -28,20 +31,13 @@ for PORTDEF in "${PORTS_ARR[@]}"; do
 		:
 	elif [[ ${PROTO} == udp ]]; then
 		# LISTEN_NAME="ListenDatagram"
-		die "udp forwarding currently not implement"
+		die "udp 转发暂未实现"
 	else
-		die "invalid port proto: ${PORTDEF}: ${NAME} - ${PORT} - ${PROTO}"
+		die "未知端口协议: ${PORTDEF}: ${NAME} - ${PORT} - ${PROTO}"
 	fi
 
-	if [[ -z ${NAME} ]]; then
-		FNAME="unnamed"
-	else
-		FNAME="${NAME}"
+	if [[ -e "${SOURCE_DIR}/${NAME}" ]]; then
+		die "重复的代理 socket 名称: ${NAME}"
 	fi
-
-	mkdir -p "${SOURCE_DIR}"
-	if [[ -e "${SOURCE_DIR}/${FNAME}" ]]; then
-		die "duplicate proxy socket name: ${FNAME}"
-	fi
-	declare -p PROTO PORT NAME >"${SOURCE_DIR}/${FNAME}"
+	declare -p PROTO PORT NAME >"${SOURCE_DIR}/${NAME}"
 done

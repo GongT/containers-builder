@@ -13,7 +13,7 @@ function output_file() {
 }
 
 function __fs_args() {
-	let OPERATER=$1
+	local -i OPERATER=$1
 	shift
 
 	while [[ $# -gt 0 ]]; do
@@ -113,6 +113,9 @@ function copy_file() {
 		chmod "$(bit_mask "${MODE}")" "${TARGET}"
 	fi
 }
+
+# 用法:
+#    write_file "/absolute/path/to/target" "file content" [--mode 0644] [--nodir]
 function write_file() {
 	_arg_ensure_finish
 	local ARGS MODE MKDIR=1

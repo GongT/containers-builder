@@ -12,17 +12,17 @@ function get_container() {
 function ensure_container_not_running() {
 	get_container
 	if [[ -z ${LCID} ]]; then
-		info_log "good, no old container"
+		info_log "很好, 没有旧容器"
 		return
 	fi
-	info_log "-- old container exists --" >&2
-	sdnotify "--status=killing old container"
+	info_log "-- 发现旧容器 --" >&2
+	sdnotify "--status=删除旧容器"
 	expand_timeout_seconds "30"
 
 	while true; do
 		info_log "Conmon PID: ${LPID}" >&2
-		info_log "Container ID: ${LCID}" >&2
-		info_log "State: ${LSTAT}" >&2
+		info_log "容器 ID: ${LCID}" >&2
+		info_log "状态: ${LSTAT}" >&2
 		if [[ ${LSTAT} == "running" ]]; then
 			if [[ ${ALLOW_FORCE_KILL} == yes ]]; then
 				podman stop "${CONTAINER_ID}" || true
@@ -38,12 +38,12 @@ function ensure_container_not_running() {
 
 		get_container
 		if [[ -z ${LCID} ]]; then
-			info_log "good, old container removed."
+			info_log "  * 旧容器已删除."
 			return
 		fi
 
-		info_log "-- old container still exists --" >&2
+		info_log "-- 旧容器仍然存在 --" >&2
 	done
 
-	critical_die "failed delete old container"
+	critical_die "删除旧容器失败，无法继续"
 }

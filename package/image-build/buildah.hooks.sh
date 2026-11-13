@@ -21,13 +21,13 @@ function image_get_label() {
 
 function add_build_config() {
 	if ! variable_exists COMMIT_CONFIGS; then
-		print_failure "wrong call timing add_build_config()"
+		print_failure "调用 add_build_config 时机错误"
 	fi
 	COMMIT_CONFIGS+=("$@")
 }
 function add_run_argument() {
 	if ! variable_exists COMMIT_CONFIGS; then
-		print_failure "wrong call timing add_run_argument()"
+		print_failure "调用 add_run_argument 时机错误"
 	fi
 	# noop
 }
@@ -78,15 +78,15 @@ function buildah() {
 		return
 		;;
 	commit)
-		local IID="${PASSARGS[*]: -1}"   # Image Id
-		local CID="${PASSARGS[*]: -2:1}" # Container Id
+		local IID="${PASSARGS[*]: -1}"   # 镜像ID，一串hash
+		local CID="${PASSARGS[*]: -2:1}" # 容器ID，一般是名称（tag）
 
 		if [[ ${IID} != "${CACHE_CENTER_NAME_BASE}"* ]]; then
-			info_success "commiting final image ${CID} as ${IID}"
+			info_success "提交最终镜像 ${CID}, 命名: ${IID}"
 			local -a COMMIT_CONFIGS=()
 
 			if [[ ${REWRITE_IMAGE_NAME+found} == found ]]; then
-				info "rewrite commit image name: ${REWRITE_IMAGE_NAME}"
+				info "重写提交镜像名称: ${REWRITE_IMAGE_NAME}"
 				PASSARGS=("${PASSARGS[@]:0:LEN}" "${REWRITE_IMAGE_NAME}")
 			fi
 
@@ -126,16 +126,16 @@ function buildah() {
 
 			xbuildah config "${COMMIT_CONFIGS[@]}" "${CID}"
 		else
-			info_success "commiting cache image ${CID} as ${IID}"
+			info_success "提交缓存镜像 ${CID}, 命名: ${IID}"
 		fi
 
 		local OUTPUT
 		## Note: current oci not support healthcheck, docker not correct save annotations
 		OUTPUT=$(xbuildah commit "--format=oci" --rm --quiet "${PASSARGS[@]}")
-		info_note "commit: ${OUTPUT}"
+		info_note "提交输出: ${OUTPUT}"
 		control_ci set-env "LAST_COMMITED_IMAGE" "${OUTPUT}"
 		if ! is_digits "${OUTPUT}"; then
-			die "output wrong"
+			die "输出内容异常"
 		fi
 		echo "${OUTPUT}"
 		return

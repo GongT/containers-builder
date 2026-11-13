@@ -1,11 +1,10 @@
 # 配置启动服务组件
 
 输入参数:
-* REQUIRE - 空格分割的服务名称列表，添加到 success.service 的 Requires
-* WANT - 空格分割的服务名称列表，添加到 success.service 的 Wants
+* REQUIRE、WANT、BACKGROUND - 空格分割的服务名称列表
 
-两者均会添加到 notify-stop.service 的 After，并且调用 systemctl enable
+REQUIRES = 失败导致容器退出 & 成功才发送通知
+WANTS = 成功、失败不会产生影响
+BACKGROUND = 需要长时间运行，成功没有影响，但失败导致容器退出
 
-启动前向 /entrypoint/systemd.enables.d/{requires,wants} 写入相应的文件（服务名称做文件名，内容无意义），可以动态增减依赖关系
-
-一旦systemd启动，再写入无效
+所有的都会自启动

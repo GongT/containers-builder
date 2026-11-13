@@ -53,23 +53,23 @@ function cache_try_pull() {
 	if [[ $ERRNO -eq 0 ]]; then
 		local IMAGE=$(<"$MANAGER_TMP_STDOUT")
 		if [[ ${CACHE_CENTER_TYPE} == 'filesystem' ]] && is_digits "${IMAGE}"; then
-			info_log "  - name local image to match cache name."
+			info_log "  - 修改本地镜像标签以匹配缓存名称"
 			xpodman image tag "${IMAGE}" "${NAME}"
 		fi
 		LAST_CACHE_COMES_FROM=pull
 		collect_temp_image "${NAME}"
 
-		info_note "  - success."
+		info_note "  - 拉取成功"
 	else
 		LAST_CACHE_COMES_FROM=local
 		if grep -q -- 'manifest unknown' "${MANAGER_TMP_STDERR}" \
 			|| grep -q -- 'name unknown' "${MANAGER_TMP_STDERR}" \
 			|| grep -q -- 'no such file or directory' "${MANAGER_TMP_STDERR}"; then
-			info_note " - 失败: 不存在."
+			info_note "  - 拉取失败: 不存在."
 		else
 			info_stream <"${MANAGER_TMP_STDERR}"
-			info_warn "  - 拉取失败, 无法获取缓存."
-			die "拉取缓存镜像失败!"
+			info_warn "  - 拉取失败！"
+			die "拉取缓存镜像失败"
 		fi
 	fi
 }

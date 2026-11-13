@@ -13,3 +13,5 @@ source "/entrypoint/library/env.sh"
 source "/entrypoint/library/users.sh"
 # shellcheck source=./filesystem.sh
 source "/entrypoint/library/filesystem.sh"
+# shellcheck source=./systemd.sh
+source "/entrypoint/library/systemd.sh"

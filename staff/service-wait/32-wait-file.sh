@@ -5,12 +5,13 @@ function wait_by_create_file() {
 	ROOT=$(podman unshare podman mount "${CONTAINER_ID}")
 	ACTIVE_FILE_ABS="${ROOT}/${ACTIVE_FILE}"
 
-	info_log "file: ${ACTIVE_FILE_ABS}"
+	info_log "等待容器内文件出现: ${ACTIVE_FILE_ABS}"
+	sdnotify --status="等待创建文件..."
 	while ! [[ -e ${ACTIVE_FILE_ABS} ]]; do
 		sleep 1
 	done
 
-	info_log "== ---- active file created ---- =="
+	info_log "== ---- 容器内文件已创建 ---- =="
 	service_wait_success
 
 	rm -f "${ACTIVE_FILE_ABS}" || true

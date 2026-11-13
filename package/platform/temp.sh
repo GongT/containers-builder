@@ -24,13 +24,17 @@ declare -xr TMP_CONTAINER_FILE="${TMPDIR}/temp-containers"
 declare -xr TMP_IMAGE_FILE="${TMPDIR}/temp-images"
 touch "${TMP_REGISTRY_FILE}" "${TMP_CONTAINER_FILE}" "${TMP_IMAGE_FILE}"
 
+__exit_no_delete() {
+	echo "由于设置了 NO_DELETE_TEMP, 不会删除临时文件, 位置为: ${TMPDIR}"
+}
+
 if [[ ${NO_DELETE_TEMP-no} != yes ]]; then
 	if ! is_ci; then
 		register_exit_handler __exit_delete_container
 		register_exit_handler __exit_delete_temp_files
 	fi
 else
-	register_exit_handler echo "由于设置了 NO_DELETE_TEMP, 不会删除临时文件, 位置为: ${TMPDIR}"
+	register_exit_handler __exit_no_delete
 fi
 
 function create_temp_dir() {

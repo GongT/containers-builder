@@ -70,12 +70,13 @@ function _create_unit_name() {
 function _create_service_lib() {
 	local BODY
 	BODY=$(
-		_create_common_lib
 		declare -p CURRENT_DIR PROJECT_NAME SCRIPTS_DIR
-
 		printf "declare UNIT_FILE_NAME=%q\n" "$(_create_unit_name)"
+		call_script_emit
+
+		printf 'source "%s/service-library.sh"\n' "${SHARED_SCRIPTS_DIR}"
 	)
-	write_file "${SCRIPTS_DIR}/service-library.sh" "$BODY"
+	write_file "${SCRIPTS_DIR}/functions.sh" "$BODY"
 }
 
 function unit_write() {
@@ -156,7 +157,8 @@ function unit_get_scopename() {
 }
 function _export_base_envs() {
 	printf 'declare -r UNIT_FILE_LOCATION=%q\n' "${SYSTEM_UNITS_DIR}/${_S_CURRENT_UNIT_FILE}"
-	printf 'declare -r PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
+	printf 'declare PODMAN_IMAGE_NAME=%q\n' "${_S_IMAGE}"
+	printf 'declare -r PODMAN_MY_REGISTRY=%q\n' "${PODMAN_MY_REGISTRY}"
 	echo "declare -r SERVICE_FILE='${_S_CURRENT_UNIT_FILE}'"
 }
 register_script_emit _export_base_envs
@@ -196,7 +198,7 @@ NotifyAccess=all"
 
 	_print_unit_service_section
 
-	echo "Environment=CONTAINER_ID=managed_$(unit_get_scopename)"
+	echo "Environment=CONTAINER_ID=$(unit_get_scopename)"
 	echo "Environment=UNIT_NAME=%n"
 	echo "Environment=template_id=%i"
 	echo "RuntimeDirectory=containers/services/$(unit_get_scopename)"

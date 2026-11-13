@@ -42,14 +42,17 @@ function shared_sockets_provide() {
 	if ! echo "${_S_VOLUME_ARG[*]}" | grep "${SHARED_SOCKET_PATH}"; then
 		unit_fs_bind "${SHARED_SOCKET_PATH}" /run/sockets
 	fi
-	local -a FULLPATH=() ARGS=()
+	local ARGS=("${@}")
+	if [[ $# -eq 0 ]]; then
+		ARGS=('')
+	fi
+
 	local i
-	for i; do
-		if ! [[ $i == *.sock || $i == *.socket ]]; then
-			i+='.sock'
+	for i in "${ARGS[@]}"; do
+		if [[ $i == *.sock ]]; then
+			info_error "不要在提供的共享套接字路径中包含 .sock 后缀"
+			i="${i%.sock}"
 		fi
-		ARGS+=("$i")
-		FULLPATH+=("${SHARED_SOCKET_PATH}/${i}")
 		_S_PROVIDE_SOCKETS+=("$i")
 	done
 }

@@ -1,5 +1,6 @@
 # 写入变量到 /etc/environment 文件
 # 此函数用于构建时期（setup_systemd步骤）的容器内脚本
+# 不会自动导出到当前环境，只会写入 /etc/environment
 function exportenv() {
 	local -r NAME=$1 VALUE=$2 FORCE=${3-false}
 	if [[ $# -ne 2 ]]; then

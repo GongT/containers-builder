@@ -17,4 +17,4 @@ fi
 
 exportenv "NGINX_CONFIG_SOURCE" "${CONFIG_FILE}"
 
-systemctl enable nginx-attach.service
+systemctl enable nginx-attach.service nginx-attach-build-package.service
