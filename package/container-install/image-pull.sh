@@ -5,6 +5,12 @@ function unit_podman_image() {
 	_S_IMAGE=$1
 	shift
 
+	if [[ -n ${PODMAN_MY_REGISTRY:-} ]]; then
+		if [[ ${_S_IMAGE} != "${PODMAN_MY_REGISTRY}/"* ]]; then
+			_S_IMAGE="${PODMAN_MY_REGISTRY}/${_S_IMAGE}"
+		fi
+	fi
+
 	if [[ $# -gt 0 ]]; then
 		unit_podman_cmdline "$@"
 	fi
@@ -18,7 +24,7 @@ register_unit_reset __reset_image_pull
 
 function __emit_image_pull() {
 	if [[ ${_S_IMAGE_PULL} == "never" ]]; then
-		:   # Nothing
+		: # Nothing
 	else # always
 		local _PULL_HELPER
 		_PULL_HELPER=$(install_script "${COMMON_LIB_ROOT}/staff/container-tools/pull-image.sh")
